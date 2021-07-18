@@ -9,7 +9,6 @@
 //     rustdoc::missing_crate_level_docs,
 //     rustdoc::private_intra_doc_links
 // )]
-#![forbid(unsafe_code)]
 #![warn(
     clippy::all,
     clippy::await_holding_lock,

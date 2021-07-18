@@ -871,6 +871,7 @@ dependencies = [
  "ab_glyph",
  "ahash",
  "atomic_refcell",
+ "bytemuck",
  "cint",
  "emath",
  "ordered-float",

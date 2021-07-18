@@ -31,6 +31,7 @@ cint = { version = "^0.2.2", optional = true }
 ordered-float = { version = "2", default-features = false }
 parking_lot = { version = "0.11", optional = true } # Using parking_lot over std::sync::Mutex gives 50% speedups in some real-world scenarios.
 serde = { version = "1", features = ["derive"], optional = true }
+bytemuck = { version = "1.7", optional = true }
 
 [features]
 default = ["multi_threaded", "default_fonts"]

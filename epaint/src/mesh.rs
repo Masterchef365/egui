@@ -20,6 +20,11 @@ pub struct Vertex {
     pub color: Color32, // 32 bit
 }
 
+#[cfg(feature = "bytemuck")]
+unsafe impl bytemuck::Zeroable for Vertex {}
+#[cfg(feature = "bytemuck")]
+unsafe impl bytemuck::Pod for Vertex {}
+
 /// Textured triangles in two dimensions.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Mesh {
