@@ -57,6 +57,9 @@ impl EguiGlow {
             shapes,
         } = self.egui_ctx.run(raw_input, run_ui);
 
+        #[cfg(feature = "winit")]
+        self.egui_ctx.set_pixels_per_point(egui_winit::native_pixels_per_point(window));
+
         self.egui_winit
             .handle_platform_output(window, &self.egui_ctx, platform_output);
 

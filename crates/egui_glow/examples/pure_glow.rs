@@ -70,13 +70,13 @@ fn main() {
                 }
 
                 if let glutin::event::WindowEvent::Resized(physical_size) = &event {
-                    gl_window.resize(*physical_size);
+                    gl_window.resize(*dbg!(physical_size));
                 } else if let glutin::event::WindowEvent::ScaleFactorChanged {
                     new_inner_size,
                     ..
                 } = &event
                 {
-                    gl_window.resize(**new_inner_size);
+                    gl_window.resize(**dbg!(new_inner_size));
                 }
 
                 egui_glow.on_event(&event);
