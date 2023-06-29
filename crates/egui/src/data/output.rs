@@ -5,6 +5,7 @@ use crate::WidgetType;
 /// What egui emits each frame from [`crate::Context::run`].
 ///
 /// The backend should use this.
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[derive(Clone, Default, PartialEq)]
 pub struct FullOutput {
     /// Non-rendering related output.
