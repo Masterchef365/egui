@@ -6,6 +6,7 @@ use crate::{ImageData, ImageDelta, TextureId};
 ///
 /// Communicates with the painting subsystem using [`Self::take_delta`].
 #[derive(Default)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct TextureManager {
     /// We allocate texture id:s linearly.
     next_id: u64,
@@ -118,6 +119,7 @@ impl TextureManager {
 
 /// Meta-data about an allocated texture.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct TextureMeta {
     /// A human-readable name useful for debugging.
     pub name: String,
