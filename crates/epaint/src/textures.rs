@@ -42,6 +42,21 @@ impl TextureManager {
         id
     }
 
+    pub fn insert(&mut self, id: TextureId, image: ImageData, options: TextureOptions) {
+        if self.metas.contains_key(&id) {
+            return;
+        }
+
+        self.metas.entry(id).or_insert_with(|| TextureMeta {
+            name: format!("{:?}", id),
+            size: image.size(),
+            bytes_per_pixel: image.bytes_per_pixel(),
+            retain_count: 1,
+            options,
+        });
+
+        self.delta.set.push((id, ImageDelta::full(image, options)));
+    }
     /// Assign a new image to an existing texture,
     /// or update a region of it.
     pub fn set(&mut self, id: TextureId, delta: ImageDelta) {
