@@ -9,7 +9,7 @@ use crate::{ImageData, ImageDelta, TextureId};
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct TextureManager {
     /// We allocate texture id:s linearly.
-    next_id: u64,
+    pub next_id: u64,
     /// Information about currently allocated textures.
     metas: ahash::HashMap<TextureId, TextureMeta>,
     delta: TexturesDelta,
