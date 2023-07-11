@@ -5,7 +5,7 @@ use crate::{ImageData, ImageDelta, TextureId};
 /// Low-level manager for allocating textures.
 ///
 /// Communicates with the painting subsystem using [`Self::take_delta`].
-#[derive(Default)]
+#[derive(Default, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct TextureManager {
     /// We allocate texture id:s linearly.
