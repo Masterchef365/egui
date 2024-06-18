@@ -33,6 +33,7 @@ pub struct FullOutput {
     ///
     /// It is up to the integration to spawn a native window for each viewport,
     /// and to close any window that no longer has a viewport in this map.
+    #[serde(skip)]
     pub viewport_output: ViewportIdMap<ViewportOutput>,
 }
 
