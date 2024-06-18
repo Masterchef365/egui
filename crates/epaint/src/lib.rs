@@ -106,6 +106,7 @@ impl Default for TextureId {
 /// A [`Shape`] within a clip rectangle.
 ///
 /// Everything is using logical points.
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct ClippedShape {
     /// Clip / scissor rectangle.

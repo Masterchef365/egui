@@ -17,6 +17,7 @@ pub use crate::{CubicBezierShape, QuadraticBezierShape};
 /// but storing them should also be fine with one exception:
 /// [`Shape::Text`] depends on the current `pixels_per_point` (dpi scale)
 /// and so must be recreated every time `pixels_per_point` changes.
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[must_use = "Add a Shape to a Painter"]
 #[derive(Clone, Debug, PartialEq)]
 pub enum Shape {
@@ -60,6 +61,7 @@ pub enum Shape {
     CubicBezier(CubicBezierShape),
 
     /// Backend-specific painting.
+    #[serde(skip)]
     Callback(PaintCallback),
 }
 
