@@ -386,7 +386,7 @@ impl Default for TextWrapping {
     fn default() -> Self {
         Self {
             max_width: f32::INFINITY,
-            max_rows: usize::MAX,
+            max_rows: u32::MAX,
             break_anywhere: false,
             overflow_character: Some('…'),
         }

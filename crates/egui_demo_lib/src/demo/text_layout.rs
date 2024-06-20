@@ -139,7 +139,7 @@ impl super::View for TextLayoutDemo {
                     },
                 );
                 job.wrap = egui::text::TextWrapping {
-                    max_rows: *max_rows,
+                    max_rows: *max_rows as u32,
                     break_anywhere: *break_anywhere,
                     overflow_character: *overflow_character,
                     ..Default::default()
