@@ -197,7 +197,7 @@ fn rows_from_paragraphs(
     let mut rows = vec![];
 
     for (i, paragraph) in paragraphs.into_iter().enumerate() {
-        if job.wrap.max_rows <= rows.len() {
+        if job.wrap.max_rows <= rows.len() as u32 {
             *elided = true;
             break;
         }
@@ -252,7 +252,7 @@ fn line_break(paragraph: &Paragraph, job: &LayoutJob, out_rows: &mut Vec<Row>, e
     let mut row_start_idx = 0;
 
     for i in 0..paragraph.glyphs.len() {
-        if job.wrap.max_rows <= out_rows.len() {
+        if job.wrap.max_rows <= out_rows.len() as u32 {
             *elided = true;
             break;
         }
@@ -314,7 +314,7 @@ fn line_break(paragraph: &Paragraph, job: &LayoutJob, out_rows: &mut Vec<Row>, e
     if row_start_idx < paragraph.glyphs.len() {
         // Final row of text:
 
-        if job.wrap.max_rows <= out_rows.len() {
+        if job.wrap.max_rows <= out_rows.len() as u32 {
             *elided = true; // can't fit another row
         } else {
             let glyphs: Vec<Glyph> = paragraph.glyphs[row_start_idx..]

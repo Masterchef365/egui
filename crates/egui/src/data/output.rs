@@ -6,6 +6,7 @@ use crate::{ViewportIdMap, ViewportOutput, WidgetType};
 ///
 /// The backend should use this.
 #[derive(Clone, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct FullOutput {
     /// Non-rendering related output.
     pub platform_output: PlatformOutput,
@@ -32,6 +33,7 @@ pub struct FullOutput {
     ///
     /// It is up to the integration to spawn a native window for each viewport,
     /// and to close any window that no longer has a viewport in this map.
+    #[serde(skip)]
     pub viewport_output: ViewportIdMap<ViewportOutput>,
 }
 

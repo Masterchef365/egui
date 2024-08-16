@@ -370,8 +370,8 @@ pub struct TextWrapping {
     /// eliding the text after [`Self::max_width`] is reached.
     /// When you set `max_rows = 1`, it is recommended you also set [`Self::break_anywhere`] to `true`.
     ///
-    /// Default value: `usize::MAX`.
-    pub max_rows: usize,
+    /// Default value: `u32::MAX`.
+    pub max_rows: u32,
 
     /// If `true`: Allow breaking between any characters.
     /// If `false` (default): prefer breaking between words, etc.
@@ -411,7 +411,7 @@ impl Default for TextWrapping {
     fn default() -> Self {
         Self {
             max_width: f32::INFINITY,
-            max_rows: usize::MAX,
+            max_rows: u32::MAX,
             break_anywhere: false,
             overflow_character: Some('…'),
         }
