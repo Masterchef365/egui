@@ -15,6 +15,9 @@ pub struct MultiTouchInfo {
     /// Position of the pointer at the time the gesture started.
     pub start_pos: Pos2,
 
+    /// Center position of the current gesture (average of all touch points).
+    pub center_pos: Pos2,
+
     /// Number of touches (fingers) on the surface. Value is ≥ 2 since for a single touch no
     /// [`MultiTouchInfo`] is created.
     pub num_touches: usize,
@@ -134,7 +137,7 @@ impl TouchState {
         }
     }
 
-    pub fn begin_frame(&mut self, time: f64, new: &RawInput, pointer_pos: Option<Pos2>) {
+    pub fn begin_pass(&mut self, time: f64, new: &RawInput, pointer_pos: Option<Pos2>) {
         let mut added_or_removed_touches = false;
         for event in &new.events {
             match *event {
@@ -203,6 +206,8 @@ impl TouchState {
                 PinchType::Proportional => Vec2::splat(zoom_delta),
             };
 
+            let center_pos = state.current.avg_pos;
+
             MultiTouchInfo {
                 start_time: state.start_time,
                 start_pos: state.start_pointer_pos,
@@ -212,6 +217,7 @@ impl TouchState {
                 rotation_delta: normalized_angle(state.current.heading - state_previous.heading),
                 translation_delta: state.current.avg_pos - state_previous.avg_pos,
                 force: state.current.avg_force,
+                center_pos,
             }
         })
     }

@@ -1,4 +1,7 @@
-use crate::*;
+use crate::{
+    epaint, pos2, vec2, NumExt, Response, Sense, Shape, TextStyle, Ui, Vec2, Widget, WidgetInfo,
+    WidgetText, WidgetType,
+};
 
 // TODO(emilk): allow checkbox without a text label
 /// Boolean on/off control with text label.
@@ -13,7 +16,7 @@ use crate::*;
 /// ui.add(egui::Checkbox::new(&mut my_bool, "Checked"));
 /// # });
 /// ```
-#[must_use = "You should put this widget in an ui with `ui.add(widget);`"]
+#[must_use = "You should put this widget in a ui with `ui.add(widget);`"]
 pub struct Checkbox<'a> {
     checked: &'a mut bool,
     text: WidgetText,
@@ -44,7 +47,7 @@ impl<'a> Checkbox<'a> {
     }
 }
 
-impl<'a> Widget for Checkbox<'a> {
+impl Widget for Checkbox<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
         let Checkbox {
             checked,
@@ -101,9 +104,10 @@ impl<'a> Widget for Checkbox<'a> {
             let (small_icon_rect, big_icon_rect) = ui.spacing().icon_rectangles(rect);
             ui.painter().add(epaint::RectShape::new(
                 big_icon_rect.expand(visuals.expansion),
-                visuals.rounding,
+                visuals.corner_radius,
                 visuals.bg_fill,
                 visuals.bg_stroke,
+                epaint::StrokeKind::Inside,
             ));
 
             if indeterminate {

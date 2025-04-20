@@ -16,7 +16,7 @@
 ///
 /// - If you just want to be able to load `file://` and `http://` URIs, enable the `all_loaders` feature.
 /// - The supported set of image formats is configured by adding the [`image`](https://crates.io/crates/image)
-/// crate as your direct dependency, and enabling features on it:
+///   crate as your direct dependency, and enabling features on it:
 ///
 /// ```toml,ignore
 /// egui_extras = { version = "*", features = ["all_loaders"] }
@@ -84,6 +84,12 @@ pub fn install_image_loaders(ctx: &egui::Context) {
         log::trace!("installed GifLoader");
     }
 
+    #[cfg(feature = "webp")]
+    if !ctx.is_loader_installed(self::webp_loader::WebPLoader::ID) {
+        ctx.add_image_loader(std::sync::Arc::new(self::webp_loader::WebPLoader::default()));
+        log::trace!("installed WebPLoader");
+    }
+
     #[cfg(feature = "svg")]
     if !ctx.is_loader_installed(self::svg_loader::SvgLoader::ID) {
         ctx.add_image_loader(std::sync::Arc::new(self::svg_loader::SvgLoader::default()));
@@ -113,3 +119,5 @@ mod gif_loader;
 mod image_loader;
 #[cfg(feature = "svg")]
 mod svg_loader;
+#[cfg(feature = "webp")]
+mod webp_loader;

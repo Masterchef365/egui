@@ -2,13 +2,15 @@
 
 #![allow(clippy::if_same_then_else)]
 
+use emath::Align;
+use epaint::{text::FontTweak, CornerRadius, Shadow, Stroke};
 use std::{collections::BTreeMap, ops::RangeInclusive, sync::Arc};
 
-use epaint::{Rounding, Shadow, Stroke};
-
 use crate::{
-    ecolor::*, emath::*, ComboBox, CursorIcon, FontFamily, FontId, Grid, Margin, Response,
-    RichText, WidgetText,
+    ecolor::Color32,
+    emath::{pos2, vec2, Rangef, Rect, Vec2},
+    ComboBox, CursorIcon, FontFamily, FontId, Grid, Margin, Response, RichText, TextWrapMode,
+    WidgetText,
 };
 
 /// How to format numbers in e.g. a [`crate::DragValue`].
@@ -171,10 +173,54 @@ impl From<TextStyle> for FontSelection {
 
 // ----------------------------------------------------------------------------
 
+/// Utility to modify a [`Style`] in some way.
+/// Constructed via [`StyleModifier::from`] from a `Fn(&mut Style)` or a [`Style`].
+#[derive(Clone, Default)]
+pub struct StyleModifier(Option<Arc<dyn Fn(&mut Style) + Send + Sync>>);
+
+impl std::fmt::Debug for StyleModifier {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("StyleModifier")
+    }
+}
+
+impl<T> From<T> for StyleModifier
+where
+    T: Fn(&mut Style) + Send + Sync + 'static,
+{
+    fn from(f: T) -> Self {
+        Self(Some(Arc::new(f)))
+    }
+}
+
+impl From<Style> for StyleModifier {
+    fn from(style: Style) -> Self {
+        Self(Some(Arc::new(move |s| *s = style.clone())))
+    }
+}
+
+impl StyleModifier {
+    /// Create a new [`StyleModifier`] from a function.
+    pub fn new(f: impl Fn(&mut Style) + Send + Sync + 'static) -> Self {
+        Self::from(f)
+    }
+
+    /// Apply the modification to the given [`Style`].
+    /// Usually used with [`Ui::style_mut`].
+    pub fn apply(&self, style: &mut Style) {
+        if let Some(f) = &self.0 {
+            f(style);
+        }
+    }
+}
+
+// ----------------------------------------------------------------------------
+
 /// Specifies the look and feel of egui.
 ///
 /// You can change the visuals of a [`Ui`] with [`Ui::style_mut`]
-/// and of everything with [`crate::Context::set_style`].
+/// and of everything with [`crate::Context::set_style_of`].
+/// To choose between dark and light style, use [`crate::Context::set_theme`].
 ///
 /// If you want to change fonts, use [`crate::Context::set_fonts`] instead.
 #[derive(Clone, Debug, PartialEq)]
@@ -193,6 +239,11 @@ pub struct Style {
     /// which will take precedence over this.
     pub override_font_id: Option<FontId>,
 
+    /// How to vertically align text.
+    ///
+    /// Set to `None` to use align that depends on the current layout.
+    pub override_text_valign: Option<Align>,
+
     /// The [`FontFamily`] and size you want to use for a specific [`TextStyle`].
     ///
     /// The most convenient way to look something up in this is to use [`TextStyle::resolve`].
@@ -204,12 +255,10 @@ pub struct Style {
     /// use egui::FontFamily::Proportional;
     /// use egui::FontId;
     /// use egui::TextStyle::*;
-    ///
-    /// // Get current context style
-    /// let mut style = (*ctx.style()).clone();
+    /// use std::collections::BTreeMap;
     ///
     /// // Redefine text_styles
-    /// style.text_styles = [
+    /// let text_styles: BTreeMap<_, _> = [
     ///   (Heading, FontId::new(30.0, Proportional)),
     ///   (Name("Heading2".into()), FontId::new(25.0, Proportional)),
     ///   (Name("Context".into()), FontId::new(23.0, Proportional)),
@@ -219,8 +268,8 @@ pub struct Style {
     ///   (Small, FontId::new(10.0, Proportional)),
     /// ].into();
     ///
-    /// // Mutate global style with above changes
-    /// ctx.set_style(style);
+    /// // Mutate global styles with new text styles
+    /// ctx.all_styles_mut(move |style| style.text_styles = text_styles.clone());
     /// ```
     pub text_styles: BTreeMap<TextStyle, FontId>,
 
@@ -280,6 +329,9 @@ pub struct Style {
 
     /// If true and scrolling is enabled for only one direction, allow horizontal scrolling without pressing shift
     pub always_scroll_the_only_direction: bool,
+
+    /// The animation that should be used when scrolling a [`crate::ScrollArea`] using e.g. [`Ui::scroll_to_rect`].
+    pub scroll_animation: ScrollAnimation,
 }
 
 #[test]
@@ -358,7 +410,7 @@ pub struct Spacing {
     /// Default (minimum) width of a [`ComboBox`].
     pub combo_width: f32,
 
-    /// Default width of a [`TextEdit`].
+    /// Default width of a [`crate::TextEdit`].
     pub text_edit_width: f32,
 
     /// Checkboxes, radio button and collapsing headers have an icon at the start.
@@ -692,6 +744,88 @@ impl ScrollStyle {
 
 // ----------------------------------------------------------------------------
 
+/// Scroll animation configuration, used when programmatically scrolling somewhere (e.g. with `[crate::Ui::scroll_to_cursor]`)
+/// The animation duration is calculated based on the distance to be scrolled via `[ScrollAnimation::points_per_second]`
+/// and can be clamped to a min / max duration via `[ScrollAnimation::duration]`.
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(default))]
+pub struct ScrollAnimation {
+    /// With what speed should we scroll? (Default: 1000.0)
+    pub points_per_second: f32,
+
+    /// The min / max scroll duration.
+    pub duration: Rangef,
+}
+
+impl Default for ScrollAnimation {
+    fn default() -> Self {
+        Self {
+            points_per_second: 1000.0,
+            duration: Rangef::new(0.1, 0.3),
+        }
+    }
+}
+
+impl ScrollAnimation {
+    /// New scroll animation
+    pub fn new(points_per_second: f32, duration: Rangef) -> Self {
+        Self {
+            points_per_second,
+            duration,
+        }
+    }
+
+    /// No animation, scroll instantly.
+    pub fn none() -> Self {
+        Self {
+            points_per_second: f32::INFINITY,
+            duration: Rangef::new(0.0, 0.0),
+        }
+    }
+
+    /// Scroll with a fixed duration, regardless of distance.
+    pub fn duration(t: f32) -> Self {
+        Self {
+            points_per_second: f32::INFINITY,
+            duration: Rangef::new(t, t),
+        }
+    }
+
+    pub fn ui(&mut self, ui: &mut crate::Ui) {
+        crate::Grid::new("scroll_animation").show(ui, |ui| {
+            ui.label("Scroll animation:");
+            ui.add(
+                DragValue::new(&mut self.points_per_second)
+                    .speed(100.0)
+                    .range(0.0..=5000.0),
+            );
+            ui.label("points/second");
+            ui.end_row();
+
+            ui.label("Min duration:");
+            ui.add(
+                DragValue::new(&mut self.duration.min)
+                    .speed(0.01)
+                    .range(0.0..=self.duration.max),
+            );
+            ui.label("seconds");
+            ui.end_row();
+
+            ui.label("Max duration:");
+            ui.add(
+                DragValue::new(&mut self.duration.max)
+                    .speed(0.01)
+                    .range(0.0..=1.0),
+            );
+            ui.label("seconds");
+            ui.end_row();
+        });
+    }
+}
+
+// ----------------------------------------------------------------------------
+
 /// How and when interaction happens.
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -768,7 +902,7 @@ impl Default for TextCursorStyle {
 /// Controls the visual style (colors etc) of egui.
 ///
 /// You can change the visuals of a [`Ui`] with [`Ui::visuals_mut`]
-/// and of everything with [`crate::Context::set_visuals`].
+/// and of everything with [`crate::Context::set_visuals_of`].
 ///
 /// If you want to change fonts, use [`crate::Context::set_fonts`] instead.
 #[derive(Clone, Debug, PartialEq)]
@@ -802,7 +936,7 @@ pub struct Visuals {
 
     pub selection: Selection,
 
-    /// The color used for [`Hyperlink`],
+    /// The color used for [`crate::Hyperlink`],
     pub hyperlink_color: Color32,
 
     /// Something just barely different from the background color.
@@ -823,7 +957,7 @@ pub struct Visuals {
     /// A good color for error text (e.g. red).
     pub error_fg_color: Color32,
 
-    pub window_rounding: Rounding,
+    pub window_corner_radius: CornerRadius,
     pub window_shadow: Shadow,
     pub window_fill: Color32,
     pub window_stroke: Stroke,
@@ -831,7 +965,7 @@ pub struct Visuals {
     /// Highlight the topmost window.
     pub window_highlight_topmost: bool,
 
-    pub menu_rounding: Rounding,
+    pub menu_corner_radius: CornerRadius,
 
     /// Panel background color
     pub panel_fill: Color32,
@@ -923,6 +1057,7 @@ impl Visuals {
     }
 
     /// Returned a "grayed out" version of the given color.
+    #[doc(alias = "grey_out")]
     #[inline(always)]
     pub fn gray_out(&self, color: Color32) -> Color32 {
         crate::ecolor::tint_color_towards(color, self.fade_out_to_color())
@@ -1014,7 +1149,7 @@ pub struct WidgetVisuals {
     pub bg_stroke: Stroke,
 
     /// Button frames etc.
-    pub rounding: Rounding,
+    pub corner_radius: CornerRadius,
 
     /// Stroke and text color of the interactive part of a component (button text, slider grab, check-mark, …).
     pub fg_stroke: Stroke,
@@ -1027,6 +1162,11 @@ impl WidgetVisuals {
     #[inline(always)]
     pub fn text_color(&self) -> Color32 {
         self.fg_stroke.color
+    }
+
+    #[deprecated = "Renamed to corner_radius"]
+    pub fn rounding(&self) -> CornerRadius {
+        self.corner_radius
     }
 }
 
@@ -1074,6 +1214,11 @@ pub struct DebugOptions {
 
     /// Show interesting widgets under the mouse cursor.
     pub show_widget_hits: bool,
+
+    /// If true, highlight widgets that are not aligned to [`emath::GUI_ROUNDING`].
+    ///
+    /// See [`emath::GuiRounding`] for more.
+    pub show_unaligned: bool,
 }
 
 #[cfg(debug_assertions)]
@@ -1089,6 +1234,7 @@ impl Default for DebugOptions {
             show_resize: false,
             show_interactive_widgets: false,
             show_widget_hits: false,
+            show_unaligned: cfg!(debug_assertions),
         }
     }
 }
@@ -1115,6 +1261,7 @@ impl Default for Style {
         Self {
             override_font_id: None,
             override_text_style: None,
+            override_text_valign: Some(Align::Center),
             text_styles: default_text_styles(),
             drag_value_text_style: TextStyle::Button,
             number_formatter: NumberFormatter(Arc::new(emath::format_with_decimals_in_range)),
@@ -1129,6 +1276,7 @@ impl Default for Style {
             explanation_tooltips: false,
             url_in_tooltip: false,
             always_scroll_the_only_direction: false,
+            scroll_animation: ScrollAnimation::default(),
         }
     }
 }
@@ -1137,8 +1285,8 @@ impl Default for Spacing {
     fn default() -> Self {
         Self {
             item_spacing: vec2(8.0, 3.0),
-            window_margin: Margin::same(6.0),
-            menu_margin: Margin::same(6.0),
+            window_margin: Margin::same(6),
+            menu_margin: Margin::same(6),
             button_padding: vec2(4.0, 1.0),
             indent: 18.0, // match checkbox/radio-button with `button_padding.x + icon_width + icon_spacing`
             interact_size: vec2(40.0, 18.0),
@@ -1190,25 +1338,25 @@ impl Visuals {
             warn_fg_color: Color32::from_rgb(255, 143, 0), // orange
             error_fg_color: Color32::from_rgb(255, 0, 0),  // red
 
-            window_rounding: Rounding::same(6.0),
+            window_corner_radius: CornerRadius::same(6),
             window_shadow: Shadow {
-                offset: vec2(10.0, 20.0),
-                blur: 15.0,
-                spread: 0.0,
+                offset: [10, 20],
+                blur: 15,
+                spread: 0,
                 color: Color32::from_black_alpha(96),
             },
             window_fill: Color32::from_gray(27),
             window_stroke: Stroke::new(1.0, Color32::from_gray(60)),
             window_highlight_topmost: true,
 
-            menu_rounding: Rounding::same(6.0),
+            menu_corner_radius: CornerRadius::same(6),
 
             panel_fill: Color32::from_gray(27),
 
             popup_shadow: Shadow {
-                offset: vec2(6.0, 10.0),
-                blur: 8.0,
-                spread: 0.0,
+                offset: [6, 10],
+                blur: 8,
+                spread: 0,
                 color: Color32::from_black_alpha(96),
             },
 
@@ -1248,9 +1396,9 @@ impl Visuals {
             error_fg_color: Color32::from_rgb(255, 0, 0),  // red
 
             window_shadow: Shadow {
-                offset: vec2(10.0, 20.0),
-                blur: 15.0,
-                spread: 0.0,
+                offset: [10, 20],
+                blur: 15,
+                spread: 0,
                 color: Color32::from_black_alpha(25),
             },
             window_fill: Color32::from_gray(248),
@@ -1259,9 +1407,9 @@ impl Visuals {
             panel_fill: Color32::from_gray(248),
 
             popup_shadow: Shadow {
-                offset: vec2(6.0, 10.0),
-                blur: 8.0,
-                spread: 0.0,
+                offset: [6, 10],
+                blur: 8,
+                spread: 0,
                 color: Color32::from_black_alpha(25),
             },
 
@@ -1311,7 +1459,7 @@ impl Widgets {
                 bg_fill: Color32::from_gray(27),
                 bg_stroke: Stroke::new(1.0, Color32::from_gray(60)), // separators, indentation lines
                 fg_stroke: Stroke::new(1.0, Color32::from_gray(140)), // normal text color
-                rounding: Rounding::same(2.0),
+                corner_radius: CornerRadius::same(2),
                 expansion: 0.0,
             },
             inactive: WidgetVisuals {
@@ -1319,7 +1467,7 @@ impl Widgets {
                 bg_fill: Color32::from_gray(60),      // checkbox background
                 bg_stroke: Default::default(),
                 fg_stroke: Stroke::new(1.0, Color32::from_gray(180)), // button text
-                rounding: Rounding::same(2.0),
+                corner_radius: CornerRadius::same(2),
                 expansion: 0.0,
             },
             hovered: WidgetVisuals {
@@ -1327,7 +1475,7 @@ impl Widgets {
                 bg_fill: Color32::from_gray(70),
                 bg_stroke: Stroke::new(1.0, Color32::from_gray(150)), // e.g. hover over window edge or button
                 fg_stroke: Stroke::new(1.5, Color32::from_gray(240)),
-                rounding: Rounding::same(3.0),
+                corner_radius: CornerRadius::same(3),
                 expansion: 1.0,
             },
             active: WidgetVisuals {
@@ -1335,7 +1483,7 @@ impl Widgets {
                 bg_fill: Color32::from_gray(55),
                 bg_stroke: Stroke::new(1.0, Color32::WHITE),
                 fg_stroke: Stroke::new(2.0, Color32::WHITE),
-                rounding: Rounding::same(2.0),
+                corner_radius: CornerRadius::same(2),
                 expansion: 1.0,
             },
             open: WidgetVisuals {
@@ -1343,7 +1491,7 @@ impl Widgets {
                 bg_fill: Color32::from_gray(27),
                 bg_stroke: Stroke::new(1.0, Color32::from_gray(60)),
                 fg_stroke: Stroke::new(1.0, Color32::from_gray(210)),
-                rounding: Rounding::same(2.0),
+                corner_radius: CornerRadius::same(2),
                 expansion: 0.0,
             },
         }
@@ -1356,7 +1504,7 @@ impl Widgets {
                 bg_fill: Color32::from_gray(248),
                 bg_stroke: Stroke::new(1.0, Color32::from_gray(190)), // separators, indentation lines
                 fg_stroke: Stroke::new(1.0, Color32::from_gray(80)),  // normal text color
-                rounding: Rounding::same(2.0),
+                corner_radius: CornerRadius::same(2),
                 expansion: 0.0,
             },
             inactive: WidgetVisuals {
@@ -1364,7 +1512,7 @@ impl Widgets {
                 bg_fill: Color32::from_gray(230),      // checkbox background
                 bg_stroke: Default::default(),
                 fg_stroke: Stroke::new(1.0, Color32::from_gray(60)), // button text
-                rounding: Rounding::same(2.0),
+                corner_radius: CornerRadius::same(2),
                 expansion: 0.0,
             },
             hovered: WidgetVisuals {
@@ -1372,7 +1520,7 @@ impl Widgets {
                 bg_fill: Color32::from_gray(220),
                 bg_stroke: Stroke::new(1.0, Color32::from_gray(105)), // e.g. hover over window edge or button
                 fg_stroke: Stroke::new(1.5, Color32::BLACK),
-                rounding: Rounding::same(3.0),
+                corner_radius: CornerRadius::same(3),
                 expansion: 1.0,
             },
             active: WidgetVisuals {
@@ -1380,7 +1528,7 @@ impl Widgets {
                 bg_fill: Color32::from_gray(165),
                 bg_stroke: Stroke::new(1.0, Color32::BLACK),
                 fg_stroke: Stroke::new(2.0, Color32::BLACK),
-                rounding: Rounding::same(2.0),
+                corner_radius: CornerRadius::same(2),
                 expansion: 1.0,
             },
             open: WidgetVisuals {
@@ -1388,7 +1536,7 @@ impl Widgets {
                 bg_fill: Color32::from_gray(220),
                 bg_stroke: Stroke::new(1.0, Color32::from_gray(160)),
                 fg_stroke: Stroke::new(1.0, Color32::BLACK),
-                rounding: Rounding::same(2.0),
+                corner_radius: CornerRadius::same(2),
                 expansion: 0.0,
             },
         }
@@ -1403,7 +1551,10 @@ impl Default for Widgets {
 
 // ----------------------------------------------------------------------------
 
-use crate::{widgets::*, Ui};
+use crate::{
+    widgets::{reset_button, DragValue, Slider, Widget},
+    Ui,
+};
 
 impl Style {
     pub fn ui(&mut self, ui: &mut crate::Ui) {
@@ -1411,11 +1562,12 @@ impl Style {
         let Self {
             override_font_id,
             override_text_style,
+            override_text_valign,
             text_styles,
             drag_value_text_style,
             number_formatter: _, // can't change callbacks in the UI
             wrap: _,
-            wrap_mode: _,
+            wrap_mode,
             spacing,
             interaction,
             visuals,
@@ -1425,9 +1577,8 @@ impl Style {
             explanation_tooltips,
             url_in_tooltip,
             always_scroll_the_only_direction,
+            scroll_animation,
         } = self;
-
-        visuals.light_dark_radio_buttons(ui);
 
         crate::Grid::new("_options").show(ui, |ui| {
             ui.label("Override font id");
@@ -1445,7 +1596,7 @@ impl Style {
             ui.end_row();
 
             ui.label("Override text style");
-            crate::ComboBox::from_id_source("Override text style")
+            crate::ComboBox::from_id_salt("override_text_style")
                 .selected_text(match override_text_style {
                     None => "None".to_owned(),
                     Some(override_text_style) => override_text_style.to_string(),
@@ -1461,8 +1612,30 @@ impl Style {
                 });
             ui.end_row();
 
+            fn valign_name(valign: Align) -> &'static str {
+                match valign {
+                    Align::TOP => "Top",
+                    Align::Center => "Center",
+                    Align::BOTTOM => "Bottom",
+                }
+            }
+
+            ui.label("Override text valign");
+            crate::ComboBox::from_id_salt("override_text_valign")
+                .selected_text(match override_text_valign {
+                    None => "None",
+                    Some(override_text_valign) => valign_name(*override_text_valign),
+                })
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(override_text_valign, None, "None");
+                    for align in [Align::TOP, Align::Center, Align::BOTTOM] {
+                        ui.selectable_value(override_text_valign, Some(align), valign_name(align));
+                    }
+                });
+            ui.end_row();
+
             ui.label("Text style of DragValue");
-            crate::ComboBox::from_id_source("drag_value_text_style")
+            crate::ComboBox::from_id_salt("drag_value_text_style")
                 .selected_text(drag_value_text_style.to_string())
                 .show_ui(ui, |ui| {
                     let all_text_styles = ui.style().text_styles();
@@ -1470,6 +1643,23 @@ impl Style {
                         let text =
                             crate::RichText::new(style.to_string()).text_style(style.clone());
                         ui.selectable_value(drag_value_text_style, style, text);
+                    }
+                });
+            ui.end_row();
+
+            ui.label("Text Wrap Mode");
+            crate::ComboBox::from_id_salt("text_wrap_mode")
+                .selected_text(format!("{wrap_mode:?}"))
+                .show_ui(ui, |ui| {
+                    let all_wrap_mode: Vec<Option<TextWrapMode>> = vec![
+                        None,
+                        Some(TextWrapMode::Extend),
+                        Some(TextWrapMode::Wrap),
+                        Some(TextWrapMode::Truncate),
+                    ];
+                    for style in all_wrap_mode {
+                        let text = crate::RichText::new(format!("{style:?}"));
+                        ui.selectable_value(wrap_mode, style, text);
                     }
                 });
             ui.end_row();
@@ -1488,6 +1678,7 @@ impl Style {
         ui.collapsing("📏 Spacing", |ui| spacing.ui(ui));
         ui.collapsing("☝ Interaction", |ui| interaction.ui(ui));
         ui.collapsing("🎨 Visuals", |ui| visuals.ui(ui));
+        ui.collapsing("🔄 Scroll Animation", |ui| scroll_animation.ui(ui));
 
         #[cfg(debug_assertions)]
         ui.collapsing("🐛 Debug", |ui| debug.ui(ui));
@@ -1780,7 +1971,7 @@ impl WidgetVisuals {
             weak_bg_fill,
             bg_fill: mandatory_bg_fill,
             bg_stroke,
-            rounding,
+            corner_radius,
             fg_stroke,
             expansion,
         } = self;
@@ -1804,8 +1995,8 @@ impl WidgetVisuals {
                 ui.add(bg_stroke);
                 ui.end_row();
 
-                ui.label("Rounding");
-                ui.add(rounding);
+                ui.label("Corner radius");
+                ui.add(corner_radius);
                 ui.end_row();
 
                 ui.label("Foreground stroke (text)");
@@ -1821,38 +2012,6 @@ impl WidgetVisuals {
 }
 
 impl Visuals {
-    /// Show radio-buttons to switch between light and dark mode.
-    pub fn light_dark_radio_buttons(&mut self, ui: &mut crate::Ui) {
-        ui.horizontal(|ui| {
-            ui.selectable_value(self, Self::light(), "☀ Light");
-            ui.selectable_value(self, Self::dark(), "🌙 Dark");
-        });
-    }
-
-    /// Show small toggle-button for light and dark mode.
-    #[must_use]
-    pub fn light_dark_small_toggle_button(&self, ui: &mut crate::Ui) -> Option<Self> {
-        #![allow(clippy::collapsible_else_if)]
-        if self.dark_mode {
-            if ui
-                .add(Button::new("☀").frame(false))
-                .on_hover_text("Switch to light mode")
-                .clicked()
-            {
-                return Some(Self::light());
-            }
-        } else {
-            if ui
-                .add(Button::new("🌙").frame(false))
-                .on_hover_text("Switch to dark mode")
-                .clicked()
-            {
-                return Some(Self::dark());
-            }
-        }
-        None
-    }
-
     pub fn ui(&mut self, ui: &mut crate::Ui) {
         let Self {
             dark_mode: _,
@@ -1866,13 +2025,13 @@ impl Visuals {
             warn_fg_color,
             error_fg_color,
 
-            window_rounding,
+            window_corner_radius,
             window_shadow,
             window_fill,
             window_stroke,
             window_highlight_topmost,
 
-            menu_rounding,
+            menu_corner_radius,
 
             panel_fill,
 
@@ -1954,8 +2113,8 @@ impl Visuals {
                     ui.add(window_stroke);
                     ui.end_row();
 
-                    ui.label("Rounding");
-                    ui.add(window_rounding);
+                    ui.label("Corner radius");
+                    ui.add(window_corner_radius);
                     ui.end_row();
 
                     ui.label("Shadow");
@@ -1972,8 +2131,8 @@ impl Visuals {
                 .spacing([12.0, 8.0])
                 .striped(true)
                 .show(ui, |ui| {
-                    ui.label("Rounding");
-                    ui.add(menu_rounding);
+                    ui.label("Corner radius");
+                    ui.add(menu_corner_radius);
                     ui.end_row();
 
                     ui.label("Shadow");
@@ -2085,6 +2244,7 @@ impl DebugOptions {
             show_resize,
             show_interactive_widgets,
             show_widget_hits,
+            show_unaligned,
         } = self;
 
         {
@@ -2113,6 +2273,11 @@ impl DebugOptions {
         );
 
         ui.checkbox(show_widget_hits, "Show widgets under mouse pointer");
+
+        ui.checkbox(
+            show_unaligned,
+            "Show rectangles not aligned to integer point coordinates",
+        );
 
         ui.vertical_centered(|ui| reset_button(ui, self, "Reset debug options"));
     }
@@ -2222,7 +2387,7 @@ impl Widget for &mut Margin {
                 ui.checkbox(&mut same, "same");
 
                 let mut value = self.left;
-                ui.add(DragValue::new(&mut value));
+                ui.add(DragValue::new(&mut value).range(0.0..=100.0));
                 *self = Margin::same(value);
             })
             .response
@@ -2232,19 +2397,19 @@ impl Widget for &mut Margin {
 
                 crate::Grid::new("margin").num_columns(2).show(ui, |ui| {
                     ui.label("Left");
-                    ui.add(DragValue::new(&mut self.left));
+                    ui.add(DragValue::new(&mut self.left).range(0.0..=100.0));
                     ui.end_row();
 
                     ui.label("Right");
-                    ui.add(DragValue::new(&mut self.right));
+                    ui.add(DragValue::new(&mut self.right).range(0.0..=100.0));
                     ui.end_row();
 
                     ui.label("Top");
-                    ui.add(DragValue::new(&mut self.top));
+                    ui.add(DragValue::new(&mut self.top).range(0.0..=100.0));
                     ui.end_row();
 
                     ui.label("Bottom");
-                    ui.add(DragValue::new(&mut self.bottom));
+                    ui.add(DragValue::new(&mut self.bottom).range(0.0..=100.0));
                     ui.end_row();
                 });
             })
@@ -2253,16 +2418,24 @@ impl Widget for &mut Margin {
 
         // Apply the checkbox:
         if same {
-            *self = Margin::same((self.left + self.right + self.top + self.bottom) / 4.0);
-        } else if self.is_same() {
-            self.right *= 1.00001; // prevent collapsing into sameness
+            *self =
+                Margin::from((self.leftf() + self.rightf() + self.topf() + self.bottomf()) / 4.0);
+        } else {
+            // Make sure it is not same:
+            if self.is_same() {
+                if self.right == i8::MAX {
+                    self.right = i8::MAX - 1;
+                } else {
+                    self.right += 1;
+                }
+            }
         }
 
         response
     }
 }
 
-impl Widget for &mut Rounding {
+impl Widget for &mut CornerRadius {
     fn ui(self, ui: &mut Ui) -> Response {
         let mut same = self.is_same();
 
@@ -2272,39 +2445,48 @@ impl Widget for &mut Rounding {
 
                 let mut cr = self.nw;
                 ui.add(DragValue::new(&mut cr).range(0.0..=f32::INFINITY));
-                *self = Rounding::same(cr);
+                *self = CornerRadius::same(cr);
             })
             .response
         } else {
             ui.vertical(|ui| {
                 ui.checkbox(&mut same, "same");
 
-                crate::Grid::new("rounding").num_columns(2).show(ui, |ui| {
-                    ui.label("NW");
-                    ui.add(DragValue::new(&mut self.nw).range(0.0..=f32::INFINITY));
-                    ui.end_row();
+                crate::Grid::new("Corner radius")
+                    .num_columns(2)
+                    .show(ui, |ui| {
+                        ui.label("NW");
+                        ui.add(DragValue::new(&mut self.nw).range(0.0..=f32::INFINITY));
+                        ui.end_row();
 
-                    ui.label("NE");
-                    ui.add(DragValue::new(&mut self.ne).range(0.0..=f32::INFINITY));
-                    ui.end_row();
+                        ui.label("NE");
+                        ui.add(DragValue::new(&mut self.ne).range(0.0..=f32::INFINITY));
+                        ui.end_row();
 
-                    ui.label("SW");
-                    ui.add(DragValue::new(&mut self.sw).range(0.0..=f32::INFINITY));
-                    ui.end_row();
+                        ui.label("SW");
+                        ui.add(DragValue::new(&mut self.sw).range(0.0..=f32::INFINITY));
+                        ui.end_row();
 
-                    ui.label("SE");
-                    ui.add(DragValue::new(&mut self.se).range(0.0..=f32::INFINITY));
-                    ui.end_row();
-                });
+                        ui.label("SE");
+                        ui.add(DragValue::new(&mut self.se).range(0.0..=f32::INFINITY));
+                        ui.end_row();
+                    });
             })
             .response
         };
 
         // Apply the checkbox:
         if same {
-            *self = Rounding::same((self.nw + self.ne + self.sw + self.se) / 4.0);
-        } else if self.is_same() {
-            self.se *= 1.00001; // prevent collapsing into sameness
+            *self = CornerRadius::from(self.average());
+        } else {
+            // Make sure we aren't same:
+            if self.is_same() {
+                if self.average() == 0.0 {
+                    self.se = 1;
+                } else {
+                    self.se -= 1;
+                }
+            }
         }
 
         response
@@ -2323,13 +2505,13 @@ impl Widget for &mut Shadow {
         ui.vertical(|ui| {
             crate::Grid::new("shadow_ui").show(ui, |ui| {
                 ui.add(
-                    DragValue::new(&mut offset.x)
+                    DragValue::new(&mut offset[0])
                         .speed(1.0)
                         .range(-100.0..=100.0)
                         .prefix("x: "),
                 );
                 ui.add(
-                    DragValue::new(&mut offset.y)
+                    DragValue::new(&mut offset[1])
                         .speed(1.0)
                         .range(-100.0..=100.0)
                         .prefix("y: "),
@@ -2380,7 +2562,7 @@ impl Widget for &mut crate::Frame {
         let crate::Frame {
             inner_margin,
             outer_margin,
-            rounding,
+            corner_radius,
             shadow,
             fill,
             stroke,
@@ -2396,11 +2578,12 @@ impl Widget for &mut crate::Frame {
                 ui.end_row();
 
                 ui.label("Outer margin");
-                ui.add(outer_margin);
+                // Push Id to avoid clashes in the Margin widget's Grid
+                ui.push_id("outer", |ui| ui.add(outer_margin));
                 ui.end_row();
 
-                ui.label("Rounding");
-                ui.add(rounding);
+                ui.label("Corner radius");
+                ui.add(corner_radius);
                 ui.end_row();
 
                 ui.label("Shadow");
@@ -2416,5 +2599,50 @@ impl Widget for &mut crate::Frame {
                 ui.end_row();
             })
             .response
+    }
+}
+
+impl Widget for &mut FontTweak {
+    fn ui(self, ui: &mut Ui) -> Response {
+        let original: FontTweak = *self;
+
+        let mut response = Grid::new("font_tweak")
+            .num_columns(2)
+            .show(ui, |ui| {
+                let FontTweak {
+                    scale,
+                    y_offset_factor,
+                    y_offset,
+                    baseline_offset_factor,
+                } = self;
+
+                ui.label("Scale");
+                let speed = *scale * 0.01;
+                ui.add(DragValue::new(scale).range(0.01..=10.0).speed(speed));
+                ui.end_row();
+
+                ui.label("y_offset_factor");
+                ui.add(DragValue::new(y_offset_factor).speed(-0.0025));
+                ui.end_row();
+
+                ui.label("y_offset");
+                ui.add(DragValue::new(y_offset).speed(-0.02));
+                ui.end_row();
+
+                ui.label("baseline_offset_factor");
+                ui.add(DragValue::new(baseline_offset_factor).speed(-0.0025));
+                ui.end_row();
+
+                if ui.button("Reset").clicked() {
+                    *self = Default::default();
+                }
+            })
+            .response;
+
+        if *self != original {
+            response.mark_changed();
+        }
+
+        response
     }
 }

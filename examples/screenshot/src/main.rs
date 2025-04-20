@@ -45,7 +45,7 @@ impl eframe::App for MyApp {
 
                 if ui.button("save to 'top_left.png'").clicked() {
                     self.save_to_file = true;
-                    ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot);
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
                 }
 
                 ui.with_layout(egui::Layout::top_down(egui::Align::RIGHT), |ui| {
@@ -54,13 +54,17 @@ impl eframe::App for MyApp {
                             .add(egui::Label::new("hover me!").sense(egui::Sense::hover()))
                             .hovered()
                         {
-                            ctx.set_visuals(egui::Visuals::dark());
+                            ctx.set_theme(egui::Theme::Dark);
                         } else {
-                            ctx.set_visuals(egui::Visuals::light());
+                            ctx.set_theme(egui::Theme::Light);
                         };
-                        ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot);
+                        ctx.send_viewport_cmd(
+                            egui::ViewportCommand::Screenshot(Default::default()),
+                        );
                     } else if ui.button("take screenshot!").clicked() {
-                        ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot);
+                        ctx.send_viewport_cmd(
+                            egui::ViewportCommand::Screenshot(Default::default()),
+                        );
                     }
                 });
             });

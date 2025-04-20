@@ -1,10 +1,10 @@
 //! Helpers for zooming the whole GUI of an app (changing [`Context::pixels_per_point`].
 //!
-use crate::*;
+use crate::{Button, Context, Key, KeyboardShortcut, Modifiers, Ui};
 
 /// The suggested keyboard shortcuts for global gui zooming.
 pub mod kb_shortcuts {
-    use super::*;
+    use super::{Key, KeyboardShortcut, Modifiers};
 
     /// Primary keyboard shortcut for zooming in (`Cmd` + `+`).
     pub const ZOOM_IN: KeyboardShortcut = KeyboardShortcut::new(Modifiers::COMMAND, Key::Plus);
@@ -88,7 +88,6 @@ pub fn zoom_menu_buttons(ui: &mut Ui) {
         .clicked()
     {
         zoom_in(ui.ctx());
-        ui.close_menu();
     }
 
     if ui
@@ -99,7 +98,6 @@ pub fn zoom_menu_buttons(ui: &mut Ui) {
         .clicked()
     {
         zoom_out(ui.ctx());
-        ui.close_menu();
     }
 
     if ui
@@ -110,6 +108,5 @@ pub fn zoom_menu_buttons(ui: &mut Ui) {
         .clicked()
     {
         ui.ctx().set_zoom_factor(1.0);
-        ui.close_menu();
     }
 }

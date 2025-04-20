@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 
-use egui::{widgets::color_picker::show_color, TextureOptions, *};
+use egui::{
+    emath::GuiRounding as _, epaint, lerp, pos2, vec2, widgets::color_picker::show_color, Align2,
+    Color32, FontId, Image, Mesh, Pos2, Rect, Response, Rgba, RichText, Sense, Shape, Stroke,
+    TextureHandle, TextureOptions, Ui, Vec2,
+};
 
 const GRADIENT_SIZE: Vec2 = vec2(256.0, 18.0);
 
@@ -250,7 +254,7 @@ impl ColorTest {
         });
     }
 
-    fn vertex_gradient(&mut self, ui: &mut Ui, label: &str, bg_fill: Color32, gradient: &Gradient) {
+    fn vertex_gradient(&self, ui: &mut Ui, label: &str, bg_fill: Color32, gradient: &Gradient) {
         if !self.vertex_gradients {
             return;
         }
@@ -265,8 +269,8 @@ impl ColorTest {
 }
 
 fn vertex_gradient(ui: &mut Ui, bg_fill: Color32, gradient: &Gradient) -> Response {
-    use egui::epaint::*;
     let (rect, response) = ui.allocate_at_least(GRADIENT_SIZE, Sense::hover());
+    let rect = rect.round_to_pixels(ui.pixels_per_point());
     if bg_fill != Default::default() {
         let mut mesh = Mesh::default();
         mesh.add_colored_rect(rect, bg_fill);
@@ -412,6 +416,51 @@ pub fn pixel_test(ui: &mut Ui) {
     ui.add_space(4.0);
 
     pixel_test_squares(ui);
+
+    ui.add_space(4.0);
+
+    pixel_test_strokes(ui);
+}
+
+fn pixel_test_strokes(ui: &mut Ui) {
+    ui.label("The strokes should align to the physical pixel grid.");
+    let color = if ui.style().visuals.dark_mode {
+        egui::Color32::WHITE
+    } else {
+        egui::Color32::BLACK
+    };
+
+    let pixels_per_point = ui.ctx().pixels_per_point();
+
+    for thickness_pixels in 1..=3 {
+        let thickness_pixels = thickness_pixels as f32;
+        let thickness_points = thickness_pixels / pixels_per_point;
+        let num_squares = (pixels_per_point * 10.0).round().max(10.0) as u32;
+        let size_pixels = vec2(ui.min_size().x, num_squares as f32 + thickness_pixels * 2.0);
+        let size_points = size_pixels / pixels_per_point + Vec2::splat(2.0);
+        let (response, painter) = ui.allocate_painter(size_points, Sense::hover());
+
+        let mut cursor_pixel = Pos2::new(
+            response.rect.min.x * pixels_per_point + thickness_pixels,
+            response.rect.min.y * pixels_per_point + thickness_pixels,
+        )
+        .ceil();
+
+        let stroke = Stroke::new(thickness_points, color);
+        for size in 1..=num_squares {
+            let rect_points = Rect::from_min_size(
+                Pos2::new(cursor_pixel.x, cursor_pixel.y),
+                Vec2::splat(size as f32),
+            );
+            painter.rect_stroke(
+                rect_points / pixels_per_point,
+                0.0,
+                stroke,
+                egui::StrokeKind::Outside,
+            );
+            cursor_pixel.x += (1 + size) as f32 + thickness_pixels * 2.0;
+        }
+    }
 }
 
 fn pixel_test_squares(ui: &mut Ui) {
@@ -633,4 +682,34 @@ fn mul_color_gamma(left: Color32, right: Color32) -> Color32 {
         (left.b() as f32 * right.b() as f32 / 255.0).round() as u8,
         (left.a() as f32 * right.a() as f32 / 255.0).round() as u8,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::ColorTest;
+    use egui_kittest::kittest::Queryable as _;
+    use egui_kittest::SnapshotResults;
+
+    #[test]
+    pub fn rendering_test() {
+        let mut results = SnapshotResults::new();
+        for dpi in [1.0, 1.25, 1.5, 1.75, 1.6666667, 2.0] {
+            let mut color_test = ColorTest::default();
+            let mut harness = egui_kittest::Harness::builder()
+                .with_pixels_per_point(dpi)
+                .build_ui(|ui| {
+                    color_test.ui(ui);
+                });
+
+            {
+                // Expand color-test collapsing header
+                harness.get_by_label("Color test").click();
+                harness.run();
+            }
+
+            harness.fit_contents();
+
+            results.add(harness.try_snapshot(&format!("rendering_test/dpi_{dpi:.2}")));
+        }
+    }
 }

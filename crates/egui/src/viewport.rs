@@ -19,7 +19,7 @@
 //! ### Deferred viewports
 //! These are created with [`Context::show_viewport_deferred`].
 //! Deferred viewports take a closure that is called by the integration at a later time, perhaps multiple times.
-//! Deferred viewports are repainted independenantly of the parent viewport.
+//! Deferred viewports are repainted independently of the parent viewport.
 //! This means communication with them needs to be done via channels, or `Arc/Mutex`.
 //!
 //! This is the most performant type of child viewport, though a bit more cumbersome to work with compared to immediate viewports.
@@ -188,7 +188,7 @@ impl std::fmt::Debug for IconData {
 
 impl From<IconData> for epaint::ColorImage {
     fn from(icon: IconData) -> Self {
-        crate::profile_function!();
+        profiling::function_scope!();
         let IconData {
             rgba,
             width,
@@ -200,7 +200,7 @@ impl From<IconData> for epaint::ColorImage {
 
 impl From<&IconData> for epaint::ColorImage {
     fn from(icon: &IconData) -> Self {
-        crate::profile_function!();
+        profiling::function_scope!();
         let IconData {
             rgba,
             width,
@@ -534,7 +534,7 @@ impl ViewportBuilder {
     /// See [winit's documentation][drag_and_drop] for information on why you
     /// might want to disable this on windows.
     ///
-    /// [drag_and_drop]: https://docs.rs/winit/latest/x86_64-pc-windows-msvc/winit/platform/windows/trait.WindowBuilderExtWindows.html#tymethod.with_drag_and_drop
+    /// [drag_and_drop]: https://docs.rs/winit/latest/x86_64-pc-windows-msvc/winit/platform/windows/trait.WindowAttributesExtWindows.html#tymethod.with_drag_and_drop
     #[inline]
     pub fn with_drag_and_drop(mut self, value: bool) -> Self {
         self.drag_and_drop = Some(value);
@@ -543,6 +543,15 @@ impl ViewportBuilder {
 
     /// The initial "outer" position of the window,
     /// i.e. where the top-left corner of the frame/chrome should be.
+    ///
+    /// **`eframe` notes**:
+    ///
+    /// - **iOS:** Sets the top left coordinates of the window in the screen space coordinate system.
+    /// - **Web:** Sets the top-left coordinates relative to the viewport. Doesn't account for CSS
+    ///   [`transform`].
+    /// - **Android / Wayland:** Unsupported.
+    ///
+    /// [`transform`]: https://developer.mozilla.org/en-US/docs/Web/CSS/transform
     #[inline]
     pub fn with_position(mut self, pos: impl Into<Pos2>) -> Self {
         self.position = Some(pos.into());
@@ -728,7 +737,7 @@ impl ViewportBuilder {
         }
 
         if let Some(new_visible) = new_visible {
-            if Some(new_visible) != self.active {
+            if Some(new_visible) != self.visible {
                 self.visible = Some(new_visible);
                 commands.push(ViewportCommand::Visible(new_visible));
             }
@@ -936,13 +945,16 @@ pub enum ResizeDirection {
 
 /// An output [viewport](crate::viewport)-command from egui to the backend, e.g. to change the window title or size.
 ///
-///  You can send a [`ViewportCommand`] to the viewport with [`Context::send_viewport_cmd`].
+/// You can send a [`ViewportCommand`] to the viewport with [`Context::send_viewport_cmd`].
 ///
 /// See [`crate::viewport`] for how to build new viewports (native windows).
 ///
 /// All coordinates are in logical points.
 ///
-/// This is essentially a way to diff [`ViewportBuilder`].
+/// [`ViewportCommand`] is essentially a way to diff [`ViewportBuilder`]s.
+///
+/// Only commands specific to a viewport are part of [`ViewportCommand`].
+/// Other commands should be put in [`crate::OutputCommand`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum ViewportCommand {
@@ -1056,10 +1068,10 @@ pub enum ViewportCommand {
     /// Enable mouse pass-through: mouse clicks pass through the window, used for non-interactable overlays.
     MousePassthrough(bool),
 
-    /// Take a screenshot.
+    /// Take a screenshot of the next frame after this.
     ///
-    /// The results are returned in `crate::Event::Screenshot`.
-    Screenshot,
+    /// The results are returned in [`crate::Event::Screenshot`].
+    Screenshot(crate::UserData),
 
     /// Request cut of the current selection
     ///
@@ -1099,6 +1111,8 @@ impl ViewportCommand {
         self == &Self::Close
     }
 }
+
+// ----------------------------------------------------------------------------
 
 /// Describes a viewport, i.e. a native window.
 ///
@@ -1168,5 +1182,5 @@ pub struct ImmediateViewport<'a> {
     pub builder: ViewportBuilder,
 
     /// The user-code that shows the GUI.
-    pub viewport_ui_cb: Box<dyn FnOnce(&Context) + 'a>,
+    pub viewport_ui_cb: Box<dyn FnMut(&Context) + 'a>,
 }

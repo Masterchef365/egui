@@ -11,7 +11,7 @@ pub(crate) struct DatePickerButtonState {
 /// Shows a date, and will open a date picker popup when clicked.
 pub struct DatePickerButton<'a> {
     selection: &'a mut NaiveDate,
-    id_source: Option<&'a str>,
+    id_salt: Option<&'a str>,
     combo_boxes: bool,
     arrows: bool,
     calendar: bool,
@@ -25,7 +25,7 @@ impl<'a> DatePickerButton<'a> {
     pub fn new(selection: &'a mut NaiveDate) -> Self {
         Self {
             selection,
-            id_source: None,
+            id_salt: None,
             combo_boxes: true,
             arrows: true,
             calendar: true,
@@ -39,9 +39,17 @@ impl<'a> DatePickerButton<'a> {
     /// Add id source.
     /// Must be set if multiple date picker buttons are in the same Ui.
     #[inline]
-    pub fn id_source(mut self, id_source: &'a str) -> Self {
-        self.id_source = Some(id_source);
+    pub fn id_salt(mut self, id_salt: &'a str) -> Self {
+        self.id_salt = Some(id_salt);
         self
+    }
+
+    /// Add id source.
+    /// Must be set if multiple date picker buttons are in the same Ui.
+    #[inline]
+    #[deprecated = "Renamed id_salt"]
+    pub fn id_source(self, id_salt: &'a str) -> Self {
+        self.id_salt(id_salt)
     }
 
     /// Show combo boxes in date picker popup. (Default: true)
@@ -95,9 +103,9 @@ impl<'a> DatePickerButton<'a> {
     }
 }
 
-impl<'a> Widget for DatePickerButton<'a> {
+impl Widget for DatePickerButton<'_> {
     fn ui(self, ui: &mut Ui) -> egui::Response {
-        let id = ui.make_persistent_id(self.id_source);
+        let id = ui.make_persistent_id(self.id_salt);
         let mut button_state = ui
             .data_mut(|data| data.get_persisted::<DatePickerButtonState>(id))
             .unwrap_or_default();
@@ -126,21 +134,21 @@ impl<'a> Widget for DatePickerButton<'a> {
             let mut pos = button_response.rect.left_bottom();
             let width_with_padding = width
                 + ui.style().spacing.item_spacing.x
-                + ui.style().spacing.window_margin.left
-                + ui.style().spacing.window_margin.right;
+                + ui.style().spacing.window_margin.leftf()
+                + ui.style().spacing.window_margin.rightf();
             if pos.x + width_with_padding > ui.clip_rect().right() {
                 pos.x = button_response.rect.right() - width_with_padding;
             }
 
             // Check to make sure the calendar never is displayed out of window
-            pos.x = pos.x.max(ui.style().spacing.window_margin.left);
+            pos.x = pos.x.max(ui.style().spacing.window_margin.leftf());
 
             //TODO(elwerene): Better positioning
 
             let InnerResponse {
                 inner: saved,
                 response: area_response,
-            } = Area::new(ui.make_persistent_id(self.id_source))
+            } = Area::new(ui.make_persistent_id(self.id_salt))
                 .kind(egui::UiKind::Picker)
                 .order(Order::Foreground)
                 .fixed_pos(pos)

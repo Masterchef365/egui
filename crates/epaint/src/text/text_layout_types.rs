@@ -4,9 +4,12 @@
 use std::ops::Range;
 use std::sync::Arc;
 
-use super::{cursor::*, font::UvRect};
+use super::{
+    cursor::{CCursor, Cursor, PCursor, RCursor},
+    font::UvRect,
+};
 use crate::{Color32, FontId, Mesh, Stroke};
-use emath::*;
+use emath::{pos2, vec2, Align, NumExt, OrderedFloat, Pos2, Rect, Vec2};
 
 /// Describes the task of laying out text.
 ///
@@ -75,9 +78,8 @@ pub struct LayoutJob {
     /// Justify text so that word-wrapped rows fill the whole [`TextWrapping::max_width`].
     pub justify: bool,
 
-    /// Rounding to the closest ui point (not pixel!) allows the rest of the
-    /// layout code to run on perfect integers, avoiding rounding errors.
-    pub round_output_size_to_nearest_ui_point: bool,
+    /// Round output sizes using [`emath::GuiRounding`], to avoid rounding errors in layout code.
+    pub round_output_to_gui: bool,
 }
 
 impl Default for LayoutJob {
@@ -91,7 +93,7 @@ impl Default for LayoutJob {
             break_on_newline: true,
             halign: Align::LEFT,
             justify: false,
-            round_output_size_to_nearest_ui_point: true,
+            round_output_to_gui: true,
         }
     }
 }
@@ -165,12 +167,26 @@ impl LayoutJob {
     }
 
     /// The height of the tallest font used in the job.
+    ///
+    /// Returns a value rounded to [`emath::GUI_ROUNDING`].
     pub fn font_height(&self, fonts: &crate::Fonts) -> f32 {
         let mut max_height = 0.0_f32;
         for section in &self.sections {
             max_height = max_height.max(fonts.row_height(&section.format.font_id));
         }
         max_height
+    }
+
+    /// The wrap with, with a small margin in some cases.
+    pub fn effective_wrap_width(&self) -> f32 {
+        if self.round_output_to_gui {
+            // On a previous pass we may have rounded down by at most 0.5 and reported that as a width.
+            // egui may then set that width as the max width for subsequent frames, and it is important
+            // that we then don't wrap earlier.
+            self.wrap.max_width + 0.5
+        } else {
+            self.wrap.max_width
+        }
     }
 }
 
@@ -185,7 +201,7 @@ impl std::hash::Hash for LayoutJob {
             break_on_newline,
             halign,
             justify,
-            round_output_size_to_nearest_ui_point,
+            round_output_to_gui,
         } = self;
 
         text.hash(state);
@@ -195,7 +211,7 @@ impl std::hash::Hash for LayoutJob {
         break_on_newline.hash(state);
         halign.hash(state);
         justify.hash(state);
-        round_output_size_to_nearest_ui_point.hash(state);
+        round_output_to_gui.hash(state);
     }
 }
 
@@ -264,8 +280,14 @@ pub struct TextFormat {
 
     /// If you use a small font and [`Align::TOP`] you
     /// can get the effect of raised text.
+    ///
+    /// If you use a small font and [`Align::BOTTOM`]
+    /// you get the effect of a subscript.
+    ///
+    /// If you use [`Align::Center`], you get text that is centered
+    /// around a common center-line, which is nice when mixining emojis
+    /// and normal text in e.g. a button.
     pub valign: Align,
-    // TODO(emilk): lowered
 }
 
 impl Default for TextFormat {
@@ -464,7 +486,7 @@ impl TextWrapping {
 /// Needs to be recreated if the underlying font atlas texture changes, which
 /// happens under the following conditions:
 /// - `pixels_per_point` or `max_texture_size` change. These parameters are set
-///   in [`crate::text::Fonts::begin_frame`]. When using `egui` they are set
+///   in [`crate::text::Fonts::begin_pass`]. When using `egui` they are set
 ///   from `egui::InputState` and can change at any time.
 /// - The atlas has become full. This can happen any time a new glyph is added
 ///   to the atlas, which in turn can happen any time new text is laid out.
@@ -554,6 +576,12 @@ pub struct RowVisuals {
     /// Does NOT include leading or trailing whitespace glyphs!!
     pub mesh_bounds: Rect,
 
+    /// The number of triangle indices added before the first glyph triangle.
+    ///
+    /// This can be used to insert more triangles after the background but before the glyphs,
+    /// i.e. for text selection visualization.
+    pub glyph_index_start: usize,
+
     /// The range of vertices in the mesh that contain glyphs (as opposed to background, underlines, strikethorugh, etc).
     ///
     /// The glyph vertices comes after backgrounds (if any), but before any underlines and strikethrough.
@@ -565,6 +593,7 @@ impl Default for RowVisuals {
         Self {
             mesh: Default::default(),
             mesh_bounds: Rect::NOTHING,
+            glyph_index_start: 0,
             glyph_vertex_range: 0..0,
         }
     }
@@ -580,13 +609,26 @@ pub struct Glyph {
     /// Logical position: pos.y is the same for all chars of the same [`TextFormat`].
     pub pos: Pos2,
 
-    /// `ascent` value from the font
-    pub ascent: f32,
+    /// Logical width of the glyph.
+    pub advance_width: f32,
 
-    /// Advance width and line height.
+    /// Height of this row of text.
     ///
-    /// Does not control the visual size of the glyph (see [`Self::uv_rect`] for that).
-    pub size: Vec2,
+    /// Usually same as [`Self::font_height`],
+    /// unless explicitly overridden by [`TextFormat::line_height`].
+    pub line_height: f32,
+
+    /// The ascent of this font.
+    pub font_ascent: f32,
+
+    /// The row/line height of this font.
+    pub font_height: f32,
+
+    /// The ascent of the sub-font within the font (`FontImpl`).
+    pub font_impl_ascent: f32,
+
+    /// The row/line height of the sub-font within the font (`FontImpl`).
+    pub font_impl_height: f32,
 
     /// Position and size of the glyph in the font texture, in texels.
     pub uv_rect: UvRect,
@@ -596,14 +638,20 @@ pub struct Glyph {
 }
 
 impl Glyph {
+    #[inline]
+    pub fn size(&self) -> Vec2 {
+        Vec2::new(self.advance_width, self.line_height)
+    }
+
+    #[inline]
     pub fn max_x(&self) -> f32 {
-        self.pos.x + self.size.x
+        self.pos.x + self.advance_width
     }
 
     /// Same y range for all characters with the same [`TextFormat`].
     #[inline]
     pub fn logical_rect(&self) -> Rect {
-        Rect::from_min_size(self.pos - vec2(0.0, self.ascent), self.size)
+        Rect::from_min_size(self.pos - vec2(0.0, self.font_ascent), self.size())
     }
 }
 

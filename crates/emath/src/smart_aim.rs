@@ -56,9 +56,6 @@ pub fn best_in_range_f64(min: f64, max: f64) -> f64 {
     let min_str = to_decimal_string(min / exp_factor);
     let max_str = to_decimal_string(max / exp_factor);
 
-    // eprintln!("min_str: {:?}", min_str);
-    // eprintln!("max_str: {:?}", max_str);
-
     let mut ret_str = [0; NUM_DECIMALS];
 
     // Select the common prefix:
@@ -141,7 +138,9 @@ fn test_aim() {
     assert_eq!(best_in_range_f64(99.999, 100.000), 100.0);
     assert_eq!(best_in_range_f64(10.001, 100.001), 100.0);
 
-    use std::f64::{INFINITY, NAN, NEG_INFINITY};
+    const NAN: f64 = f64::NAN;
+    const INFINITY: f64 = f64::INFINITY;
+    const NEG_INFINITY: f64 = f64::NEG_INFINITY;
     assert!(best_in_range_f64(NAN, NAN).is_nan());
     assert_eq!(best_in_range_f64(NAN, 1.2), 1.2);
     assert_eq!(best_in_range_f64(NAN, INFINITY), INFINITY);

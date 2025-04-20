@@ -2,9 +2,10 @@ use std::sync::Arc;
 
 use crate::mutex::Mutex;
 
-use crate::*;
-
-use self::text_selection::{CCursorRange, CursorRange, TextCursorState};
+use crate::{
+    text_selection::{CCursorRange, CursorRange, TextCursorState},
+    Context, Galley, Id,
+};
 
 pub type TextEditUndoer = crate::util::undoer::Undoer<(CCursorRange, String)>;
 
@@ -52,10 +53,10 @@ pub struct TextEditState {
     #[cfg_attr(feature = "serde", serde(skip))]
     pub(crate) singleline_offset: f32,
 
-    /// When did the user last press a key?
+    /// When did the user last press a key or click on the `TextEdit`.
     /// Used to pause the cursor animation when typing.
     #[cfg_attr(feature = "serde", serde(skip))]
-    pub(crate) last_edit_time: f64,
+    pub(crate) last_interaction_time: f64,
 }
 
 impl TextEditState {
@@ -88,6 +89,7 @@ impl TextEditState {
         self.undoer.lock().clone()
     }
 
+    #[allow(clippy::needless_pass_by_ref_mut)] // Intentionally hide interiority of mutability
     pub fn set_undoer(&mut self, undoer: TextEditUndoer) {
         *self.undoer.lock() = undoer;
     }
@@ -97,7 +99,7 @@ impl TextEditState {
     }
 
     #[deprecated = "Use `self.cursor.range` instead"]
-    pub fn cursor_range(&mut self, galley: &Galley) -> Option<CursorRange> {
+    pub fn cursor_range(&self, galley: &Galley) -> Option<CursorRange> {
         self.cursor.range(galley)
     }
 }

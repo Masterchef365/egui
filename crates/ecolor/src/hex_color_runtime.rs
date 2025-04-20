@@ -90,14 +90,15 @@ impl HexColor {
                 let [r, gb] = u16::from_str_radix(s, 16)
                     .map_err(ParseHexColorError::InvalidInt)?
                     .to_be_bytes();
-                let [r, g, b] = [r, gb >> 4, gb & 0x0f].map(|u| u << 4 | u);
+                let [r, g, b] = [r, gb >> 4, gb & 0x0f].map(|u| (u << 4) | u);
                 Ok(Self::Hex3(Color32::from_rgb(r, g, b)))
             }
             4 => {
                 let [r_g, b_a] = u16::from_str_radix(s, 16)
                     .map_err(ParseHexColorError::InvalidInt)?
                     .to_be_bytes();
-                let [r, g, b, a] = [r_g >> 4, r_g & 0x0f, b_a >> 4, b_a & 0x0f].map(|u| u << 4 | u);
+                let [r, g, b, a] =
+                    [r_g >> 4, r_g & 0x0f, b_a >> 4, b_a & 0x0f].map(|u| (u << 4) | u);
                 Ok(Self::Hex4(Color32::from_rgba_unmultiplied(r, g, b, a)))
             }
             6 => {
@@ -123,8 +124,8 @@ impl Color32 {
     /// Supports the 3, 4, 6, and 8-digit formats, according to the specification in
     /// <https://drafts.csswg.org/css-color-4/#hex-color>
     ///
-    /// To parse hex colors at compile-time (e.g. for use in `const` contexts)
-    /// use the macro [`crate::hex_color!`] instead.
+    /// To parse hex colors from string literals with compile-time checking, use the macro
+    /// [`crate::hex_color!`] instead.
     ///
     /// # Example
     /// ```rust

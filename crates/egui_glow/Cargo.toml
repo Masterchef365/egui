@@ -24,7 +24,7 @@ workspace = true
 
 [package.metadata.docs.rs]
 all-features = true
-
+rustdoc-args = ["--generate-link-to-definition"]
 
 [features]
 default = []
@@ -38,9 +38,6 @@ clipboard = ["egui-winit?/clipboard"]
 ## For the `winit` integration:
 ## enable opening links in a browser when an egui hyperlink is clicked.
 links = ["egui-winit?/links"]
-
-## Enable profiling with the [`puffin`](https://docs.rs/puffin) crate.
-puffin = ["dep:puffin", "egui-winit?/puffin", "egui/puffin"]
 
 ## Enable [`winit`](https://docs.rs/winit) integration. On Linux, requires either `wayland` or `x11`
 winit = ["egui-winit", "dep:winit"]
@@ -61,17 +58,14 @@ bytemuck.workspace = true
 glow.workspace = true
 log.workspace = true
 memoffset = "0.9"
+profiling.workspace = true
 
 #! ### Optional dependencies
 ## Enable this when generating docs.
 document-features = { workspace = true, optional = true }
 
 # Native:
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-puffin = { workspace = true, optional = true }
-winit = { workspace = true, optional = true, default-features = false, features = [
-  "rwh_06", # for compatibility with egui-winit
-] }
+winit = { workspace = true, optional = true, default-features = false, features = ["rwh_06"] }
 
 # Web:
 [target.'cfg(target_arch = "wasm32")'.dependencies]
@@ -80,17 +74,9 @@ wasm-bindgen.workspace = true
 
 
 [dev-dependencies]
-glutin.workspace = true       # examples/pure_glow
-glutin-winit.workspace = true
-# glutin stuck on old version of raw-window-handle:
-rwh_05 = { package = "raw-window-handle", version = "0.5.2", features = [
-  "std",
-] }
+glutin = { workspace = true, default-features = true }       # examples/pure_glow
+glutin-winit = { workspace = true, default-features = true }
 
 [[example]]
 name = "pure_glow"
-required-features = [
-  "winit",
-  "egui/default_fonts",
-  "winit/rwh_05",       # glutin stuck on old version of raw-window-handle
-]
+required-features = ["winit", "egui/default_fonts"]

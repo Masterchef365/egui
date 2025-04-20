@@ -1,8 +1,14 @@
 //! Color picker widgets.
 
 use crate::util::fixed_cache::FixedCache;
-use crate::*;
-use epaint::{ecolor::*, *};
+use crate::{
+    epaint, lerp, remap_clamp, Area, Context, DragValue, Frame, Id, Key, Order, Painter, Response,
+    Sense, Ui, UiKind, Widget, WidgetInfo, WidgetType,
+};
+use epaint::{
+    ecolor::{Color32, Hsva, HsvaGamma, Rgba},
+    pos2, vec2, Mesh, Rect, Shape, Stroke, StrokeKind, Vec2,
+};
 
 fn contrast_color(color: impl Into<Rgba>) -> Color32 {
     if color.into().intensity() < 0.5 {
@@ -91,11 +97,16 @@ fn color_button(ui: &mut Ui, color: Color32, open: bool) -> Response {
         };
         let rect = rect.expand(visuals.expansion);
 
-        show_color_at(ui.painter(), color, rect);
+        let stroke_width = 1.0;
+        show_color_at(ui.painter(), color, rect.shrink(stroke_width));
 
-        let rounding = visuals.rounding.at_most(2.0); // Can't do more rounding because the background grid doesn't do any rounding
-        ui.painter()
-            .rect_stroke(rect, rounding, (2.0, visuals.bg_fill)); // fill is intentional, because default style has no border
+        let corner_radius = visuals.corner_radius.at_most(2); // Can't do more rounding because the background grid doesn't do any rounding
+        ui.painter().rect_stroke(
+            rect,
+            corner_radius,
+            (stroke_width, visuals.bg_fill), // Using fill for stroke is intentional, because default style has no border
+            StrokeKind::Inside,
+        );
     }
 
     response
@@ -133,7 +144,8 @@ fn color_slider_1d(ui: &mut Ui, value: &mut f32, color_at: impl Fn(f32) -> Color
             ui.painter().add(Shape::mesh(mesh));
         }
 
-        ui.painter().rect_stroke(rect, 0.0, visuals.bg_stroke); // outline
+        ui.painter()
+            .rect_stroke(rect, 0.0, visuals.bg_stroke, StrokeKind::Inside); // outline
 
         {
             // Show where the slider is at:
@@ -159,8 +171,11 @@ fn color_slider_1d(ui: &mut Ui, value: &mut f32, color_at: impl Fn(f32) -> Color
 /// * `x_value` - X axis, either saturation or value (0.0-1.0).
 /// * `y_value` - Y axis, either saturation or value (0.0-1.0).
 /// * `color_at` - A function that dictates how the mix of saturation and value will be displayed in the 2d slider.
-/// E.g.: `|x_value, y_value| HsvaGamma { h: 1.0, s: x_value, v: y_value, a: 1.0 }.into()` displays the colors as follows: top-left: white \[s: 0.0, v: 1.0], top-right: fully saturated color \[s: 1.0, v: 1.0], bottom-right: black \[s: 0.0, v: 1.0].
 ///
+/// e.g.: `|x_value, y_value| HsvaGamma { h: 1.0, s: x_value, v: y_value, a: 1.0 }.into()` displays the colors as follows:
+/// * top-left: white `[s: 0.0, v: 1.0]`
+/// * top-right: fully saturated color `[s: 1.0, v: 1.0]`
+/// * bottom-right: black `[s: 0.0, v: 1.0].`
 fn color_slider_2d(
     ui: &mut Ui,
     x_value: &mut f32,
@@ -199,7 +214,8 @@ fn color_slider_2d(
         }
         ui.painter().add(Shape::mesh(mesh)); // fill
 
-        ui.painter().rect_stroke(rect, 0.0, visuals.bg_stroke); // outline
+        ui.painter()
+            .rect_stroke(rect, 0.0, visuals.bg_stroke, StrokeKind::Inside); // outline
 
         // Show where the slider is at:
         let x = lerp(rect.left()..=rect.right(), *x_value);
@@ -363,7 +379,7 @@ fn color_picker_hsvag_2d(ui: &mut Ui, hsvag: &mut HsvaGamma, alpha: Alpha) {
 fn input_type_button_ui(ui: &mut Ui) {
     let mut input_type = ui.ctx().style().visuals.numeric_color_space;
     if input_type.toggle_button_ui(ui).changed() {
-        ui.ctx().style_mut(|s| {
+        ui.ctx().all_styles_mut(|s| {
             s.visuals.numeric_color_space = input_type;
         });
     }

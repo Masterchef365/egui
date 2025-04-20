@@ -10,9 +10,6 @@
 //! call [`crate::run_native`] from your `main.rs`, and/or use `eframe::WebRunner` from your `lib.rs`.
 //!
 //! ## Compiling for web
-//! To get copy-paste working on web, you need to compile with
-//! `export RUSTFLAGS=--cfg=web_sys_unstable_apis`.
-//!
 //! You need to install the `wasm32` target with `rustup target add wasm32-unknown-unknown`.
 //!
 //! Build the `.wasm` using `cargo build --target wasm32-unknown-unknown`
@@ -85,10 +82,10 @@
 //!
 //!     /// Call this once from JavaScript to start your app.
 //!     #[wasm_bindgen]
-//!     pub async fn start(&self, canvas_id: &str) -> Result<(), wasm_bindgen::JsValue> {
+//!     pub async fn start(&self, canvas: web_sys::HtmlCanvasElement) -> Result<(), wasm_bindgen::JsValue> {
 //!         self.runner
 //!             .start(
-//!                 canvas_id,
+//!                 canvas,
 //!                 eframe::WebOptions::default(),
 //!                 Box::new(|cc| Ok(Box::new(MyEguiApp::new(cc))),)
 //!             )
@@ -131,6 +128,17 @@
 //!
 //! ## Feature flags
 #![doc = document_features::document_features!()]
+//!
+//! ## Instrumentation
+//! This crate supports using the [profiling](https://crates.io/crates/profiling) crate for instrumentation.
+//! You can enable features on the profiling crates in your application to add instrumentation for all
+//! crates that support it, including egui. See the profiling crate docs for more information.
+//! ```toml
+//! [dependencies]
+//! profiling = "1.0"
+//! [features]
+//! profile-with-puffin = ["profiling/profile-with-puffin"]
+//! ```
 //!
 
 #![warn(missing_docs)] // let's keep eframe well-documented
@@ -232,7 +240,7 @@ pub mod icon_data;
 pub fn run_native(
     app_name: &str,
     mut native_options: NativeOptions,
-    app_creator: AppCreator,
+    app_creator: AppCreator<'_>,
 ) -> Result {
     #[cfg(not(feature = "__screenshot"))]
     assert!(
@@ -274,7 +282,9 @@ pub fn run_native(
 
 /// The simplest way to get started when writing a native app.
 ///
-/// This does NOT support persistence. For that you need to use [`run_native`].
+/// This does NOT support persistence of custom user data. For that you need to use [`run_native`].
+/// However, it DOES support persistence of egui data (window positions and sizes, how far the user has scrolled in a
+/// [`ScrollArea`](egui::ScrollArea), etc.) if the persistence feature is enabled.
 ///
 /// # Example
 /// ``` no_run
@@ -446,33 +456,3 @@ impl std::fmt::Display for Error {
 
 /// Short for `Result<T, eframe::Error>`.
 pub type Result<T = (), E = Error> = std::result::Result<T, E>;
-
-// ---------------------------------------------------------------------------
-
-mod profiling_scopes {
-    #![allow(unused_macros)]
-    #![allow(unused_imports)]
-
-    /// Profiling macro for feature "puffin"
-    macro_rules! profile_function {
-        ($($arg: tt)*) => {
-            #[cfg(feature = "puffin")]
-            #[cfg(not(target_arch = "wasm32"))] // Disabled on web because of the coarse 1ms clock resolution there.
-            puffin::profile_function!($($arg)*);
-        };
-    }
-    pub(crate) use profile_function;
-
-    /// Profiling macro for feature "puffin"
-    macro_rules! profile_scope {
-        ($($arg: tt)*) => {
-            #[cfg(feature = "puffin")]
-            #[cfg(not(target_arch = "wasm32"))] // Disabled on web because of the coarse 1ms clock resolution there.
-            puffin::profile_scope!($($arg)*);
-        };
-    }
-    pub(crate) use profile_scope;
-}
-
-#[allow(unused_imports)]
-pub(crate) use profiling_scopes::*;

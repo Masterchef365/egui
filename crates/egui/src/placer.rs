@@ -1,7 +1,10 @@
-use crate::*;
+use crate::{grid, vec2, Layout, Painter, Pos2, Rect, Region, Vec2};
+
+#[cfg(debug_assertions)]
+use crate::{Align2, Color32, Stroke};
 
 pub(crate) struct Placer {
-    /// If set this will take precedence over [`layout`].
+    /// If set this will take precedence over [`crate::layout`].
     grid: Option<grid::GridLayout>,
     layout: Layout,
     region: Region,
@@ -106,7 +109,10 @@ impl Placer {
     /// This is what you then pass to `advance_after_rects`.
     /// Use `justify_and_align` to get the inner `widget_rect`.
     pub(crate) fn next_space(&self, child_size: Vec2, item_spacing: Vec2) -> Rect {
-        debug_assert!(child_size.is_finite() && child_size.x >= 0.0 && child_size.y >= 0.0);
+        debug_assert!(
+            0.0 <= child_size.x && 0.0 <= child_size.y,
+            "Negative child size: {child_size:?}"
+        );
         self.region.sanity_check();
         if let Some(grid) = &self.grid {
             grid.next_cell(self.region.cursor, child_size)
@@ -275,7 +281,7 @@ impl Placer {
 
         if let Some(grid) = &self.grid {
             let rect = grid.next_cell(self.cursor(), Vec2::splat(0.0));
-            painter.rect_stroke(rect, 1.0, stroke);
+            painter.rect_stroke(rect, 1.0, stroke, epaint::StrokeKind::Inside);
             let align = Align2::CENTER_CENTER;
             painter.debug_text(align.pos_in_rect(&rect), align, stroke.color, text);
         } else {

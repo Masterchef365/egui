@@ -14,7 +14,7 @@ pub use accesskit_winit;
 pub use egui;
 #[cfg(feature = "accesskit")]
 use egui::accesskit;
-use egui::{Pos2, Rect, Vec2, ViewportBuilder, ViewportCommand, ViewportId, ViewportInfo};
+use egui::{Pos2, Rect, Theme, Vec2, ViewportBuilder, ViewportCommand, ViewportId, ViewportInfo};
 pub use winit;
 
 pub mod clipboard;
@@ -25,18 +25,22 @@ pub use window_settings::WindowSettings;
 use ahash::HashSet;
 use raw_window_handle::HasDisplayHandle;
 
-#[allow(unused_imports)]
-pub(crate) use profiling_scopes::*;
-
 use winit::{
     dpi::{PhysicalPosition, PhysicalSize},
     event::ElementState,
-    event_loop::EventLoopWindowTarget,
+    event_loop::ActiveEventLoop,
     window::{CursorGrabMode, Window, WindowButtons, WindowLevel},
 };
 
 pub fn screen_size_in_pixels(window: &Window) -> egui::Vec2 {
-    let size = window.inner_size();
+    let size = if cfg!(target_os = "ios") {
+        // `outer_size` Includes the area behind the "dynamic island".
+        // It is up to the eframe user to make sure the dynamic island doesn't cover anything important.
+        // That will be easier once https://github.com/rust-windowing/winit/pull/3890 lands
+        window.outer_size()
+    } else {
+        window.inner_size()
+    };
     egui::vec2(size.width as f32, size.height as f32)
 }
 
@@ -111,9 +115,10 @@ impl State {
         viewport_id: ViewportId,
         display_target: &dyn HasDisplayHandle,
         native_pixels_per_point: Option<f32>,
+        theme: Option<winit::window::Theme>,
         max_texture_side: Option<usize>,
     ) -> Self {
-        crate::profile_function!();
+        profiling::function_scope!();
 
         let egui_input = egui::RawInput {
             focused: false, // winit will tell us when we have focus
@@ -150,6 +155,7 @@ impl State {
             .entry(ViewportId::ROOT)
             .or_default()
             .native_pixels_per_point = native_pixels_per_point;
+        slf.egui_input.system_theme = theme.map(to_egui_theme);
 
         if let Some(max_texture_side) = max_texture_side {
             slf.set_max_texture_side(max_texture_side);
@@ -158,16 +164,15 @@ impl State {
     }
 
     #[cfg(feature = "accesskit")]
-    pub fn init_accesskit<T: From<accesskit_winit::ActionRequestEvent> + Send>(
+    pub fn init_accesskit<T: From<accesskit_winit::Event> + Send>(
         &mut self,
         window: &Window,
         event_loop_proxy: winit::event_loop::EventLoopProxy<T>,
-        initial_tree_update_factory: impl 'static + FnOnce() -> accesskit::TreeUpdate + Send,
     ) {
-        crate::profile_function!();
-        self.accesskit = Some(accesskit_winit::Adapter::new(
+        profiling::function_scope!();
+
+        self.accesskit = Some(accesskit_winit::Adapter::with_event_loop_proxy(
             window,
-            initial_tree_update_factory,
             event_loop_proxy,
         ));
     }
@@ -185,7 +190,7 @@ impl State {
 
     /// Places the text onto the clipboard.
     pub fn set_clipboard_text(&mut self, text: String) {
-        self.clipboard.set(text);
+        self.clipboard.set_text(text);
     }
 
     /// Returns [`false`] or the last value that [`Window::set_ime_allowed()`] was called with, used for debouncing.
@@ -225,7 +230,7 @@ impl State {
     /// Use [`update_viewport_info`] to update the info for each
     /// viewport.
     pub fn take_egui_input(&mut self, window: &Window) -> egui::RawInput {
-        crate::profile_function!();
+        profiling::function_scope!();
 
         self.egui_input.time = Some(self.start_time.elapsed().as_secs_f64());
 
@@ -260,10 +265,10 @@ impl State {
         window: &Window,
         event: &winit::event::WindowEvent,
     ) -> EventResponse {
-        crate::profile_function!(short_window_event_description(event));
+        profiling::function_scope!(short_window_event_description(event));
 
         #[cfg(feature = "accesskit")]
-        if let Some(accesskit) = &self.accesskit {
+        if let Some(accesskit) = self.accesskit.as_mut() {
             accesskit.process_event(window, event);
         }
 
@@ -342,9 +347,14 @@ impl State {
                 // We use input_method_editor_started to manually insert CompositionStart
                 // between Commits.
                 match ime {
-                    winit::event::Ime::Enabled => {}
-                    winit::event::Ime::Preedit(_, None) => {
-                        self.ime_event_enable();
+                    winit::event::Ime::Enabled => {
+                        if cfg!(target_os = "linux") {
+                            // This event means different things in X11 and Wayland, but we can just
+                            // ignore it and enable IME on the preedit event.
+                            // See <https://github.com/rust-windowing/winit/issues/2498>
+                        } else {
+                            self.ime_event_enable();
+                        }
                     }
                     winit::event::Ime::Preedit(text, Some(_cursor)) => {
                         self.ime_event_enable();
@@ -358,7 +368,7 @@ impl State {
                             .push(egui::Event::Ime(egui::ImeEvent::Commit(text.clone())));
                         self.ime_event_disable();
                     }
-                    winit::event::Ime::Disabled => {
+                    winit::event::Ime::Disabled | winit::event::Ime::Preedit(_, None) => {
                         self.ime_event_disable();
                     }
                 };
@@ -400,6 +410,13 @@ impl State {
                 self.egui_input
                     .events
                     .push(egui::Event::WindowFocused(*focused));
+                EventResponse {
+                    repaint: true,
+                    consumed: false,
+                }
+            }
+            WindowEvent::ThemeChanged(winit_theme) => {
+                self.egui_input.system_theme = Some(to_egui_theme(*winit_theme));
                 EventResponse {
                     repaint: true,
                     consumed: false,
@@ -464,7 +481,6 @@ impl State {
             | WindowEvent::Occluded(_)
             | WindowEvent::Resized(_)
             | WindowEvent::Moved(_)
-            | WindowEvent::ThemeChanged(_)
             | WindowEvent::TouchpadPressure { .. }
             | WindowEvent::CloseRequested => EventResponse {
                 repaint: true,
@@ -474,13 +490,14 @@ impl State {
             // Things we completely ignore:
             WindowEvent::ActivationTokenDone { .. }
             | WindowEvent::AxisMotion { .. }
-            | WindowEvent::SmartMagnify { .. }
-            | WindowEvent::TouchpadRotate { .. } => EventResponse {
+            | WindowEvent::DoubleTapGesture { .. }
+            | WindowEvent::RotationGesture { .. }
+            | WindowEvent::PanGesture { .. } => EventResponse {
                 repaint: false,
                 consumed: false,
             },
 
-            WindowEvent::TouchpadMagnify { delta, .. } => {
+            WindowEvent::PinchGesture { delta, .. } => {
                 // Positive delta values indicate magnification (zooming in).
                 // Negative delta values indicate shrinking (zooming out).
                 let zoom_factor = (*delta as f32).exp();
@@ -805,9 +822,11 @@ impl State {
         window: &Window,
         platform_output: egui::PlatformOutput,
     ) {
-        crate::profile_function!();
+        #![allow(deprecated)]
+        profiling::function_scope!();
 
         let egui::PlatformOutput {
+            commands,
             cursor_icon,
             open_url,
             copied_text,
@@ -816,7 +835,23 @@ impl State {
             ime,
             #[cfg(feature = "accesskit")]
             accesskit_update,
+            num_completed_passes: _,    // `egui::Context::run` handles this
+            request_discard_reasons: _, // `egui::Context::run` handles this
         } = platform_output;
+
+        for command in commands {
+            match command {
+                egui::OutputCommand::CopyText(text) => {
+                    self.clipboard.set_text(text);
+                }
+                egui::OutputCommand::CopyImage(image) => {
+                    self.clipboard.set_image(&image);
+                }
+                egui::OutputCommand::OpenUrl(open_url) => {
+                    open_url_in_browser(&open_url.url);
+                }
+            }
+        }
 
         self.set_cursor_icon(window, cursor_icon);
 
@@ -825,13 +860,13 @@ impl State {
         }
 
         if !copied_text.is_empty() {
-            self.clipboard.set(copied_text);
+            self.clipboard.set_text(copied_text);
         }
 
         let allow_ime = ime.is_some();
         if self.allow_ime != allow_ime {
             self.allow_ime = allow_ime;
-            crate::profile_scope!("set_ime_allowed");
+            profiling::scope!("set_ime_allowed");
             window.set_ime_allowed(allow_ime);
         }
 
@@ -842,7 +877,7 @@ impl State {
                 || self.egui_ctx.input(|i| !i.events.is_empty())
             {
                 self.ime_rect_px = Some(ime_rect_px);
-                crate::profile_scope!("set_ime_cursor_area");
+                profiling::scope!("set_ime_cursor_area");
                 window.set_ime_cursor_area(
                     winit::dpi::PhysicalPosition {
                         x: ime_rect_px.min.x,
@@ -859,9 +894,9 @@ impl State {
         }
 
         #[cfg(feature = "accesskit")]
-        if let Some(accesskit) = self.accesskit.as_ref() {
+        if let Some(accesskit) = self.accesskit.as_mut() {
             if let Some(update) = accesskit_update {
-                crate::profile_scope!("accesskit");
+                profiling::scope!("accesskit");
                 accesskit.update_if_active(|| update);
             }
         }
@@ -880,7 +915,7 @@ impl State {
 
             if let Some(winit_cursor_icon) = translate_cursor(cursor_icon) {
                 window.set_cursor_visible(true);
-                window.set_cursor_icon(winit_cursor_icon);
+                window.set_cursor(winit_cursor_icon);
             } else {
                 window.set_cursor_visible(false);
             }
@@ -888,6 +923,13 @@ impl State {
             // Remember to set the cursor again once the cursor returns to the screen:
             self.current_cursor_icon = None;
         }
+    }
+}
+
+fn to_egui_theme(theme: winit::window::Theme) -> Theme {
+    match theme {
+        winit::window::Theme::Dark => Theme::Dark,
+        winit::window::Theme::Light => Theme::Light,
     }
 }
 
@@ -926,8 +968,7 @@ pub fn update_viewport_info(
     window: &Window,
     is_init: bool,
 ) {
-    crate::profile_function!();
-
+    profiling::function_scope!();
     let pixels_per_point = pixels_per_point(egui_ctx, window);
 
     let has_a_position = match window.is_minimized() {
@@ -948,7 +989,7 @@ pub fn update_viewport_info(
     };
 
     let monitor_size = {
-        crate::profile_scope!("monitor_size");
+        profiling::scope!("monitor_size");
         if let Some(monitor) = window.current_monitor() {
             let size = monitor.size().to_logical::<f32>(pixels_per_point.into());
             Some(egui::vec2(size.width, size.height))
@@ -1274,7 +1315,7 @@ fn translate_cursor(cursor_icon: egui::CursorIcon) -> Option<winit::window::Curs
 // ---------------------------------------------------------------------------
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub enum ActionRequested {
-    Screenshot,
+    Screenshot(egui::UserData),
     Cut,
     Copy,
     Paste,
@@ -1299,7 +1340,7 @@ fn process_viewport_command(
     info: &mut ViewportInfo,
     actions_requested: &mut HashSet<ActionRequested>,
 ) {
-    crate::profile_function!();
+    profiling::function_scope!();
 
     use winit::window::ResizeDirection;
 
@@ -1489,8 +1530,8 @@ fn process_viewport_command(
                 log::warn!("{command:?}: {err}");
             }
         }
-        ViewportCommand::Screenshot => {
-            actions_requested.insert(ActionRequested::Screenshot);
+        ViewportCommand::Screenshot(user_data) => {
+            actions_requested.insert(ActionRequested::Screenshot(user_data));
         }
         ViewportCommand::RequestCut => {
             actions_requested.insert(ActionRequested::Cut);
@@ -1510,29 +1551,26 @@ fn process_viewport_command(
 ///
 /// # Errors
 /// Possible causes of error include denied permission, incompatible system, and lack of memory.
-pub fn create_window<T>(
+pub fn create_window(
     egui_ctx: &egui::Context,
-    event_loop: &EventLoopWindowTarget<T>,
+    event_loop: &ActiveEventLoop,
     viewport_builder: &ViewportBuilder,
 ) -> Result<Window, winit::error::OsError> {
-    crate::profile_function!();
+    profiling::function_scope!();
 
-    let window_builder =
-        create_winit_window_builder(egui_ctx, event_loop, viewport_builder.clone());
-    let window = {
-        crate::profile_scope!("WindowBuilder::build");
-        window_builder.build(event_loop)?
-    };
+    let window_attributes =
+        create_winit_window_attributes(egui_ctx, event_loop, viewport_builder.clone());
+    let window = event_loop.create_window(window_attributes)?;
     apply_viewport_builder_to_window(egui_ctx, &window, viewport_builder);
     Ok(window)
 }
 
-pub fn create_winit_window_builder<T>(
+pub fn create_winit_window_attributes(
     egui_ctx: &egui::Context,
-    event_loop: &EventLoopWindowTarget<T>,
+    event_loop: &ActiveEventLoop,
     viewport_builder: ViewportBuilder,
-) -> winit::window::WindowBuilder {
-    crate::profile_function!();
+) -> winit::window::WindowAttributes {
+    profiling::function_scope!();
 
     // We set sizes and positions in egui:s own ui points, which depends on the egui
     // zoom_factor and the native pixels per point, so we need to know that here.
@@ -1590,13 +1628,17 @@ pub fn create_winit_window_builder<T>(
         clamp_size_to_monitor_size: _, // Handled in `viewport_builder` in `epi_integration.rs`
     } = viewport_builder;
 
-    let mut window_builder = winit::window::WindowBuilder::new()
+    let mut window_attributes = winit::window::WindowAttributes::default()
         .with_title(title.unwrap_or_else(|| "egui window".to_owned()))
         .with_transparent(transparent.unwrap_or(false))
         .with_decorations(decorations.unwrap_or(true))
         .with_resizable(resizable.unwrap_or(true))
         .with_visible(visible.unwrap_or(true))
-        .with_maximized(maximized.unwrap_or(false))
+        .with_maximized(if cfg!(target_os = "ios") {
+            true
+        } else {
+            maximized.unwrap_or(false)
+        })
         .with_window_level(match window_level.unwrap_or_default() {
             egui::viewport::WindowLevel::AlwaysOnBottom => WindowLevel::AlwaysOnBottom,
             egui::viewport::WindowLevel::AlwaysOnTop => WindowLevel::AlwaysOnTop,
@@ -1620,98 +1662,111 @@ pub fn create_winit_window_builder<T>(
         })
         .with_active(active.unwrap_or(true));
 
+    #[cfg(not(target_os = "ios"))]
     if let Some(size) = inner_size {
-        window_builder = window_builder.with_inner_size(PhysicalSize::new(
+        window_attributes = window_attributes.with_inner_size(PhysicalSize::new(
             pixels_per_point * size.x,
             pixels_per_point * size.y,
         ));
     }
 
+    #[cfg(not(target_os = "ios"))]
     if let Some(size) = min_inner_size {
-        window_builder = window_builder.with_min_inner_size(PhysicalSize::new(
+        window_attributes = window_attributes.with_min_inner_size(PhysicalSize::new(
             pixels_per_point * size.x,
             pixels_per_point * size.y,
         ));
     }
 
+    #[cfg(not(target_os = "ios"))]
     if let Some(size) = max_inner_size {
-        window_builder = window_builder.with_max_inner_size(PhysicalSize::new(
+        window_attributes = window_attributes.with_max_inner_size(PhysicalSize::new(
             pixels_per_point * size.x,
             pixels_per_point * size.y,
         ));
     }
 
+    #[cfg(not(target_os = "ios"))]
     if let Some(pos) = position {
-        window_builder = window_builder.with_position(PhysicalPosition::new(
+        window_attributes = window_attributes.with_position(PhysicalPosition::new(
             pixels_per_point * pos.x,
             pixels_per_point * pos.y,
         ));
     }
+    #[cfg(target_os = "ios")]
+    {
+        // Unused:
+        _ = pixels_per_point;
+        _ = position;
+        _ = inner_size;
+        _ = min_inner_size;
+        _ = max_inner_size;
+    }
 
     if let Some(icon) = icon {
         let winit_icon = to_winit_icon(&icon);
-        window_builder = window_builder.with_window_icon(winit_icon);
+        window_attributes = window_attributes.with_window_icon(winit_icon);
     }
 
     #[cfg(all(feature = "wayland", target_os = "linux"))]
     if let Some(app_id) = _app_id {
-        use winit::platform::wayland::WindowBuilderExtWayland as _;
-        window_builder = window_builder.with_name(app_id, "");
+        use winit::platform::wayland::WindowAttributesExtWayland as _;
+        window_attributes = window_attributes.with_name(app_id, "");
     }
 
     #[cfg(all(feature = "x11", target_os = "linux"))]
     {
         if let Some(window_type) = _window_type {
-            use winit::platform::x11::WindowBuilderExtX11 as _;
-            use winit::platform::x11::XWindowType;
-            window_builder = window_builder.with_x11_window_type(vec![match window_type {
-                egui::X11WindowType::Normal => XWindowType::Normal,
-                egui::X11WindowType::Utility => XWindowType::Utility,
-                egui::X11WindowType::Dock => XWindowType::Dock,
-                egui::X11WindowType::Desktop => XWindowType::Desktop,
-                egui::X11WindowType::Toolbar => XWindowType::Toolbar,
-                egui::X11WindowType::Menu => XWindowType::Menu,
-                egui::X11WindowType::Splash => XWindowType::Splash,
-                egui::X11WindowType::Dialog => XWindowType::Dialog,
-                egui::X11WindowType::DropdownMenu => XWindowType::DropdownMenu,
-                egui::X11WindowType::PopupMenu => XWindowType::PopupMenu,
-                egui::X11WindowType::Tooltip => XWindowType::Tooltip,
-                egui::X11WindowType::Notification => XWindowType::Notification,
-                egui::X11WindowType::Combo => XWindowType::Combo,
-                egui::X11WindowType::Dnd => XWindowType::Dnd,
+            use winit::platform::x11::WindowAttributesExtX11 as _;
+            use winit::platform::x11::WindowType;
+            window_attributes = window_attributes.with_x11_window_type(vec![match window_type {
+                egui::X11WindowType::Normal => WindowType::Normal,
+                egui::X11WindowType::Utility => WindowType::Utility,
+                egui::X11WindowType::Dock => WindowType::Dock,
+                egui::X11WindowType::Desktop => WindowType::Desktop,
+                egui::X11WindowType::Toolbar => WindowType::Toolbar,
+                egui::X11WindowType::Menu => WindowType::Menu,
+                egui::X11WindowType::Splash => WindowType::Splash,
+                egui::X11WindowType::Dialog => WindowType::Dialog,
+                egui::X11WindowType::DropdownMenu => WindowType::DropdownMenu,
+                egui::X11WindowType::PopupMenu => WindowType::PopupMenu,
+                egui::X11WindowType::Tooltip => WindowType::Tooltip,
+                egui::X11WindowType::Notification => WindowType::Notification,
+                egui::X11WindowType::Combo => WindowType::Combo,
+                egui::X11WindowType::Dnd => WindowType::Dnd,
             }]);
         }
     }
 
     #[cfg(target_os = "windows")]
     {
-        use winit::platform::windows::WindowBuilderExtWindows as _;
+        use winit::platform::windows::WindowAttributesExtWindows as _;
         if let Some(enable) = _drag_and_drop {
-            window_builder = window_builder.with_drag_and_drop(enable);
+            window_attributes = window_attributes.with_drag_and_drop(enable);
         }
         if let Some(show) = _taskbar {
-            window_builder = window_builder.with_skip_taskbar(!show);
+            window_attributes = window_attributes.with_skip_taskbar(!show);
         }
     }
 
     #[cfg(target_os = "macos")]
     {
-        use winit::platform::macos::WindowBuilderExtMacOS as _;
-        window_builder = window_builder
+        use winit::platform::macos::WindowAttributesExtMacOS as _;
+        window_attributes = window_attributes
             .with_title_hidden(!_title_shown.unwrap_or(true))
             .with_titlebar_buttons_hidden(!_titlebar_buttons_shown.unwrap_or(true))
             .with_titlebar_transparent(!_titlebar_shown.unwrap_or(true))
             .with_fullsize_content_view(_fullsize_content_view.unwrap_or(false));
     }
 
-    window_builder
+    window_attributes
 }
 
 fn to_winit_icon(icon: &egui::IconData) -> Option<winit::window::Icon> {
     if icon.is_empty() {
         None
     } else {
-        crate::profile_function!();
+        profiling::function_scope!();
         match winit::window::Icon::from_rgba(icon.rgba.clone(), icon.width, icon.height) {
             Ok(winit_icon) => Some(winit_icon),
             Err(err) => {
@@ -1769,43 +1824,31 @@ pub fn apply_viewport_builder_to_window(
             let pos = PhysicalPosition::new(pixels_per_point * pos.x, pixels_per_point * pos.y);
             window.set_outer_position(pos);
         }
+        if let Some(maximized) = builder.maximized {
+            window.set_maximized(maximized);
+        }
     }
 }
 
 // ---------------------------------------------------------------------------
 
-/// Short and fast description of an event.
+/// Short and fast description of a device event.
 /// Useful for logging and profiling.
-pub fn short_generic_event_description<T>(event: &winit::event::Event<T>) -> &'static str {
-    use winit::event::{DeviceEvent, Event, StartCause};
+pub fn short_device_event_description(event: &winit::event::DeviceEvent) -> &'static str {
+    use winit::event::DeviceEvent;
 
     match event {
-        Event::AboutToWait => "Event::AboutToWait",
-        Event::LoopExiting => "Event::LoopExiting",
-        Event::Suspended => "Event::Suspended",
-        Event::Resumed => "Event::Resumed",
-        Event::MemoryWarning => "Event::MemoryWarning",
-        Event::UserEvent(_) => "UserEvent",
-        Event::DeviceEvent { event, .. } => match event {
-            DeviceEvent::Added { .. } => "DeviceEvent::Added",
-            DeviceEvent::Removed { .. } => "DeviceEvent::Removed",
-            DeviceEvent::MouseMotion { .. } => "DeviceEvent::MouseMotion",
-            DeviceEvent::MouseWheel { .. } => "DeviceEvent::MouseWheel",
-            DeviceEvent::Motion { .. } => "DeviceEvent::Motion",
-            DeviceEvent::Button { .. } => "DeviceEvent::Button",
-            DeviceEvent::Key { .. } => "DeviceEvent::Key",
-        },
-        Event::NewEvents(start_cause) => match start_cause {
-            StartCause::ResumeTimeReached { .. } => "NewEvents::ResumeTimeReached",
-            StartCause::WaitCancelled { .. } => "NewEvents::WaitCancelled",
-            StartCause::Poll => "NewEvents::Poll",
-            StartCause::Init => "NewEvents::Init",
-        },
-        Event::WindowEvent { event, .. } => short_window_event_description(event),
+        DeviceEvent::Added { .. } => "DeviceEvent::Added",
+        DeviceEvent::Removed { .. } => "DeviceEvent::Removed",
+        DeviceEvent::MouseMotion { .. } => "DeviceEvent::MouseMotion",
+        DeviceEvent::MouseWheel { .. } => "DeviceEvent::MouseWheel",
+        DeviceEvent::Motion { .. } => "DeviceEvent::Motion",
+        DeviceEvent::Button { .. } => "DeviceEvent::Button",
+        DeviceEvent::Key { .. } => "DeviceEvent::Key",
     }
 }
 
-/// Short and fast description of an event.
+/// Short and fast description of a window event.
 /// Useful for logging and profiling.
 pub fn short_window_event_description(event: &winit::event::WindowEvent) -> &'static str {
     use winit::event::WindowEvent;
@@ -1828,42 +1871,16 @@ pub fn short_window_event_description(event: &winit::event::WindowEvent) -> &'st
         WindowEvent::CursorLeft { .. } => "WindowEvent::CursorLeft",
         WindowEvent::MouseWheel { .. } => "WindowEvent::MouseWheel",
         WindowEvent::MouseInput { .. } => "WindowEvent::MouseInput",
-        WindowEvent::TouchpadMagnify { .. } => "WindowEvent::TouchpadMagnify",
+        WindowEvent::PinchGesture { .. } => "WindowEvent::PinchGesture",
         WindowEvent::RedrawRequested { .. } => "WindowEvent::RedrawRequested",
-        WindowEvent::SmartMagnify { .. } => "WindowEvent::SmartMagnify",
-        WindowEvent::TouchpadRotate { .. } => "WindowEvent::TouchpadRotate",
+        WindowEvent::DoubleTapGesture { .. } => "WindowEvent::DoubleTapGesture",
+        WindowEvent::RotationGesture { .. } => "WindowEvent::RotationGesture",
         WindowEvent::TouchpadPressure { .. } => "WindowEvent::TouchpadPressure",
         WindowEvent::AxisMotion { .. } => "WindowEvent::AxisMotion",
         WindowEvent::Touch { .. } => "WindowEvent::Touch",
         WindowEvent::ScaleFactorChanged { .. } => "WindowEvent::ScaleFactorChanged",
         WindowEvent::ThemeChanged { .. } => "WindowEvent::ThemeChanged",
         WindowEvent::Occluded { .. } => "WindowEvent::Occluded",
+        WindowEvent::PanGesture { .. } => "WindowEvent::PanGesture",
     }
-}
-
-// ---------------------------------------------------------------------------
-
-mod profiling_scopes {
-    #![allow(unused_macros)]
-    #![allow(unused_imports)]
-
-    /// Profiling macro for feature "puffin"
-    macro_rules! profile_function {
-        ($($arg: tt)*) => {
-            #[cfg(feature = "puffin")]
-            #[cfg(not(target_arch = "wasm32"))] // Disabled on web because of the coarse 1ms clock resolution there.
-            puffin::profile_function!($($arg)*);
-        };
-    }
-    pub(crate) use profile_function;
-
-    /// Profiling macro for feature "puffin"
-    macro_rules! profile_scope {
-        ($($arg: tt)*) => {
-            #[cfg(feature = "puffin")]
-            #[cfg(not(target_arch = "wasm32"))] // Disabled on web because of the coarse 1ms clock resolution there.
-            puffin::profile_scope!($($arg)*);
-        };
-    }
-    pub(crate) use profile_scope;
 }

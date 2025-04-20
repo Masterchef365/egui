@@ -83,6 +83,9 @@ impl Tooltips {
                 ui.label("You can select this text.");
             });
 
+        ui.label("This tooltip shows at the mouse cursor.")
+            .on_hover_text_at_pointer("Move me around!!");
+
         ui.separator(); // ---------------------------------------------------------
 
         let tooltip_ui = |ui: &mut egui::Ui| {
@@ -99,8 +102,8 @@ impl Tooltips {
             });
         };
 
-        ui.label("You can have different tooltips depending on whether or not a widget is enabled or not:")
-            .on_hover_text("Check the tooltip of the button below, and see how it changes dependning on whether or not it is enabled.");
+        ui.label("You can have different tooltips depending on whether or not a widget is enabled:")
+            .on_hover_text("Check the tooltip of the button below, and see how it changes depending on whether or not it is enabled.");
 
         ui.horizontal(|ui| {
             ui.checkbox(&mut self.enabled, "Enabled")

@@ -1,4 +1,6 @@
-use crate::{Context, Galley, Id, Pos2};
+use emath::TSTransform;
+
+use crate::{Context, Galley, Id};
 
 use super::{text_cursor_state::is_word_char, CursorRange};
 
@@ -8,7 +10,7 @@ pub fn update_accesskit_for_text_widget(
     widget_id: Id,
     cursor_range: Option<CursorRange>,
     role: accesskit::Role,
-    galley_pos: Pos2,
+    global_from_galley: TSTransform,
     galley: &Galley,
 ) {
     let parent_id = ctx.accesskit_node_builder(widget_id, |builder| {
@@ -29,8 +31,6 @@ pub fn update_accesskit_for_text_widget(
             });
         }
 
-        builder.set_default_action_verb(accesskit::DefaultActionVerb::Focus);
-
         builder.set_role(role);
 
         parent_id
@@ -44,8 +44,8 @@ pub fn update_accesskit_for_text_widget(
         for (row_index, row) in galley.rows.iter().enumerate() {
             let row_id = parent_id.with(row_index);
             ctx.accesskit_node_builder(row_id, |builder| {
-                builder.set_role(accesskit::Role::InlineTextBox);
-                let rect = row.rect.translate(galley_pos.to_vec2());
+                builder.set_role(accesskit::Role::TextRun);
+                let rect = global_from_galley * row.rect;
                 builder.set_bounds(accesskit::Rect {
                     x0: rect.min.x.into(),
                     y0: rect.min.y.into(),
@@ -77,7 +77,7 @@ pub fn update_accesskit_for_text_widget(
                     value.push(glyph.chr);
                     character_lengths.push((value.len() - old_len) as _);
                     character_positions.push(glyph.pos.x - row.rect.min.x);
-                    character_widths.push(glyph.size.x);
+                    character_widths.push(glyph.advance_width);
                 }
 
                 if row.ends_with_newline {

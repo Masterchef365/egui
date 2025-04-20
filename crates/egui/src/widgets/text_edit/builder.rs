@@ -1,14 +1,22 @@
 use std::sync::Arc;
 
-use epaint::text::{cursor::*, Galley, LayoutJob};
+use emath::{Rect, TSTransform};
+use epaint::{
+    text::{cursor::CCursor, Galley, LayoutJob},
+    StrokeKind,
+};
 
 use crate::{
+    epaint,
     os::OperatingSystem,
     output::OutputEvent,
+    response, text_selection,
     text_selection::{
         text_cursor_state::cursor_rect, visuals::paint_text_selection, CCursorRange, CursorRange,
     },
-    *,
+    vec2, Align, Align2, Color32, Context, CursorIcon, Event, EventFilter, FontSelection, Id,
+    ImeEvent, Key, KeyboardShortcut, Margin, Modifiers, NumExt, Response, Sense, Shape, TextBuffer,
+    TextStyle, TextWrapMode, Ui, Vec2, Widget, WidgetInfo, WidgetText, WidgetWithState,
 };
 
 use super::{TextEditOutput, TextEditState};
@@ -55,14 +63,14 @@ use super::{TextEditOutput, TextEditState};
 /// See [`TextEdit::show`].
 ///
 /// ## Other
-/// The background color of a [`TextEdit`] is [`Visuals::extreme_bg_color`].
-#[must_use = "You should put this widget in an ui with `ui.add(widget);`"]
+/// The background color of a [`crate::TextEdit`] is [`crate::Visuals::extreme_bg_color`] or can be set with [`crate::TextEdit::background_color`].
+#[must_use = "You should put this widget in a ui with `ui.add(widget);`"]
 pub struct TextEdit<'t> {
     text: &'t mut dyn TextBuffer,
     hint_text: WidgetText,
     hint_text_font: Option<FontSelection>,
     id: Option<Id>,
-    id_source: Option<Id>,
+    id_salt: Option<Id>,
     font_selection: FontSelection,
     text_color: Option<Color32>,
     layouter: Option<&'t mut dyn FnMut(&Ui, &str, f32) -> Arc<Galley>>,
@@ -80,13 +88,14 @@ pub struct TextEdit<'t> {
     clip_text: bool,
     char_limit: usize,
     return_key: Option<KeyboardShortcut>,
+    background_color: Option<Color32>,
 }
 
-impl<'t> WidgetWithState for TextEdit<'t> {
+impl WidgetWithState for TextEdit<'_> {
     type State = TextEditState;
 }
 
-impl<'t> TextEdit<'t> {
+impl TextEdit<'_> {
     pub fn load_state(ctx: &Context, id: Id) -> Option<TextEditState> {
         TextEditState::load(ctx, id)
     }
@@ -114,13 +123,13 @@ impl<'t> TextEdit<'t> {
             hint_text: Default::default(),
             hint_text_font: None,
             id: None,
-            id_source: None,
+            id_salt: None,
             font_selection: Default::default(),
             text_color: None,
             layouter: None,
             password: false,
             frame: true,
-            margin: Margin::symmetric(4.0, 2.0),
+            margin: Margin::symmetric(4, 2),
             multiline: true,
             interactive: true,
             desired_width: None,
@@ -138,6 +147,7 @@ impl<'t> TextEdit<'t> {
             clip_text: false,
             char_limit: usize::MAX,
             return_key: Some(KeyboardShortcut::new(Modifiers::NONE, Key::Enter)),
+            background_color: None,
         }
     }
 
@@ -158,8 +168,14 @@ impl<'t> TextEdit<'t> {
 
     /// A source for the unique [`Id`], e.g. `.id_source("second_text_edit_field")` or `.id_source(loop_index)`.
     #[inline]
-    pub fn id_source(mut self, id_source: impl std::hash::Hash) -> Self {
-        self.id_source = Some(Id::new(id_source));
+    pub fn id_source(self, id_salt: impl std::hash::Hash) -> Self {
+        self.id_salt(id_salt)
+    }
+
+    /// A source for the unique [`Id`], e.g. `.id_salt("second_text_edit_field")` or `.id_salt(loop_index)`.
+    #[inline]
+    pub fn id_salt(mut self, id_salt: impl std::hash::Hash) -> Self {
+        self.id_salt = Some(Id::new(id_salt));
         self
     }
 
@@ -191,6 +207,14 @@ impl<'t> TextEdit<'t> {
         self
     }
 
+    /// Set the background color of the [`TextEdit`]. The default is [`crate::Visuals::extreme_bg_color`].
+    // TODO(bircni): remove this once #3284 is implemented
+    #[inline]
+    pub fn background_color(mut self, color: Color32) -> Self {
+        self.background_color = Some(color);
+        self
+    }
+
     /// Set a specific style for the hint text.
     #[inline]
     pub fn hint_text_font(mut self, hint_text_font: impl Into<FontSelection>) -> Self {
@@ -205,7 +229,7 @@ impl<'t> TextEdit<'t> {
         self
     }
 
-    /// Pick a [`FontId`] or [`TextStyle`].
+    /// Pick a [`crate::FontId`] or [`TextStyle`].
     #[inline]
     pub fn font(mut self, font_selection: impl Into<FontSelection>) -> Self {
         self.font_selection = font_selection.into();
@@ -373,13 +397,13 @@ impl<'t> TextEdit<'t> {
 
 // ----------------------------------------------------------------------------
 
-impl<'t> Widget for TextEdit<'t> {
+impl Widget for TextEdit<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
         self.show(ui).response
     }
 }
 
-impl<'t> TextEdit<'t> {
+impl TextEdit<'_> {
     /// Show the [`TextEdit`], returning a rich [`TextEditOutput`].
     ///
     /// ```
@@ -399,7 +423,9 @@ impl<'t> TextEdit<'t> {
         let is_mutable = self.text.is_mutable();
         let frame = self.frame;
         let where_to_put_background = ui.painter().add(Shape::Noop);
-
+        let background_color = self
+            .background_color
+            .unwrap_or(ui.visuals().extreme_bg_color);
         let margin = self.margin;
         let mut output = self.show_content(ui);
 
@@ -416,24 +442,27 @@ impl<'t> TextEdit<'t> {
                 if output.response.has_focus() {
                     epaint::RectShape::new(
                         frame_rect,
-                        visuals.rounding,
-                        ui.visuals().extreme_bg_color,
+                        visuals.corner_radius,
+                        background_color,
                         ui.visuals().selection.stroke,
+                        StrokeKind::Inside,
                     )
                 } else {
                     epaint::RectShape::new(
                         frame_rect,
-                        visuals.rounding,
-                        ui.visuals().extreme_bg_color,
+                        visuals.corner_radius,
+                        background_color,
                         visuals.bg_stroke, // TODO(emilk): we want to show something here, or a text-edit field doesn't "pop".
+                        StrokeKind::Inside,
                     )
                 }
             } else {
                 let visuals = &ui.style().visuals.widgets.inactive;
                 epaint::RectShape::stroke(
                     frame_rect,
-                    visuals.rounding,
+                    visuals.corner_radius,
                     visuals.bg_stroke, // TODO(emilk): we want to show something here, or a text-edit field doesn't "pop".
+                    StrokeKind::Inside,
                 )
             };
 
@@ -449,7 +478,7 @@ impl<'t> TextEdit<'t> {
             hint_text,
             hint_text_font,
             id,
-            id_source,
+            id_salt,
             font_selection,
             text_color,
             layouter,
@@ -467,6 +496,7 @@ impl<'t> TextEdit<'t> {
             clip_text,
             char_limit,
             return_key,
+            background_color: _,
         } = self;
 
         let text_color = text_color
@@ -475,6 +505,7 @@ impl<'t> TextEdit<'t> {
             .unwrap_or_else(|| ui.visuals().widgets.inactive.text_color());
 
         let prev_text = text.as_str().to_owned();
+        let hint_text_str = hint_text.text().to_owned();
 
         let font_id = font_selection.resolve(ui.style());
         let row_height = ui.fonts(|f| f.row_height(&font_id));
@@ -502,20 +533,20 @@ impl<'t> TextEdit<'t> {
 
         let mut galley = layouter(ui, text.as_str(), wrap_width);
 
-        let desired_width = if clip_text {
+        let desired_inner_width = if clip_text {
             wrap_width // visual clipping with scroll in singleline input.
         } else {
             galley.size().x.max(wrap_width)
         };
         let desired_height = (desired_height_rows.at_least(1) as f32) * row_height;
-        let desired_inner_size = vec2(desired_width, galley.size().y.max(desired_height));
+        let desired_inner_size = vec2(desired_inner_width, galley.size().y.max(desired_height));
         let desired_outer_size = (desired_inner_size + margin.sum()).at_least(min_size);
         let (auto_id, outer_rect) = ui.allocate_space(desired_outer_size);
         let rect = outer_rect - margin; // inner rect (excluding frame/margin).
 
         let id = id.unwrap_or_else(|| {
-            if let Some(id_source) = id_source {
-                ui.make_persistent_id(id_source)
+            if let Some(id_salt) = id_salt {
+                ui.make_persistent_id(id_salt)
             } else {
                 auto_id // Since we are only storing the cursor a persistent Id is not super important
             }
@@ -539,9 +570,10 @@ impl<'t> TextEdit<'t> {
             Sense::hover()
         };
         let mut response = ui.interact(outer_rect, id, sense);
+        response.intrinsic_size = Some(Vec2::new(desired_width, desired_outer_size.y));
 
-        response.fake_primary_click = false; // Don't sent `OutputEvent::Clicked` when a user presses the space bar
-
+        // Don't sent `OutputEvent::Clicked` when a user presses the space bar
+        response.flags -= response::Flags::FAKE_PRIMARY_CLICKED;
         let text_clip_rect = rect;
         let painter = ui.painter_at(text_clip_rect.expand(1.0)); // expand to avoid clipping cursor
 
@@ -562,8 +594,8 @@ impl<'t> TextEdit<'t> {
                     && ui.input(|i| i.pointer.is_moving())
                 {
                     // text cursor preview:
-                    let cursor_rect =
-                        cursor_rect(rect.min, &galley, &cursor_at_pointer, row_height);
+                    let cursor_rect = TSTransform::from_translation(rect.min.to_vec2())
+                        * cursor_rect(&galley, &cursor_at_pointer, row_height);
                     text_selection::visuals::paint_cursor_end(&painter, ui.visuals(), cursor_rect);
                 }
 
@@ -576,8 +608,10 @@ impl<'t> TextEdit<'t> {
                     is_being_dragged,
                 );
 
-                if did_interact {
+                if did_interact || response.clicked() {
                     ui.memory_mut(|mem| mem.request_focus(response.id));
+
+                    state.last_interaction_time = ui.ctx().input(|i| i.time);
                 }
             }
         }
@@ -662,8 +696,6 @@ impl<'t> TextEdit<'t> {
         };
 
         if ui.is_rect_visible(rect) {
-            painter.galley(galley_pos, galley.clone(), text_color);
-
             if text.as_str().is_empty() && !hint_text.is_empty() {
                 let hint_text_color = ui.visuals().weak_text_color();
                 let hint_text_font_id = hint_text_font.unwrap_or(font_id.into());
@@ -682,59 +714,78 @@ impl<'t> TextEdit<'t> {
                         hint_text_font_id,
                     )
                 };
-                painter.galley(rect.min, galley, hint_text_color);
+                let galley_pos = align
+                    .align_size_within_rect(galley.size(), rect)
+                    .intersect(rect)
+                    .min;
+                painter.galley(galley_pos, galley, hint_text_color);
             }
 
-            if ui.memory(|mem| mem.has_focus(id)) {
+            let has_focus = ui.memory(|mem| mem.has_focus(id));
+
+            if has_focus {
                 if let Some(cursor_range) = state.cursor.range(&galley) {
-                    // We paint the cursor on top of the text, in case
-                    // the text galley has backgrounds (as e.g. `code` snippets in markup do).
-                    paint_text_selection(
-                        &painter,
-                        ui.visuals(),
-                        galley_pos,
-                        &galley,
-                        &cursor_range,
-                        None,
+                    // Add text selection rectangles to the galley:
+                    paint_text_selection(&mut galley, ui.visuals(), &cursor_range, None);
+                }
+            }
+
+            if !clip_text {
+                // Allocate additional space if edits were made this frame that changed the size. This is important so that,
+                // if there's a ScrollArea, it can properly scroll to the cursor.
+                // Condition `!clip_text` is important to avoid breaking layout for `TextEdit::singleline` (PR #5640)
+                let extra_size = galley.size() - rect.size();
+                if extra_size.x > 0.0 || extra_size.y > 0.0 {
+                    ui.allocate_rect(
+                        Rect::from_min_size(outer_rect.max, extra_size),
+                        Sense::hover(),
                     );
+                }
+            }
 
+            painter.galley(galley_pos, galley.clone(), text_color);
+
+            if has_focus {
+                if let Some(cursor_range) = state.cursor.range(&galley) {
                     let primary_cursor_rect =
-                        cursor_rect(galley_pos, &galley, &cursor_range.primary, row_height);
+                        cursor_rect(&galley, &cursor_range.primary, row_height)
+                            .translate(galley_pos.to_vec2());
 
-                    let is_fully_visible = ui.clip_rect().contains_rect(rect); // TODO(emilk): remove this HACK workaround for https://github.com/emilk/egui/issues/1531
-                    if (response.changed || selection_changed) && !is_fully_visible {
+                    if response.changed() || selection_changed {
                         // Scroll to keep primary cursor in view:
-                        ui.scroll_to_rect(primary_cursor_rect, None);
+                        ui.scroll_to_rect(primary_cursor_rect + margin, None);
                     }
 
                     if text.is_mutable() && interactive {
                         let now = ui.ctx().input(|i| i.time);
-                        if response.changed || selection_changed {
-                            state.last_edit_time = now;
+                        if response.changed() || selection_changed {
+                            state.last_interaction_time = now;
                         }
 
                         // Only show (and blink) cursor if the egui viewport has focus.
                         // This is for two reasons:
                         // * Don't give the impression that the user can type into a window without focus
                         // * Don't repaint the ui because of a blinking cursor in an app that is not in focus
-                        if ui.ctx().input(|i| i.focused) {
+                        let viewport_has_focus = ui.ctx().input(|i| i.focused);
+                        if viewport_has_focus {
                             text_selection::visuals::paint_text_cursor(
                                 ui,
                                 &painter,
                                 primary_cursor_rect,
-                                now - state.last_edit_time,
+                                now - state.last_interaction_time,
                             );
                         }
 
                         // Set IME output (in screen coords) when text is editable and visible
-                        let transform = ui
-                            .memory(|m| m.layer_transforms.get(&ui.layer_id()).copied())
+                        let to_global = ui
+                            .ctx()
+                            .layer_transform_to_global(ui.layer_id())
                             .unwrap_or_default();
 
                         ui.ctx().output_mut(|o| {
                             o.ime = Some(crate::output::IMEOutput {
-                                rect: transform * rect,
-                                cursor_rect: transform * primary_cursor_rect,
+                                rect: to_global * rect,
+                                cursor_rect: to_global * primary_cursor_rect,
                             });
                         });
                     }
@@ -742,14 +793,25 @@ impl<'t> TextEdit<'t> {
             }
         }
 
+        // Ensures correct IME behavior when the text input area gains or loses focus.
+        if state.ime_enabled && (response.gained_focus() || response.lost_focus()) {
+            state.ime_enabled = false;
+            if let Some(mut ccursor_range) = state.cursor.char_range() {
+                ccursor_range.secondary.index = ccursor_range.primary.index;
+                state.cursor.set_char_range(Some(ccursor_range));
+            }
+            ui.input_mut(|i| i.events.retain(|e| !matches!(e, Event::Ime(_))));
+        }
+
         state.clone().store(ui.ctx(), id);
 
-        if response.changed {
+        if response.changed() {
             response.widget_info(|| {
                 WidgetInfo::text_edit(
                     ui.is_enabled(),
                     mask_if_password(password, prev_text.as_str()),
                     mask_if_password(password, text.as_str()),
+                    hint_text_str.as_str(),
                 )
             });
         } else if selection_changed {
@@ -768,6 +830,7 @@ impl<'t> TextEdit<'t> {
                     ui.is_enabled(),
                     mask_if_password(password, prev_text.as_str()),
                     mask_if_password(password, text.as_str()),
+                    hint_text_str.as_str(),
                 )
             });
         }
@@ -787,7 +850,7 @@ impl<'t> TextEdit<'t> {
                 id,
                 cursor_range,
                 role,
-                galley_pos,
+                TSTransform::from_translation(galley_pos.to_vec2()),
                 &galley,
             );
         }
@@ -855,7 +918,14 @@ fn events(
 
     let mut any_change = false;
 
-    let events = ui.input(|i| i.filtered_events(&event_filter));
+    let mut events = ui.input(|i| i.filtered_events(&event_filter));
+
+    if state.ime_enabled {
+        remove_ime_incompatible_events(&mut events);
+        // Process IME events first:
+        events.sort_by_key(|e| !matches!(e, Event::Ime(_)));
+    }
+
     for event in &events {
         let did_mutate_text = match event {
             // First handle events that only changes the selection cursor, not the text:
@@ -863,16 +933,15 @@ fn events(
 
             Event::Copy => {
                 if cursor_range.is_empty() {
-                    copy_if_not_password(ui, text.as_str().to_owned());
+                    None
                 } else {
                     copy_if_not_password(ui, cursor_range.slice_str(text.as_str()).to_owned());
+                    None
                 }
-                None
             }
             Event::Cut => {
                 if cursor_range.is_empty() {
-                    copy_if_not_password(ui, text.take());
-                    Some(CCursorRange::default())
+                    None
                 } else {
                     copy_if_not_password(ui, cursor_range.slice_str(text.as_str()).to_owned());
                     Some(CCursorRange::one(text.delete_selected(&cursor_range)))
@@ -935,23 +1004,7 @@ fn events(
                     break;
                 }
             }
-            Event::Key {
-                key: Key::Z,
-                pressed: true,
-                modifiers,
-                ..
-            } if modifiers.matches_logically(Modifiers::COMMAND) => {
-                if let Some((undo_ccursor_range, undo_txt)) = state
-                    .undoer
-                    .lock()
-                    .undo(&(cursor_range.as_ccursor_range(), text.as_str().to_owned()))
-                {
-                    text.replace_with(undo_txt);
-                    Some(*undo_ccursor_range)
-                } else {
-                    None
-                }
-            }
+
             Event::Key {
                 key,
                 pressed: true,
@@ -968,6 +1021,24 @@ fn events(
                 {
                     text.replace_with(redo_txt);
                     Some(*redo_ccursor_range)
+                } else {
+                    None
+                }
+            }
+
+            Event::Key {
+                key: Key::Z,
+                pressed: true,
+                modifiers,
+                ..
+            } if modifiers.matches_logically(Modifiers::COMMAND) => {
+                if let Some((undo_ccursor_range, undo_txt)) = state
+                    .undoer
+                    .lock()
+                    .undo(&(cursor_range.as_ccursor_range(), text.as_str().to_owned()))
+                {
+                    text.replace_with(undo_txt);
+                    Some(*undo_ccursor_range)
                 } else {
                     None
                 }
@@ -1051,6 +1122,27 @@ fn events(
     );
 
     (any_change, cursor_range)
+}
+
+// ----------------------------------------------------------------------------
+
+fn remove_ime_incompatible_events(events: &mut Vec<Event>) {
+    // Remove key events which cause problems while 'IME' is being used.
+    // See https://github.com/emilk/egui/pull/4509
+    events.retain(|event| {
+        !matches!(
+            event,
+            Event::Key { repeat: true, .. }
+                | Event::Key {
+                    key: Key::Backspace
+                        | Key::ArrowUp
+                        | Key::ArrowDown
+                        | Key::ArrowLeft
+                        | Key::ArrowRight,
+                    ..
+                }
+        )
+    });
 }
 
 // ----------------------------------------------------------------------------

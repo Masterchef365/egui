@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 //! Menu bar functionality (very basic so far).
 //!
 //! Usage:
@@ -19,7 +20,12 @@ use super::{
     style::WidgetVisuals, Align, Context, Id, InnerResponse, PointerState, Pos2, Rect, Response,
     Sense, TextStyle, Ui, Vec2,
 };
-use crate::{widgets::*, *};
+use crate::{
+    epaint, vec2,
+    widgets::{Button, ImageButton},
+    Align2, Area, Color32, Frame, Key, LayerId, Layout, NumExt, Order, Stroke, Style, TextWrapMode,
+    UiKind, WidgetText,
+};
 use epaint::mutex::RwLock;
 use std::sync::Arc;
 
@@ -77,8 +83,8 @@ fn set_menu_style(style: &mut Style) {
     style.visuals.widgets.inactive.bg_stroke = Stroke::NONE;
 }
 
-/// The menu bar goes well in a [`TopBottomPanel::top`],
-/// but can also be placed in a [`Window`].
+/// The menu bar goes well in a [`crate::TopBottomPanel::top`],
+/// but can also be placed in a [`crate::Window`].
 /// In the latter case you may want to wrap it in [`Frame`].
 pub fn bar<R>(ui: &mut Ui, add_contents: impl FnOnce(&mut Ui) -> R) -> InnerResponse<R> {
     ui.horizontal(|ui| {
@@ -105,17 +111,35 @@ pub fn menu_button<R>(
     stationary_menu_impl(ui, title, Box::new(add_contents))
 }
 
+/// Construct a top level menu with a custom button in a menu bar.
+///
+/// Responds to primary clicks.
+///
+/// Returns `None` if the menu is not open.
+pub fn menu_custom_button<R>(
+    ui: &mut Ui,
+    button: Button<'_>,
+    add_contents: impl FnOnce(&mut Ui) -> R,
+) -> InnerResponse<Option<R>> {
+    stationary_menu_button_impl(ui, button, Box::new(add_contents))
+}
+
 /// Construct a top level menu with an image in a menu bar. This would be e.g. "File", "Edit" etc.
 ///
 /// Responds to primary clicks.
 ///
 /// Returns `None` if the menu is not open.
+#[deprecated = "Use `menu_custom_button` instead"]
 pub fn menu_image_button<R>(
     ui: &mut Ui,
     image_button: ImageButton<'_>,
     add_contents: impl FnOnce(&mut Ui) -> R,
 ) -> InnerResponse<Option<R>> {
-    stationary_menu_image_impl(ui, image_button, Box::new(add_contents))
+    stationary_menu_button_impl(
+        ui,
+        Button::image(image_button.image),
+        Box::new(add_contents),
+    )
 }
 
 /// Construct a nested sub menu in another menu.
@@ -123,7 +147,7 @@ pub fn menu_image_button<R>(
 /// Opens on hover.
 ///
 /// Returns `None` if the menu is not open.
-pub(crate) fn submenu_button<R>(
+pub fn submenu_button<R>(
     ui: &mut Ui,
     parent_state: Arc<RwLock<MenuState>>,
     title: impl Into<WidgetText>,
@@ -148,7 +172,7 @@ fn menu_popup<'c, R>(
 
     let area_id = menu_id.with("__menu");
 
-    ctx.frame_state_mut(|fs| {
+    ctx.pass_state_mut(|fs| {
         fs.layers
             .entry(parent_layer)
             .or_default()
@@ -226,15 +250,15 @@ fn stationary_menu_impl<'c, R>(
 /// Build a top level menu with an image button.
 ///
 /// Responds to primary clicks.
-fn stationary_menu_image_impl<'c, R>(
+fn stationary_menu_button_impl<'c, R>(
     ui: &mut Ui,
-    image_button: ImageButton<'_>,
+    button: Button<'_>,
     add_contents: Box<dyn FnOnce(&mut Ui) -> R + 'c>,
 ) -> InnerResponse<Option<R>> {
     let bar_id = ui.id();
 
     let mut bar_state = BarState::load(ui.ctx(), bar_id);
-    let button_response = ui.add(image_button);
+    let button_response = ui.add(button);
     let inner = bar_state.bar_menu(&button_response, add_contents);
 
     bar_state.store(ui.ctx(), bar_id);
@@ -244,7 +268,7 @@ fn stationary_menu_image_impl<'c, R>(
 pub(crate) const CONTEXT_MENU_ID_STR: &str = "__egui::context_menu";
 
 /// Response to secondary clicks (right-clicks) by showing the given menu.
-pub(crate) fn context_menu(
+pub fn context_menu(
     response: &Response,
     add_contents: impl FnOnce(&mut Ui),
 ) -> Option<InnerResponse<()>> {
@@ -259,7 +283,7 @@ pub(crate) fn context_menu(
 }
 
 /// Returns `true` if the context menu is opened for this widget.
-pub(crate) fn context_menu_opened(response: &Response) -> bool {
+pub fn context_menu_opened(response: &Response) -> bool {
     let menu_id = Id::new(CONTEXT_MENU_ID_STR);
     let bar_state = BarState::load(&response.ctx, menu_id);
     bar_state.is_menu_open(response.id)
@@ -326,7 +350,7 @@ impl MenuRoot {
     }
 
     pub fn show<R>(
-        &mut self,
+        &self,
         button: &Response,
         add_contents: impl FnOnce(&mut Ui) -> R,
     ) -> (MenuResponse, Option<InnerResponse<R>>) {
@@ -341,7 +365,10 @@ impl MenuRoot {
             let menu_state = self.menu_state.read();
 
             let escape_pressed = button.ctx.input(|i| i.key_pressed(Key::Escape));
-            if menu_state.response.is_close() || escape_pressed {
+            if menu_state.response.is_close()
+                || escape_pressed
+                || inner_response.response.should_close()
+            {
                 return (MenuResponse::Close, Some(inner_response));
             }
         }
@@ -383,11 +410,8 @@ impl MenuRoot {
                 }
             }
 
-            if let Some(transform) = button
-                .ctx
-                .memory(|m| m.layer_transforms.get(&button.layer_id).copied())
-            {
-                pos = transform * pos;
+            if let Some(to_global) = button.ctx.layer_transform_to_global(button.layer_id) {
+                pos = to_global * pos;
             }
 
             return MenuResponse::Create(pos, id);
@@ -560,7 +584,7 @@ impl SubMenuButton {
             if ui.visuals().button_frame {
                 ui.painter().rect_filled(
                     rect.expand(visuals.expansion),
-                    visuals.rounding,
+                    visuals.corner_radius,
                     visuals.weak_bg_fill,
                 );
             }
@@ -647,6 +671,9 @@ impl MenuState {
     ) -> Option<R> {
         let (sub_response, response) = self.submenu(id).map(|sub| {
             let inner_response = menu_popup(ctx, parent_layer, sub, id, add_contents);
+            if inner_response.response.should_close() {
+                sub.write().close();
+            }
             (sub.read().response, inner_response.inner)
         })?;
         self.cascade_close_response(sub_response);
@@ -659,7 +686,7 @@ impl MenuState {
             || self
                 .sub_menu
                 .as_ref()
-                .map_or(false, |(_, sub)| sub.read().area_contains(pos))
+                .is_some_and(|(_, sub)| sub.read().area_contains(pos))
     }
 
     fn next_entry_index(&mut self) -> usize {
@@ -683,7 +710,7 @@ impl MenuState {
 
             self.open_submenu(sub_id, pos);
         } else if open
-            && ui.interact_bg(Sense::hover()).contains_pointer()
+            && ui.response().contains_pointer()
             && !button.hovered()
             && !self.hovering_current_submenu(&pointer)
         {
@@ -736,7 +763,7 @@ impl MenuState {
         self.sub_menu.as_ref().map(|(_, sub)| sub)
     }
 
-    fn submenu(&mut self, id: Id) -> Option<&Arc<RwLock<Self>>> {
+    fn submenu(&self, id: Id) -> Option<&Arc<RwLock<Self>>> {
         self.sub_menu
             .as_ref()
             .and_then(|(k, sub)| if id == *k { Some(sub) } else { None })

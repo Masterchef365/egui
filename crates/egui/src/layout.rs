@@ -1,5 +1,10 @@
-use crate::{emath::*, Align};
-use std::f32::INFINITY;
+use emath::GuiRounding as _;
+
+use crate::{
+    emath::{pos2, vec2, Align2, NumExt, Pos2, Rect, Vec2},
+    Align,
+};
+const INFINITY: f32 = f32::INFINITY;
 
 // ----------------------------------------------------------------------------
 
@@ -50,7 +55,7 @@ impl Region {
     }
 
     /// Ensure we are big enough to contain the given X-coordinate.
-    /// This is sometimes useful to expand an ui to stretch to a certain place.
+    /// This is sometimes useful to expand a ui to stretch to a certain place.
     pub fn expand_to_include_x(&mut self, x: f32) {
         self.min_rect.extend_with_x(x);
         self.max_rect.extend_with_x(x);
@@ -58,7 +63,7 @@ impl Region {
     }
 
     /// Ensure we are big enough to contain the given Y-coordinate.
-    /// This is sometimes useful to expand an ui to stretch to a certain place.
+    /// This is sometimes useful to expand a ui to stretch to a certain place.
     pub fn expand_to_include_y(&mut self, y: f32) {
         self.min_rect.extend_with_y(y);
         self.max_rect.extend_with_y(y);
@@ -391,7 +396,7 @@ impl Layout {
     pub fn align_size_within_rect(&self, size: Vec2, outer: Rect) -> Rect {
         debug_assert!(size.x >= 0.0 && size.y >= 0.0);
         debug_assert!(!outer.is_negative());
-        self.align2().align_size_within_rect(size, outer)
+        self.align2().align_size_within_rect(size, outer).round_ui()
     }
 
     fn initial_cursor(&self, max_rect: Rect) -> Rect {
@@ -417,7 +422,6 @@ impl Layout {
 
     pub(crate) fn region_from_max_rect(&self, max_rect: Rect) -> Region {
         debug_assert!(!max_rect.any_nan());
-        debug_assert!(max_rect.is_finite());
         let mut region = Region {
             min_rect: Rect::NOTHING, // temporary
             max_rect,
@@ -452,7 +456,6 @@ impl Layout {
     fn available_from_cursor_max_rect(&self, cursor: Rect, max_rect: Rect) -> Rect {
         debug_assert!(!cursor.any_nan());
         debug_assert!(!max_rect.any_nan());
-        debug_assert!(max_rect.is_finite());
 
         // NOTE: in normal top-down layout the cursor has moved below the current max_rect,
         // but the available shouldn't be negative.
@@ -633,7 +636,7 @@ impl Layout {
         debug_assert!(!frame_rect.any_nan());
         debug_assert!(!frame_rect.is_negative());
 
-        frame_rect
+        frame_rect.round_ui()
     }
 
     /// Apply justify (fill width/height) and/or alignment after calling `next_space`.
@@ -659,8 +662,6 @@ impl Layout {
         let rect = self.align_size_within_rect(size, frame);
         debug_assert!(!rect.any_nan());
         debug_assert!(!rect.is_negative());
-        debug_assert!((rect.width() - size.x).abs() < 1.0 || size.x == f32::INFINITY);
-        debug_assert!((rect.height() - size.y).abs() < 1.0 || size.y == f32::INFINITY);
         rect
     }
 
@@ -766,7 +767,7 @@ impl Layout {
 
     /// Move to the next row in a wrapping layout.
     /// Otherwise does nothing.
-    pub(crate) fn end_row(&mut self, region: &mut Region, spacing: Vec2) {
+    pub(crate) fn end_row(&self, region: &mut Region, spacing: Vec2) {
         if self.main_wrap {
             match self.main_dir {
                 Direction::LeftToRight => {
@@ -789,7 +790,7 @@ impl Layout {
     }
 
     /// Set row height in horizontal wrapping layout.
-    pub(crate) fn set_row_height(&mut self, region: &mut Region, height: f32) {
+    pub(crate) fn set_row_height(&self, region: &mut Region, height: f32) {
         if self.main_wrap && self.is_horizontal() {
             region.cursor.max.y = region.cursor.min.y + height;
         }

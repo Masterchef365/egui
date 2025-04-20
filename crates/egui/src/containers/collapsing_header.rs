@@ -1,7 +1,12 @@
 use std::hash::Hash;
 
-use crate::*;
-use epaint::Shape;
+use crate::{
+    emath, epaint, pos2, remap, remap_clamp, vec2, Context, Id, InnerResponse, NumExt, Rect,
+    Response, Sense, Stroke, TextStyle, TextWrapMode, Ui, UiBuilder, UiKind, UiStackInfo, Vec2,
+    WidgetInfo, WidgetText, WidgetType,
+};
+use emath::GuiRounding as _;
+use epaint::{Shape, StrokeKind};
 
 #[derive(Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -15,7 +20,7 @@ pub(crate) struct InnerState {
 
 /// This is a a building block for building collapsing regions.
 ///
-/// It is used by [`CollapsingHeader`] and [`Window`], but can also be used on its own.
+/// It is used by [`CollapsingHeader`] and [`crate::Window`], but can also be used on its own.
 ///
 /// See [`CollapsingState::show_header`] for how to show a collapsing header with a custom header.
 #[derive(Clone, Debug)]
@@ -84,6 +89,14 @@ impl CollapsingState {
     ) -> Response {
         let (_id, rect) = ui.allocate_space(button_size);
         let response = ui.interact(rect, self.id, Sense::click());
+        response.widget_info(|| {
+            WidgetInfo::labeled(
+                WidgetType::Button,
+                ui.is_enabled(),
+                if self.is_open() { "Hide" } else { "Show" },
+            )
+        });
+
         if response.clicked() {
             self.toggle(ui);
         }
@@ -191,11 +204,16 @@ impl CollapsingState {
         add_body: impl FnOnce(&mut Ui) -> R,
     ) -> Option<InnerResponse<R>> {
         let openness = self.openness(ui.ctx());
+
+        let builder = UiBuilder::new()
+            .ui_stack_info(UiStackInfo::new(UiKind::Collapsible))
+            .closable();
+
         if openness <= 0.0 {
             self.store(ui.ctx()); // we store any earlier toggling as promised in the docstring
             None
         } else if openness < 1.0 {
-            Some(ui.scope(|child_ui| {
+            Some(ui.scope_builder(builder, |child_ui| {
                 let max_height = if self.state.open && self.state.open_height.is_none() {
                     // First frame of expansion.
                     // We don't know full height yet, but we will next frame.
@@ -203,7 +221,7 @@ impl CollapsingState {
                     10.0
                 } else {
                     let full_height = self.state.open_height.unwrap_or_default();
-                    remap_clamp(openness, 0.0..=1.0, 0.0..=full_height)
+                    remap_clamp(openness, 0.0..=1.0, 0.0..=full_height).round_ui()
                 };
 
                 let mut clip_rect = child_ui.clip_rect();
@@ -214,6 +232,9 @@ impl CollapsingState {
 
                 let mut min_rect = child_ui.min_rect();
                 self.state.open_height = Some(min_rect.height());
+                if child_ui.should_close() {
+                    self.state.open = false;
+                }
                 self.store(child_ui.ctx()); // remember the height
 
                 // Pretend children took up at most `max_height` space:
@@ -222,7 +243,10 @@ impl CollapsingState {
                 ret
             }))
         } else {
-            let ret_response = ui.scope(add_body);
+            let ret_response = ui.scope_builder(builder, add_body);
+            if ret_response.response.should_close() {
+                self.state.open = false;
+            }
             let full_size = ret_response.response.rect.size();
             self.state.open_height = Some(full_size.y);
             self.store(ui.ctx()); // remember the height
@@ -271,7 +295,7 @@ pub struct HeaderResponse<'ui, HeaderRet> {
     header_response: InnerResponse<HeaderRet>,
 }
 
-impl<'ui, HeaderRet> HeaderResponse<'ui, HeaderRet> {
+impl<HeaderRet> HeaderResponse<'_, HeaderRet> {
     pub fn is_open(&self) -> bool {
         self.state.is_open()
     }
@@ -369,7 +393,7 @@ pub struct CollapsingHeader {
     text: WidgetText,
     default_open: bool,
     open: Option<bool>,
-    id_source: Id,
+    id_salt: Id,
     enabled: bool,
     selectable: bool,
     selected: bool,
@@ -383,15 +407,15 @@ impl CollapsingHeader {
     /// The label is used as an [`Id`] source.
     /// If the label is unique and static this is fine,
     /// but if it changes or there are several [`CollapsingHeader`] with the same title
-    /// you need to provide a unique id source with [`Self::id_source`].
+    /// you need to provide a unique id source with [`Self::id_salt`].
     pub fn new(text: impl Into<WidgetText>) -> Self {
         let text = text.into();
-        let id_source = Id::new(text.text());
+        let id_salt = Id::new(text.text());
         Self {
             text,
             default_open: false,
             open: None,
-            id_source,
+            id_salt,
             enabled: true,
             selectable: false,
             selected: false,
@@ -422,8 +446,17 @@ impl CollapsingHeader {
     /// Explicitly set the source of the [`Id`] of this widget, instead of using title label.
     /// This is useful if the title label is dynamic or not unique.
     #[inline]
-    pub fn id_source(mut self, id_source: impl Hash) -> Self {
-        self.id_source = Id::new(id_source);
+    pub fn id_salt(mut self, id_salt: impl Hash) -> Self {
+        self.id_salt = Id::new(id_salt);
+        self
+    }
+
+    /// Explicitly set the source of the [`Id`] of this widget, instead of using title label.
+    /// This is useful if the title label is dynamic or not unique.
+    #[deprecated = "Renamed id_salt"]
+    #[inline]
+    pub fn id_source(mut self, id_salt: impl Hash) -> Self {
+        self.id_salt = Id::new(id_salt);
         self
     }
 
@@ -491,7 +524,7 @@ impl CollapsingHeader {
             text,
             default_open,
             open,
-            id_source,
+            id_salt,
             enabled: _,
             selectable,
             selected,
@@ -500,7 +533,7 @@ impl CollapsingHeader {
 
         // TODO(emilk): horizontal layout, with icon and text as labels. Insert background behind using Frame.
 
-        let id = ui.make_persistent_id(id_source);
+        let id = ui.make_persistent_id(id_salt);
         let button_padding = ui.spacing().button_padding;
 
         let available = ui.available_rect_before_wrap();
@@ -552,9 +585,10 @@ impl CollapsingHeader {
             if ui.visuals().collapsing_header_frame || show_background {
                 ui.painter().add(epaint::RectShape::new(
                     header_response.rect.expand(visuals.expansion),
-                    visuals.rounding,
+                    visuals.corner_radius,
                     visuals.weak_bg_fill,
                     visuals.bg_stroke,
+                    StrokeKind::Inside,
                 ));
             }
 
@@ -562,8 +596,13 @@ impl CollapsingHeader {
             {
                 let rect = rect.expand(visuals.expansion);
 
-                ui.painter()
-                    .rect(rect, visuals.rounding, visuals.bg_fill, visuals.bg_stroke);
+                ui.painter().rect(
+                    rect,
+                    visuals.corner_radius,
+                    visuals.bg_fill,
+                    visuals.bg_stroke,
+                    StrokeKind::Inside,
+                );
             }
 
             {

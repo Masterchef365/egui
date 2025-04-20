@@ -3,22 +3,23 @@
 use web_time::Instant;
 
 use std::path::PathBuf;
-use winit::event_loop::EventLoopWindowTarget;
+use winit::event_loop::ActiveEventLoop;
 
 use raw_window_handle::{HasDisplayHandle as _, HasWindowHandle as _};
 
-use egui::{DeferredViewportUiCallback, NumExt as _, ViewportBuilder, ViewportId};
+use egui::{DeferredViewportUiCallback, ViewportBuilder, ViewportId};
 use egui_winit::{EventResponse, WindowSettings};
 
-use crate::{epi, Theme};
+use crate::epi;
 
-pub fn viewport_builder<E>(
+#[cfg_attr(target_os = "ios", allow(dead_code, unused_variables, unused_mut))]
+pub fn viewport_builder(
     egui_zoom_factor: f32,
-    event_loop: &EventLoopWindowTarget<E>,
+    event_loop: &ActiveEventLoop,
     native_options: &mut epi::NativeOptions,
     window_settings: Option<WindowSettings>,
 ) -> ViewportBuilder {
-    crate::profile_function!();
+    profiling::function_scope!();
 
     let mut viewport_builder = native_options.viewport.clone();
 
@@ -53,8 +54,10 @@ pub fn viewport_builder<E>(
 
         if clamp_size_to_monitor_size {
             if let Some(initial_window_size) = viewport_builder.inner_size {
-                let initial_window_size = initial_window_size
-                    .at_most(largest_monitor_point_size(egui_zoom_factor, event_loop));
+                let initial_window_size = egui::NumExt::at_most(
+                    initial_window_size,
+                    largest_monitor_point_size(egui_zoom_factor, event_loop),
+                );
                 viewport_builder = viewport_builder.with_inner_size(initial_window_size);
             }
         }
@@ -64,8 +67,11 @@ pub fn viewport_builder<E>(
 
     #[cfg(not(target_os = "ios"))]
     if native_options.centered {
-        crate::profile_scope!("center");
-        if let Some(monitor) = event_loop.available_monitors().next() {
+        profiling::scope!("center");
+        if let Some(monitor) = event_loop
+            .primary_monitor()
+            .or_else(|| event_loop.available_monitors().next())
+        {
             let monitor_size = monitor
                 .size()
                 .to_logical::<f32>(egui_zoom_factor as f64 * monitor.scale_factor());
@@ -88,23 +94,19 @@ pub fn apply_window_settings(
     window: &winit::window::Window,
     window_settings: Option<WindowSettings>,
 ) {
-    crate::profile_function!();
-
+    profiling::function_scope!();
     if let Some(window_settings) = window_settings {
         window_settings.initialize_window(window);
     }
 }
 
-fn largest_monitor_point_size<E>(
-    egui_zoom_factor: f32,
-    event_loop: &EventLoopWindowTarget<E>,
-) -> egui::Vec2 {
-    crate::profile_function!();
-
+#[cfg(not(target_os = "ios"))]
+fn largest_monitor_point_size(egui_zoom_factor: f32, event_loop: &ActiveEventLoop) -> egui::Vec2 {
+    profiling::function_scope!();
     let mut max_size = egui::Vec2::ZERO;
 
     let available_monitors = {
-        crate::profile_scope!("available_monitors");
+        profiling::scope!("available_monitors");
         event_loop.available_monitors()
     };
 
@@ -154,7 +156,6 @@ pub struct EpiIntegration {
     last_auto_save: Instant,
     pub beginning: Instant,
     is_first_frame: bool,
-    pub frame_start: Instant,
     pub egui_ctx: egui::Context,
     pending_full_output: egui::FullOutput,
 
@@ -162,7 +163,6 @@ pub struct EpiIntegration {
     close: bool,
 
     can_drag_window: bool,
-    follow_system_theme: bool,
     #[cfg(feature = "persistence")]
     persist_window: bool,
     app_icon_setter: super::app_icon::AppTitleIconSetter,
@@ -173,7 +173,6 @@ impl EpiIntegration {
     pub fn new(
         egui_ctx: egui::Context,
         window: &winit::window::Window,
-        system_theme: Option<Theme>,
         app_name: &str,
         native_options: &crate::NativeOptions,
         storage: Option<Box<dyn epi::Storage>>,
@@ -184,10 +183,7 @@ impl EpiIntegration {
         #[cfg(feature = "wgpu")] wgpu_render_state: Option<egui_wgpu::RenderState>,
     ) -> Self {
         let frame = epi::Frame {
-            info: epi::IntegrationInfo {
-                system_theme,
-                cpu_usage: None,
-            },
+            info: epi::IntegrationInfo { cpu_usage: None },
             storage,
             #[cfg(feature = "glow")]
             gl,
@@ -221,35 +217,12 @@ impl EpiIntegration {
             pending_full_output: Default::default(),
             close: false,
             can_drag_window: false,
-            follow_system_theme: native_options.follow_system_theme,
             #[cfg(feature = "persistence")]
             persist_window: native_options.persist_window,
             app_icon_setter,
             beginning: Instant::now(),
             is_first_frame: true,
-            frame_start: Instant::now(),
         }
-    }
-
-    #[cfg(feature = "accesskit")]
-    pub fn init_accesskit<E: From<egui_winit::accesskit_winit::ActionRequestEvent> + Send>(
-        &self,
-        egui_winit: &mut egui_winit::State,
-        window: &winit::window::Window,
-        event_loop_proxy: winit::event_loop::EventLoopProxy<E>,
-    ) {
-        crate::profile_function!();
-
-        let egui_ctx = self.egui_ctx.clone();
-        egui_winit.init_accesskit(window, event_loop_proxy, move || {
-            // This function is called when an accessibility client
-            // (e.g. screen reader) makes its first request. If we got here,
-            // we know that an accessibility tree is actually wanted.
-            egui_ctx.enable_accesskit();
-            // Enqueue a repaint so we'll receive a full tree update soon.
-            egui_ctx.request_repaint();
-            egui_ctx.accesskit_placeholder_tree_update()
-        });
     }
 
     /// If `true`, it is time to close the native window.
@@ -263,26 +236,17 @@ impl EpiIntegration {
         egui_winit: &mut egui_winit::State,
         event: &winit::event::WindowEvent,
     ) -> EventResponse {
-        crate::profile_function!(egui_winit::short_window_event_description(event));
+        profiling::function_scope!(egui_winit::short_window_event_description(event));
 
         use winit::event::{ElementState, MouseButton, WindowEvent};
 
-        match event {
-            WindowEvent::Destroyed => {
-                log::debug!("Received WindowEvent::Destroyed");
-                self.close = true;
-            }
-            WindowEvent::MouseInput {
-                button: MouseButton::Left,
-                state: ElementState::Pressed,
-                ..
-            } => self.can_drag_window = true,
-            WindowEvent::ThemeChanged(winit_theme) if self.follow_system_theme => {
-                let theme = theme_from_winit_theme(*winit_theme);
-                self.frame.info.system_theme = Some(theme);
-                self.egui_ctx.set_visuals(theme.egui_visuals());
-            }
-            _ => {}
+        if let WindowEvent::MouseInput {
+            button: MouseButton::Left,
+            state: ElementState::Pressed,
+            ..
+        } = event
+        {
+            self.can_drag_window = true;
         }
 
         egui_winit.on_window_event(window, event)
@@ -310,10 +274,10 @@ impl EpiIntegration {
         let full_output = self.egui_ctx.run(raw_input, |egui_ctx| {
             if let Some(viewport_ui_cb) = viewport_ui_cb {
                 // Child viewport
-                crate::profile_scope!("viewport_callback");
+                profiling::scope!("viewport_callback");
                 viewport_ui_cb(egui_ctx);
             } else {
-                crate::profile_scope!("App::update");
+                profiling::scope!("App::update");
                 app.update(egui_ctx, &mut self.frame);
             }
         });
@@ -340,7 +304,7 @@ impl EpiIntegration {
     }
 
     pub fn post_rendering(&mut self, window: &winit::window::Window) {
-        crate::profile_function!();
+        profiling::function_scope!();
         if std::mem::take(&mut self.is_first_frame) {
             // We keep hidden until we've painted something. See https://github.com/emilk/egui/pull/2279
             window.set_visible(true);
@@ -366,11 +330,11 @@ impl EpiIntegration {
     pub fn save(&mut self, _app: &mut dyn epi::App, _window: Option<&winit::window::Window>) {
         #[cfg(feature = "persistence")]
         if let Some(storage) = self.frame.storage_mut() {
-            crate::profile_function!();
+            profiling::function_scope!();
 
             if let Some(window) = _window {
                 if self.persist_window {
-                    crate::profile_scope!("native_window");
+                    profiling::scope!("native_window");
                     epi::set_value(
                         storage,
                         STORAGE_WINDOW_KEY,
@@ -379,23 +343,23 @@ impl EpiIntegration {
                 }
             }
             if _app.persist_egui_memory() {
-                crate::profile_scope!("egui_memory");
+                profiling::scope!("egui_memory");
                 self.egui_ctx
                     .memory(|mem| epi::set_value(storage, STORAGE_EGUI_MEMORY_KEY, mem));
             }
             {
-                crate::profile_scope!("App::save");
+                profiling::scope!("App::save");
                 _app.save(storage);
             }
 
-            crate::profile_scope!("Storage::flush");
+            profiling::scope!("Storage::flush");
             storage.flush();
         }
     }
 }
 
 fn load_default_egui_icon() -> egui::IconData {
-    crate::profile_function!();
+    profiling::function_scope!();
     crate::icon_data::from_png_bytes(&include_bytes!("../../data/icon.png")[..]).unwrap()
 }
 
@@ -406,7 +370,7 @@ const STORAGE_EGUI_MEMORY_KEY: &str = "egui";
 const STORAGE_WINDOW_KEY: &str = "window";
 
 pub fn load_window_settings(_storage: Option<&dyn epi::Storage>) -> Option<WindowSettings> {
-    crate::profile_function!();
+    profiling::function_scope!();
     #[cfg(feature = "persistence")]
     {
         epi::get_value(_storage?, STORAGE_WINDOW_KEY)
@@ -416,18 +380,11 @@ pub fn load_window_settings(_storage: Option<&dyn epi::Storage>) -> Option<Windo
 }
 
 pub fn load_egui_memory(_storage: Option<&dyn epi::Storage>) -> Option<egui::Memory> {
-    crate::profile_function!();
+    profiling::function_scope!();
     #[cfg(feature = "persistence")]
     {
         epi::get_value(_storage?, STORAGE_EGUI_MEMORY_KEY)
     }
     #[cfg(not(feature = "persistence"))]
     None
-}
-
-pub(crate) fn theme_from_winit_theme(theme: winit::window::Theme) -> Theme {
-    match theme {
-        winit::window::Theme::Dark => Theme::Dark,
-        winit::window::Theme::Light => Theme::Light,
-    }
 }

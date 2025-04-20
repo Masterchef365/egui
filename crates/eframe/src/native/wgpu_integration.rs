@@ -1,4 +1,4 @@
-//! Note that this file contains code very similar to [`glow_integration`].
+//! Note that this file contains code very similar to [`super::glow_integration`].
 //! When making changes to one you often also want to apply it to the other.
 //!
 //! This is also very complex code, and not very pretty.
@@ -11,7 +11,7 @@ use egui_winit::ActionRequested;
 use parking_lot::Mutex;
 use raw_window_handle::{HasDisplayHandle as _, HasWindowHandle as _};
 use winit::{
-    event_loop::{EventLoop, EventLoopProxy, EventLoopWindowTarget},
+    event_loop::{ActiveEventLoop, EventLoop, EventLoopProxy},
     window::{Window, WindowId},
 };
 
@@ -22,37 +22,38 @@ use egui::{
 };
 #[cfg(feature = "accesskit")]
 use egui_winit::accesskit_winit;
+use winit_integration::UserEvent;
 
 use crate::{
     native::{epi_integration::EpiIntegration, winit_integration::EventResult},
-    App, AppCreator, CreationContext, NativeOptions, Result, Storage, UserEvent,
+    App, AppCreator, CreationContext, NativeOptions, Result, Storage,
 };
 
-use super::{winit_integration::WinitApp, *};
+use super::{epi_integration, event_loop_context, winit_integration, winit_integration::WinitApp};
 
 // ----------------------------------------------------------------------------
 // Types:
 
-pub struct WgpuWinitApp {
+pub struct WgpuWinitApp<'app> {
     repaint_proxy: Arc<Mutex<EventLoopProxy<UserEvent>>>,
     app_name: String,
     native_options: NativeOptions,
 
     /// Set at initialization, then taken and set to `None` in `init_run_state`.
-    app_creator: Option<AppCreator>,
+    app_creator: Option<AppCreator<'app>>,
 
     /// Set when we are actually up and running.
-    running: Option<WgpuWinitRunning>,
+    running: Option<WgpuWinitRunning<'app>>,
 }
 
 /// State that is initialized when the application is first starts running via
 /// a Resumed event. On Android this ensures that any graphics state is only
 /// initialized once the application has an associated `SurfaceView`.
-struct WgpuWinitRunning {
+struct WgpuWinitRunning<'app> {
     integration: EpiIntegration,
 
     /// The users application.
-    app: Box<dyn App>,
+    app: Box<dyn 'app + App>,
 
     /// Wrapped in an `Rc<RefCell<…>>` so it can be re-entrantly shared via a weak-pointer.
     shared: Rc<RefCell<SharedState>>,
@@ -94,14 +95,14 @@ pub struct Viewport {
 
 // ----------------------------------------------------------------------------
 
-impl WgpuWinitApp {
+impl<'app> WgpuWinitApp<'app> {
     pub fn new(
         event_loop: &EventLoop<UserEvent>,
         app_name: &str,
         native_options: NativeOptions,
-        app_creator: AppCreator,
+        app_creator: AppCreator<'app>,
     ) -> Self {
-        crate::profile_function!();
+        profiling::function_scope!();
 
         #[cfg(feature = "__screenshot")]
         assert!(
@@ -119,7 +120,7 @@ impl WgpuWinitApp {
     }
 
     /// Create a window for all viewports lacking one.
-    fn initialized_all_windows(&mut self, event_loop: &EventLoopWindowTarget<UserEvent>) {
+    fn initialized_all_windows(&mut self, event_loop: &ActiveEventLoop) {
         let Some(running) = &mut self.running else {
             return;
         };
@@ -142,11 +143,7 @@ impl WgpuWinitApp {
     }
 
     #[cfg(target_os = "android")]
-    fn recreate_window(
-        &self,
-        event_loop: &EventLoopWindowTarget<UserEvent>,
-        running: &WgpuWinitRunning,
-    ) {
+    fn recreate_window(&self, event_loop: &ActiveEventLoop, running: &WgpuWinitRunning<'app>) {
         let SharedState {
             egui_ctx,
             viewports,
@@ -161,6 +158,7 @@ impl WgpuWinitApp {
             ViewportClass::Root,
             self.native_options.viewport.clone(),
             None,
+            painter,
         )
         .initialize_window(event_loop, egui_ctx, viewport_from_window, painter);
     }
@@ -178,15 +176,15 @@ impl WgpuWinitApp {
     fn init_run_state(
         &mut self,
         egui_ctx: egui::Context,
-        event_loop: &EventLoopWindowTarget<UserEvent>,
+        event_loop: &ActiveEventLoop,
         storage: Option<Box<dyn Storage>>,
         window: Window,
         builder: ViewportBuilder,
-    ) -> crate::Result<&mut WgpuWinitRunning> {
-        crate::profile_function!();
-
+    ) -> crate::Result<&mut WgpuWinitRunning<'app>> {
+        profiling::function_scope!();
         #[allow(unsafe_code, unused_mut, unused_unsafe)]
-        let mut painter = egui_wgpu::winit::Painter::new(
+        let mut painter = pollster::block_on(egui_wgpu::winit::Painter::new(
+            egui_ctx.clone(),
             self.native_options.wgpu_options.clone(),
             self.native_options.multisampling.max(1) as _,
             egui_wgpu::depth_format_from_bits(
@@ -194,22 +192,21 @@ impl WgpuWinitApp {
                 self.native_options.stencil_buffer,
             ),
             self.native_options.viewport.transparent.unwrap_or(false),
-        );
+            self.native_options.dithering,
+        ));
 
         let window = Arc::new(window);
 
         {
-            crate::profile_scope!("set_window");
+            profiling::scope!("set_window");
             pollster::block_on(painter.set_window(ViewportId::ROOT, Some(window.clone())))?;
         }
 
         let wgpu_render_state = painter.render_state();
 
-        let system_theme = winit_integration::system_theme(&window, &self.native_options);
         let integration = EpiIntegration::new(
             egui_ctx.clone(),
             &window,
-            system_theme,
             &self.app_name,
             &self.native_options,
             storage,
@@ -226,13 +223,13 @@ impl WgpuWinitApp {
             egui_ctx.set_request_repaint_callback(move |info| {
                 log::trace!("request_repaint_callback: {info:?}");
                 let when = Instant::now() + info.delay;
-                let frame_nr = info.current_frame_nr;
+                let cumulative_pass_nr = info.current_cumulative_pass_nr;
 
                 event_loop_proxy
                     .lock()
                     .send_event(UserEvent::RequestRepaint {
                         when,
-                        frame_nr,
+                        cumulative_pass_nr,
                         viewport_id: info.viewport_id,
                     })
                     .ok();
@@ -245,16 +242,15 @@ impl WgpuWinitApp {
             ViewportId::ROOT,
             event_loop,
             Some(window.scale_factor() as f32),
+            event_loop.system_theme(),
             painter.max_texture_side(),
         );
 
         #[cfg(feature = "accesskit")]
         {
             let event_loop_proxy = self.repaint_proxy.lock().clone();
-            integration.init_accesskit(&mut egui_winit, &window, event_loop_proxy);
+            egui_winit.init_accesskit(&window, event_loop_proxy);
         }
-        let theme = system_theme.unwrap_or(self.native_options.default_theme);
-        egui_ctx.set_visuals(theme.egui_visuals());
 
         let app_creator = std::mem::take(&mut self.app_creator)
             .expect("Single-use AppCreator has unexpectedly already been taken");
@@ -271,7 +267,7 @@ impl WgpuWinitApp {
             raw_window_handle: window.window_handle().map(|h| h.as_raw()),
         };
         let app = {
-            crate::profile_scope!("user_app_creator");
+            profiling::scope!("user_app_creator");
             app_creator(&cc).map_err(crate::Error::AppCreation)?
         };
 
@@ -310,16 +306,9 @@ impl WgpuWinitApp {
             let shared = Rc::downgrade(&shared);
             let beginning = integration.beginning;
 
-            let event_loop: *const EventLoopWindowTarget<UserEvent> = event_loop;
-
             egui::Context::set_immediate_viewport_renderer(move |_egui_ctx, immediate_viewport| {
                 if let Some(shared) = shared.upgrade() {
-                    // SAFETY: the event loop lives longer than
-                    // the Rc:s we just upgraded above.
-                    #[allow(unsafe_code)]
-                    let event_loop = unsafe { event_loop.as_ref().unwrap() };
-
-                    render_immediate_viewport(event_loop, beginning, &shared, immediate_viewport);
+                    render_immediate_viewport(beginning, &shared, immediate_viewport);
                 } else {
                     log::warn!("render_sync_callback called after window closed");
                 }
@@ -334,11 +323,9 @@ impl WgpuWinitApp {
     }
 }
 
-impl WinitApp for WgpuWinitApp {
-    fn frame_nr(&self, viewport_id: ViewportId) -> u64 {
-        self.running
-            .as_ref()
-            .map_or(0, |r| r.integration.egui_ctx.frame_nr_for(viewport_id))
+impl WinitApp for WgpuWinitApp<'_> {
+    fn egui_ctx(&self) -> Option<&egui::Context> {
+        self.running.as_ref().map(|r| &r.integration.egui_ctx)
     }
 
     fn window(&self, window_id: WindowId) -> Option<Arc<Window>> {
@@ -368,6 +355,13 @@ impl WinitApp for WgpuWinitApp {
         )
     }
 
+    fn save(&mut self) {
+        log::debug!("WinitApp::save called");
+        if let Some(running) = self.running.as_mut() {
+            running.save();
+        }
+    }
+
     fn save_and_destroy(&mut self) {
         if let Some(mut running) = self.running.take() {
             running.save_and_destroy();
@@ -376,145 +370,148 @@ impl WinitApp for WgpuWinitApp {
 
     fn run_ui_and_paint(
         &mut self,
-        event_loop: &EventLoopWindowTarget<UserEvent>,
+        event_loop: &ActiveEventLoop,
         window_id: WindowId,
-    ) -> EventResult {
+    ) -> Result<EventResult> {
         self.initialized_all_windows(event_loop);
 
         if let Some(running) = &mut self.running {
             running.run_ui_and_paint(window_id)
         } else {
-            EventResult::Wait
+            Ok(EventResult::Wait)
         }
     }
 
-    fn on_event(
-        &mut self,
-        event_loop: &EventLoopWindowTarget<UserEvent>,
-        event: &winit::event::Event<UserEvent>,
-    ) -> Result<EventResult> {
-        crate::profile_function!(winit_integration::short_event_description(event));
+    fn resumed(&mut self, event_loop: &ActiveEventLoop) -> crate::Result<EventResult> {
+        log::debug!("Event::Resumed");
 
+        let running = if let Some(running) = &self.running {
+            #[cfg(target_os = "android")]
+            self.recreate_window(event_loop, running);
+            running
+        } else {
+            let storage = if let Some(file) = &self.native_options.persistence_path {
+                epi_integration::create_storage_with_file(file)
+            } else {
+                epi_integration::create_storage(
+                    self.native_options
+                        .viewport
+                        .app_id
+                        .as_ref()
+                        .unwrap_or(&self.app_name),
+                )
+            };
+            let egui_ctx = winit_integration::create_egui_context(storage.as_deref());
+            let (window, builder) = create_window(
+                &egui_ctx,
+                event_loop,
+                storage.as_deref(),
+                &mut self.native_options,
+            )?;
+            self.init_run_state(egui_ctx, event_loop, storage, window, builder)?
+        };
+
+        let viewport = &running.shared.borrow().viewports[&ViewportId::ROOT];
+        if let Some(window) = &viewport.window {
+            Ok(EventResult::RepaintNow(window.id()))
+        } else {
+            Ok(EventResult::Wait)
+        }
+    }
+
+    fn suspended(&mut self, _: &ActiveEventLoop) -> crate::Result<EventResult> {
+        #[cfg(target_os = "android")]
+        self.drop_window()?;
+        Ok(EventResult::Save)
+    }
+
+    fn device_event(
+        &mut self,
+        _: &ActiveEventLoop,
+        _: winit::event::DeviceId,
+        event: winit::event::DeviceEvent,
+    ) -> crate::Result<EventResult> {
+        if let winit::event::DeviceEvent::MouseMotion { delta } = event {
+            if let Some(running) = &mut self.running {
+                let mut shared = running.shared.borrow_mut();
+                if let Some(viewport) = shared
+                    .focused_viewport
+                    .and_then(|viewport| shared.viewports.get_mut(&viewport))
+                {
+                    if let Some(egui_winit) = viewport.egui_winit.as_mut() {
+                        egui_winit.on_mouse_motion(delta);
+                    }
+
+                    if let Some(window) = viewport.window.as_ref() {
+                        return Ok(EventResult::RepaintNext(window.id()));
+                    }
+                }
+            }
+        }
+
+        Ok(EventResult::Wait)
+    }
+
+    fn window_event(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        window_id: WindowId,
+        event: winit::event::WindowEvent,
+    ) -> crate::Result<EventResult> {
         self.initialized_all_windows(event_loop);
 
-        Ok(match event {
-            winit::event::Event::Resumed => {
-                log::debug!("Event::Resumed");
+        if let Some(running) = &mut self.running {
+            Ok(running.on_window_event(window_id, &event))
+        } else {
+            Ok(EventResult::Wait)
+        }
+    }
 
-                let running = if let Some(running) = &self.running {
-                    #[cfg(target_os = "android")]
-                    self.recreate_window(event_loop, running);
-                    running
-                } else {
-                    let storage = if let Some(file) = &self.native_options.persistence_path {
-                        epi_integration::create_storage_with_file(file)
-                    } else {
-                        epi_integration::create_storage(
-                            self.native_options
-                                .viewport
-                                .app_id
-                                .as_ref()
-                                .unwrap_or(&self.app_name),
-                        )
-                    };
-                    let egui_ctx = winit_integration::create_egui_context(storage.as_deref());
-                    let (window, builder) = create_window(
-                        &egui_ctx,
-                        event_loop,
-                        storage.as_deref(),
-                        &mut self.native_options,
-                    )?;
-                    self.init_run_state(egui_ctx, event_loop, storage, window, builder)?
-                };
-
-                let viewport = &running.shared.borrow().viewports[&ViewportId::ROOT];
-                if let Some(window) = &viewport.window {
-                    EventResult::RepaintNow(window.id())
-                } else {
-                    EventResult::Wait
+    #[cfg(feature = "accesskit")]
+    fn on_accesskit_event(&mut self, event: accesskit_winit::Event) -> crate::Result<EventResult> {
+        if let Some(running) = &mut self.running {
+            let mut shared_lock = running.shared.borrow_mut();
+            let SharedState {
+                viewport_from_window,
+                viewports,
+                ..
+            } = &mut *shared_lock;
+            if let Some(viewport) = viewport_from_window
+                .get(&event.window_id)
+                .and_then(|id| viewports.get_mut(id))
+            {
+                if let Some(egui_winit) = &mut viewport.egui_winit {
+                    return Ok(winit_integration::on_accesskit_window_event(
+                        egui_winit,
+                        event.window_id,
+                        &event.window_event,
+                    ));
                 }
             }
+        }
 
-            winit::event::Event::Suspended => {
-                #[cfg(target_os = "android")]
-                self.drop_window()?;
-                EventResult::Wait
-            }
-
-            winit::event::Event::WindowEvent { event, window_id } => {
-                if let Some(running) = &mut self.running {
-                    running.on_window_event(*window_id, event)
-                } else {
-                    EventResult::Wait
-                }
-            }
-
-            winit::event::Event::DeviceEvent {
-                device_id: _,
-                event: winit::event::DeviceEvent::MouseMotion { delta },
-            } => {
-                if let Some(running) = &mut self.running {
-                    let mut shared = running.shared.borrow_mut();
-                    if let Some(viewport) = shared
-                        .focused_viewport
-                        .and_then(|viewport| shared.viewports.get_mut(&viewport))
-                    {
-                        if let Some(egui_winit) = viewport.egui_winit.as_mut() {
-                            egui_winit.on_mouse_motion(*delta);
-                        }
-
-                        if let Some(window) = viewport.window.as_ref() {
-                            EventResult::RepaintNext(window.id())
-                        } else {
-                            EventResult::Wait
-                        }
-                    } else {
-                        EventResult::Wait
-                    }
-                } else {
-                    EventResult::Wait
-                }
-            }
-
-            #[cfg(feature = "accesskit")]
-            winit::event::Event::UserEvent(UserEvent::AccessKitActionRequest(
-                accesskit_winit::ActionRequestEvent { request, window_id },
-            )) => {
-                if let Some(running) = &mut self.running {
-                    let mut shared_lock = running.shared.borrow_mut();
-                    let SharedState {
-                        viewport_from_window,
-                        viewports,
-                        ..
-                    } = &mut *shared_lock;
-                    if let Some(viewport) = viewport_from_window
-                        .get(window_id)
-                        .and_then(|id| viewports.get_mut(id))
-                    {
-                        if let Some(egui_winit) = &mut viewport.egui_winit {
-                            egui_winit.on_accesskit_action_request(request.clone());
-                        }
-                    }
-                    // As a form of user input, accessibility actions should
-                    // lead to a repaint.
-                    EventResult::RepaintNext(*window_id)
-                } else {
-                    EventResult::Wait
-                }
-            }
-            _ => EventResult::Wait,
-        })
+        Ok(EventResult::Wait)
     }
 }
 
-impl WgpuWinitRunning {
-    fn save_and_destroy(&mut self) {
-        crate::profile_function!();
+impl WgpuWinitRunning<'_> {
+    /// Saves the application state
+    fn save(&mut self) {
+        let shared = self.shared.borrow();
+        // This is done because of the "save on suspend" logic on Android. Once the application is suspended, there is no window associated to it.
+        let window = if let Some(Viewport { window, .. }) = shared.viewports.get(&ViewportId::ROOT)
+        {
+            window.as_deref()
+        } else {
+            None
+        };
+        self.integration.save(self.app.as_mut(), window);
+    }
 
-        let mut shared = self.shared.borrow_mut();
-        if let Some(Viewport { window, .. }) = shared.viewports.get(&ViewportId::ROOT) {
-            self.integration.save(self.app.as_mut(), window.as_deref());
-        }
+    fn save_and_destroy(&mut self) {
+        profiling::function_scope!();
+
+        self.save();
 
         #[cfg(feature = "glow")]
         self.app.on_exit(None);
@@ -522,12 +519,13 @@ impl WgpuWinitRunning {
         #[cfg(not(feature = "glow"))]
         self.app.on_exit();
 
+        let mut shared = self.shared.borrow_mut();
         shared.painter.destroy();
     }
 
     /// This is called both for the root viewport, and all deferred viewports
-    fn run_ui_and_paint(&mut self, window_id: WindowId) -> EventResult {
-        crate::profile_function!();
+    fn run_ui_and_paint(&mut self, window_id: WindowId) -> Result<EventResult> {
+        profiling::function_scope!();
 
         let Some(viewport_id) = self
             .shared
@@ -536,11 +534,10 @@ impl WgpuWinitRunning {
             .get(&window_id)
             .copied()
         else {
-            return EventResult::Wait;
+            return Ok(EventResult::Wait);
         };
 
-        #[cfg(feature = "puffin")]
-        puffin::GlobalProfiler::lock().new_frame();
+        profiling::finish_frame!();
 
         let Self {
             app,
@@ -552,7 +549,7 @@ impl WgpuWinitRunning {
         frame_timer.start();
 
         let (viewport_ui_cb, raw_input) = {
-            crate::profile_scope!("Prepare");
+            profiling::scope!("Prepare");
             let mut shared_lock = shared.borrow_mut();
 
             let SharedState {
@@ -561,7 +558,7 @@ impl WgpuWinitRunning {
 
             if viewport_id != ViewportId::ROOT {
                 let Some(viewport) = viewports.get(&viewport_id) else {
-                    return EventResult::Wait;
+                    return Ok(EventResult::Wait);
                 };
 
                 if viewport.viewport_ui_cb.is_none() {
@@ -569,15 +566,15 @@ impl WgpuWinitRunning {
                     // That means that the viewport cannot be rendered by itself and needs his parent to be rendered.
                     if let Some(viewport) = viewports.get(&viewport.ids.parent) {
                         if let Some(window) = viewport.window.as_ref() {
-                            return EventResult::RepaintNext(window.id());
+                            return Ok(EventResult::RepaintNext(window.id()));
                         }
                     }
-                    return EventResult::Wait;
+                    return Ok(EventResult::Wait);
                 }
             }
 
             let Some(viewport) = viewports.get_mut(&viewport_id) else {
-                return EventResult::Wait;
+                return Ok(EventResult::Wait);
             };
 
             let Viewport {
@@ -591,21 +588,17 @@ impl WgpuWinitRunning {
             let viewport_ui_cb = viewport_ui_cb.clone();
 
             let Some(window) = window else {
-                return EventResult::Wait;
+                return Ok(EventResult::Wait);
             };
             egui_winit::update_viewport_info(info, &integration.egui_ctx, window, false);
 
             {
-                crate::profile_scope!("set_window");
-                if let Err(err) =
-                    pollster::block_on(painter.set_window(viewport_id, Some(window.clone())))
-                {
-                    log::warn!("Failed to set window: {err}");
-                }
+                profiling::scope!("set_window");
+                pollster::block_on(painter.set_window(viewport_id, Some(window.clone())))?;
             }
 
             let Some(egui_winit) = egui_winit.as_mut() else {
-                return EventResult::Wait;
+                return Ok(EventResult::Wait);
             };
             let mut raw_input = egui_winit.take_egui_input(window);
 
@@ -616,6 +609,8 @@ impl WgpuWinitRunning {
                 .iter()
                 .map(|(id, viewport)| (*id, viewport.info.clone()))
                 .collect();
+
+            painter.handle_screenshots(&mut raw_input.events);
 
             (viewport_ui_cb, raw_input)
         };
@@ -649,7 +644,7 @@ impl WgpuWinitRunning {
         remove_viewports_not_in(viewports, painter, viewport_from_window, &viewport_output);
 
         let Some(viewport) = viewports.get_mut(&viewport_id) else {
-            return EventResult::Wait;
+            return Ok(EventResult::Wait);
         };
 
         viewport.info.events.clear(); // they should have been processed
@@ -660,38 +655,34 @@ impl WgpuWinitRunning {
             ..
         } = viewport
         else {
-            return EventResult::Wait;
+            return Ok(EventResult::Wait);
         };
 
         egui_winit.handle_platform_output(window, platform_output);
 
         let clipped_primitives = egui_ctx.tessellate(shapes, pixels_per_point);
 
-        let screenshot_requested = viewport
-            .actions_requested
-            .take(&ActionRequested::Screenshot)
-            .is_some();
-        let (vsync_secs, screenshot) = painter.paint_and_update_textures(
+        let mut screenshot_commands = vec![];
+        viewport.actions_requested.retain(|cmd| {
+            if let ActionRequested::Screenshot(info) = cmd {
+                screenshot_commands.push(info.clone());
+                false
+            } else {
+                true
+            }
+        });
+        let vsync_secs = painter.paint_and_update_textures(
             viewport_id,
             pixels_per_point,
             app.clear_color(&egui_ctx.style().visuals),
             &clipped_primitives,
             &textures_delta,
-            screenshot_requested,
+            screenshot_commands,
         );
-        if let Some(screenshot) = screenshot {
-            egui_winit
-                .egui_input_mut()
-                .events
-                .push(egui::Event::Screenshot {
-                    viewport_id,
-                    image: screenshot.into(),
-                });
-        }
 
         for action in viewport.actions_requested.drain() {
             match action {
-                ActionRequested::Screenshot => {
+                ActionRequested::Screenshot { .. } => {
                     // already handled above
                 }
                 ActionRequested::Cut => {
@@ -744,15 +735,15 @@ impl WgpuWinitRunning {
             if window.is_minimized() == Some(true) {
                 // On Mac, a minimized Window uses up all CPU:
                 // https://github.com/emilk/egui/issues/325
-                crate::profile_scope!("minimized_sleep");
+                profiling::scope!("minimized_sleep");
                 std::thread::sleep(std::time::Duration::from_millis(10));
             }
         }
 
         if integration.should_close() {
-            EventResult::Exit
+            Ok(EventResult::Exit)
         } else {
-            EventResult::Wait
+            Ok(EventResult::Wait)
         }
     }
 
@@ -761,8 +752,6 @@ impl WgpuWinitRunning {
         window_id: WindowId,
         event: &winit::event::WindowEvent,
     ) -> EventResult {
-        crate::profile_function!(egui_winit::short_window_event_description(event));
-
         let Self {
             integration,
             shared,
@@ -864,7 +853,7 @@ impl Viewport {
     /// Create winit window, if needed.
     fn initialize_window(
         &mut self,
-        event_loop: &EventLoopWindowTarget<UserEvent>,
+        event_loop: &ActiveEventLoop,
         egui_ctx: &egui::Context,
         windows_id: &mut HashMap<WindowId, ViewportId>,
         painter: &mut egui_wgpu::winit::Painter,
@@ -873,7 +862,7 @@ impl Viewport {
             return; // we already have one
         }
 
-        crate::profile_function!();
+        profiling::function_scope!();
 
         let viewport_id = self.ids.this;
 
@@ -894,6 +883,7 @@ impl Viewport {
                     viewport_id,
                     event_loop,
                     Some(window.scale_factor() as f32),
+                    event_loop.system_theme(),
                     painter.max_texture_side(),
                 ));
 
@@ -909,11 +899,11 @@ impl Viewport {
 
 fn create_window(
     egui_ctx: &egui::Context,
-    event_loop: &EventLoopWindowTarget<UserEvent>,
+    event_loop: &ActiveEventLoop,
     storage: Option<&dyn Storage>,
     native_options: &mut NativeOptions,
 ) -> Result<(Window, ViewportBuilder), winit::error::OsError> {
-    crate::profile_function!();
+    profiling::function_scope!();
 
     let window_settings = epi_integration::load_window_settings(storage);
     let viewport_builder = epi_integration::viewport_builder(
@@ -930,17 +920,16 @@ fn create_window(
 }
 
 fn render_immediate_viewport(
-    event_loop: &EventLoopWindowTarget<UserEvent>,
     beginning: Instant,
     shared: &RefCell<SharedState>,
     immediate_viewport: ImmediateViewport<'_>,
 ) {
-    crate::profile_function!();
+    profiling::function_scope!();
 
     let ImmediateViewport {
         ids,
         builder,
-        viewport_ui_cb,
+        mut viewport_ui_cb,
     } = immediate_viewport;
 
     let input = {
@@ -952,10 +941,18 @@ fn render_immediate_viewport(
             ..
         } = &mut *shared.borrow_mut();
 
-        let viewport =
-            initialize_or_update_viewport(viewports, ids, ViewportClass::Immediate, builder, None);
+        let viewport = initialize_or_update_viewport(
+            viewports,
+            ids,
+            ViewportClass::Immediate,
+            builder,
+            None,
+            painter,
+        );
         if viewport.window.is_none() {
-            viewport.initialize_window(event_loop, egui_ctx, viewport_from_window, painter);
+            event_loop_context::with_current_event_loop(|event_loop| {
+                viewport.initialize_window(event_loop, egui_ctx, viewport_from_window, painter);
+            });
         }
 
         let (Some(window), Some(egui_winit)) = (&viewport.window, &mut viewport.egui_winit) else {
@@ -1007,7 +1004,7 @@ fn render_immediate_viewport(
     };
 
     {
-        crate::profile_scope!("set_window");
+        profiling::scope!("set_window");
         if let Err(err) = pollster::block_on(painter.set_window(ids.this, Some(window.clone()))) {
             log::error!(
                 "when rendering viewport_id={:?}, set_window Error {err}",
@@ -1023,7 +1020,7 @@ fn render_immediate_viewport(
         [0.0, 0.0, 0.0, 0.0],
         &clipped_primitives,
         &textures_delta,
-        false,
+        vec![],
     );
 
     egui_winit.handle_platform_output(window, platform_output);
@@ -1074,7 +1071,7 @@ fn handle_viewport_output(
         let ids = ViewportIdPair::from_self_and_parent(viewport_id, parent);
 
         let viewport =
-            initialize_or_update_viewport(viewports, ids, class, builder, viewport_ui_cb);
+            initialize_or_update_viewport(viewports, ids, class, builder, viewport_ui_cb, painter);
 
         if let Some(window) = viewport.window.as_ref() {
             let old_inner_size = window.inner_size();
@@ -1107,14 +1104,15 @@ fn handle_viewport_output(
     remove_viewports_not_in(viewports, painter, viewport_from_window, viewport_output);
 }
 
-fn initialize_or_update_viewport(
-    viewports: &mut Viewports,
+fn initialize_or_update_viewport<'a>(
+    viewports: &'a mut Viewports,
     ids: ViewportIdPair,
     class: ViewportClass,
     mut builder: ViewportBuilder,
     viewport_ui_cb: Option<Arc<dyn Fn(&egui::Context) + Send + Sync>>,
-) -> &mut Viewport {
-    crate::profile_function!();
+    painter: &mut egui_wgpu::winit::Painter,
+) -> &'a mut Viewport {
+    profiling::function_scope!();
 
     if builder.icon.is_none() {
         // Inherit icon from parent
@@ -1158,6 +1156,12 @@ fn initialize_or_update_viewport(
                 );
                 viewport.window = None;
                 viewport.egui_winit = None;
+                if let Err(err) = pollster::block_on(painter.set_window(viewport.ids.this, None)) {
+                    log::error!(
+                        "when rendering viewport_id={:?}, set_window Error {err}",
+                        viewport.ids.this
+                    );
+                }
             }
 
             viewport.deferred_commands.append(&mut delta_commands);

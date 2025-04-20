@@ -41,13 +41,18 @@ pub(crate) type ActiveWebPainter = web_painter_wgpu::WebPainterWgpu;
 pub use backend::*;
 
 use wasm_bindgen::prelude::*;
-use web_sys::MediaQueryList;
+use web_sys::{Document, MediaQueryList, Node};
 
-use input::*;
-
-use crate::Theme;
+use input::{
+    button_from_mouse_event, modifiers_from_kb_event, modifiers_from_mouse_event,
+    modifiers_from_wheel_event, pos_from_mouse_event, primary_touch_pos, push_touches,
+    text_from_keyboard_event, translate_key,
+};
 
 // ----------------------------------------------------------------------------
+
+/// Debug browser resizing?
+const DEBUG_RESIZE: bool = false;
 
 pub(crate) fn string_from_js_value(value: &JsValue) -> String {
     value.as_string().unwrap_or_else(|| format!("{value:#?}"))
@@ -59,18 +64,22 @@ pub(crate) fn string_from_js_value(value: &JsValue) -> String {
 /// - `<a>`/`<area>` with an `href` attribute
 /// - `<input>`/`<select>`/`<textarea>`/`<button>` which aren't `disabled`
 /// - any other element with a `tabindex` attribute
-pub(crate) fn focused_element() -> Option<web_sys::Element> {
-    web_sys::window()?
-        .document()?
-        .active_element()?
-        .dyn_into()
-        .ok()
+pub(crate) fn focused_element(root: &Node) -> Option<web_sys::Element> {
+    if let Some(document) = root.dyn_ref::<Document>() {
+        document.active_element()
+    } else if let Some(shadow) = root.dyn_ref::<web_sys::ShadowRoot>() {
+        shadow.active_element()
+    } else {
+        None
+    }
 }
 
 pub(crate) fn has_focus<T: JsCast>(element: &T) -> bool {
     fn try_has_focus<T: JsCast>(element: &T) -> Option<bool> {
         let element = element.dyn_ref::<web_sys::Element>()?;
-        let focused_element = focused_element()?;
+        let root = element.get_root_node();
+
+        let focused_element = focused_element(&root)?;
         Some(element == &focused_element)
     }
     try_has_focus(element).unwrap_or(false)
@@ -103,7 +112,7 @@ pub fn native_pixels_per_point() -> f32 {
 /// Ask the browser about the preferred system theme.
 ///
 /// `None` means unknown.
-pub fn system_theme() -> Option<Theme> {
+pub fn system_theme() -> Option<egui::Theme> {
     let dark_mode = prefers_color_scheme_dark(&web_sys::window()?)
         .ok()??
         .matches();
@@ -114,23 +123,12 @@ fn prefers_color_scheme_dark(window: &web_sys::Window) -> Result<Option<MediaQue
     window.match_media("(prefers-color-scheme: dark)")
 }
 
-fn theme_from_dark_mode(dark_mode: bool) -> Theme {
+fn theme_from_dark_mode(dark_mode: bool) -> egui::Theme {
     if dark_mode {
-        Theme::Dark
+        egui::Theme::Dark
     } else {
-        Theme::Light
+        egui::Theme::Light
     }
-}
-
-fn get_canvas_element_by_id(canvas_id: &str) -> Option<web_sys::HtmlCanvasElement> {
-    let document = web_sys::window()?.document()?;
-    let canvas = document.get_element_by_id(canvas_id)?;
-    canvas.dyn_into::<web_sys::HtmlCanvasElement>().ok()
-}
-
-fn get_canvas_element_by_id_or_die(canvas_id: &str) -> web_sys::HtmlCanvasElement {
-    get_canvas_element_by_id(canvas_id)
-        .unwrap_or_else(|| panic!("Failed to find canvas with id {canvas_id:?}"))
 }
 
 /// Returns the canvas in client coordinates.
@@ -161,7 +159,10 @@ fn canvas_content_rect(canvas: &web_sys::HtmlCanvasElement) -> egui::Rect {
 }
 
 fn canvas_size_in_points(canvas: &web_sys::HtmlCanvasElement, ctx: &egui::Context) -> egui::Vec2 {
-    let pixels_per_point = ctx.pixels_per_point();
+    // ctx.pixels_per_point can be outdated
+
+    let pixels_per_point = ctx.zoom_factor() * native_pixels_per_point();
+
     egui::vec2(
         canvas.width() as f32 / pixels_per_point,
         canvas.height() as f32 / pixels_per_point,
@@ -181,27 +182,113 @@ fn set_cursor_icon(cursor: egui::CursorIcon) -> Option<()> {
 }
 
 /// Set the clipboard text.
-#[cfg(web_sys_unstable_apis)]
 fn set_clipboard_text(s: &str) {
     if let Some(window) = web_sys::window() {
-        if let Some(clipboard) = window.navigator().clipboard() {
-            let promise = clipboard.write_text(s);
-            let future = wasm_bindgen_futures::JsFuture::from(promise);
-            let future = async move {
-                if let Err(err) = future.await {
-                    log::error!("Copy/cut action failed: {}", string_from_js_value(&err));
-                }
-            };
-            wasm_bindgen_futures::spawn_local(future);
-        } else {
-            let is_secure_context = window.is_secure_context();
-            if is_secure_context {
-                log::warn!("window.navigator.clipboard is null; can't copy text");
-            } else {
-                log::warn!("window.navigator.clipboard is null; can't copy text, probably because we're not in a secure context. See https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts");
-            }
+        if !window.is_secure_context() {
+            log::error!(
+                "Clipboard is not available because we are not in a secure context. \
+                See https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts"
+            );
+            return;
         }
+        let promise = window.navigator().clipboard().write_text(s);
+        let future = wasm_bindgen_futures::JsFuture::from(promise);
+        let future = async move {
+            if let Err(err) = future.await {
+                log::error!("Copy/cut action failed: {}", string_from_js_value(&err));
+            }
+        };
+        wasm_bindgen_futures::spawn_local(future);
     }
+}
+
+/// Set the clipboard image.
+fn set_clipboard_image(image: &egui::ColorImage) {
+    if let Some(window) = web_sys::window() {
+        if !window.is_secure_context() {
+            log::error!(
+                "Clipboard is not available because we are not in a secure context. \
+                See https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts"
+            );
+            return;
+        }
+
+        let png_bytes = to_image(image).and_then(|image| to_png_bytes(&image));
+        let png_bytes = match png_bytes {
+            Ok(png_bytes) => png_bytes,
+            Err(err) => {
+                log::error!("Failed to encode image to png: {err}");
+                return;
+            }
+        };
+
+        let mime = "image/png";
+
+        let item = match create_clipboard_item(mime, &png_bytes) {
+            Ok(item) => item,
+            Err(err) => {
+                log::error!("Failed to copy image: {}", string_from_js_value(&err));
+                return;
+            }
+        };
+        let items = js_sys::Array::of1(&item);
+        let promise = window.navigator().clipboard().write(&items);
+        let future = wasm_bindgen_futures::JsFuture::from(promise);
+        let future = async move {
+            if let Err(err) = future.await {
+                log::error!(
+                    "Copy/cut image action failed: {}",
+                    string_from_js_value(&err)
+                );
+            }
+        };
+        wasm_bindgen_futures::spawn_local(future);
+    }
+}
+
+fn to_image(image: &egui::ColorImage) -> Result<image::RgbaImage, String> {
+    profiling::function_scope!();
+    image::RgbaImage::from_raw(
+        image.width() as _,
+        image.height() as _,
+        bytemuck::cast_slice(&image.pixels).to_vec(),
+    )
+    .ok_or_else(|| "Invalid IconData".to_owned())
+}
+
+fn to_png_bytes(image: &image::RgbaImage) -> Result<Vec<u8>, String> {
+    profiling::function_scope!();
+    let mut png_bytes: Vec<u8> = Vec::new();
+    image
+        .write_to(
+            &mut std::io::Cursor::new(&mut png_bytes),
+            image::ImageFormat::Png,
+        )
+        .map_err(|err| err.to_string())?;
+    Ok(png_bytes)
+}
+
+fn create_clipboard_item(mime: &str, bytes: &[u8]) -> Result<web_sys::ClipboardItem, JsValue> {
+    let array = js_sys::Uint8Array::from(bytes);
+    let blob_parts = js_sys::Array::new();
+    blob_parts.push(&array);
+
+    let options = web_sys::BlobPropertyBag::new();
+    options.set_type(mime);
+
+    let blob = web_sys::Blob::new_with_u8_array_sequence_and_options(&blob_parts, &options)?;
+
+    let items = js_sys::Object::new();
+
+    // SAFETY: I hope so
+    #[allow(unsafe_code, unused_unsafe)] // Weird false positive
+    unsafe {
+        js_sys::Reflect::set(&items, &JsValue::from_str(mime), &blob)?
+    };
+
+    let clipboard_item = web_sys::ClipboardItem::new_with_record_from_str_to_blob_promise(&items)?;
+
+    Ok(clipboard_item)
 }
 
 fn cursor_web_name(cursor: egui::CursorIcon) -> &'static str {
@@ -274,4 +361,9 @@ pub fn percent_decode(s: &str) -> String {
     percent_encoding::percent_decode_str(s)
         .decode_utf8_lossy()
         .to_string()
+}
+
+/// Are we running inside the Safari browser?
+pub fn is_safari_browser() -> bool {
+    web_sys::window().is_some_and(|window| window.has_own_property(&JsValue::from("safari")))
 }
