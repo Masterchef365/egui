@@ -1,14 +1,15 @@
 #![allow(clippy::derived_hash_with_manual_eq)] // We need to impl Hash for f32, but we don't implement Eq, which is fine
 #![allow(clippy::wrong_self_convention)] // We use `from_` to indicate conversion direction. It's non-diomatic, but makes sense in this context.
 
-use std::ops::Range;
-use std::sync::Arc;
+use core::ops::Range;
+use alloc::sync::Arc;
 
 use super::{
     cursor::{CCursor, LayoutCursor},
     font::UvRect,
 };
 use crate::{Color32, FontId, Mesh, Stroke};
+use alloc::{string::String, sync::Arc, vec::Vec};
 use emath::{Align, GuiRounding as _, NumExt as _, OrderedFloat, Pos2, Rect, Vec2, pos2, vec2};
 
 /// Describes the task of laying out text.
@@ -103,7 +104,7 @@ impl LayoutJob {
     #[inline]
     pub fn simple(text: String, font_id: FontId, color: Color32, wrap_width: f32) -> Self {
         Self {
-            sections: vec![LayoutSection {
+            sections: alloc::vec![LayoutSection {
                 leading_space: 0.0,
                 byte_range: 0..text.len(),
                 format: TextFormat::simple(font_id, color),
@@ -122,7 +123,7 @@ impl LayoutJob {
     #[inline]
     pub fn simple_format(text: String, format: TextFormat) -> Self {
         Self {
-            sections: vec![LayoutSection {
+            sections: alloc::vec![LayoutSection {
                 leading_space: 0.0,
                 byte_range: 0..text.len(),
                 format,
@@ -137,7 +138,7 @@ impl LayoutJob {
     #[inline]
     pub fn simple_singleline(text: String, font_id: FontId, color: Color32) -> Self {
         Self {
-            sections: vec![LayoutSection {
+            sections: alloc::vec![LayoutSection {
                 leading_space: 0.0,
                 byte_range: 0..text.len(),
                 format: TextFormat::simple(font_id, color),
@@ -152,7 +153,7 @@ impl LayoutJob {
     #[inline]
     pub fn single_section(text: String, format: TextFormat) -> Self {
         Self {
-            sections: vec![LayoutSection {
+            sections: alloc::vec![LayoutSection {
                 leading_space: 0.0,
                 byte_range: 0..text.len(),
                 format,
@@ -205,9 +206,9 @@ impl LayoutJob {
     }
 }
 
-impl std::hash::Hash for LayoutJob {
+impl core::hash::Hash for LayoutJob {
     #[inline]
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
         let Self {
             text,
             sections,
@@ -244,9 +245,9 @@ pub struct LayoutSection {
     pub format: TextFormat,
 }
 
-impl std::hash::Hash for LayoutSection {
+impl core::hash::Hash for LayoutSection {
     #[inline]
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
         let Self {
             leading_space,
             byte_range,
@@ -328,9 +329,9 @@ impl Default for TextFormat {
     }
 }
 
-impl std::hash::Hash for TextFormat {
+impl core::hash::Hash for TextFormat {
     #[inline]
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
         let Self {
             font_id,
             extra_letter_spacing,
@@ -436,9 +437,9 @@ pub struct TextWrapping {
     pub overflow_character: Option<char>,
 }
 
-impl std::hash::Hash for TextWrapping {
+impl core::hash::Hash for TextWrapping {
     #[inline]
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
         let Self {
             max_width,
             max_rows,
@@ -592,7 +593,7 @@ impl PlacedRow {
     }
 }
 
-impl std::ops::Deref for PlacedRow {
+impl core::ops::Deref for PlacedRow {
     type Target = Row;
 
     fn deref(&self) -> &Self::Target {
@@ -903,14 +904,14 @@ impl AsRef<str> for Galley {
     }
 }
 
-impl std::borrow::Borrow<str> for Galley {
+impl core::borrow::Borrow<str> for Galley {
     #[inline]
     fn borrow(&self) -> &str {
         self.text()
     }
 }
 
-impl std::ops::Deref for Galley {
+impl core::ops::Deref for Galley {
     type Target = str;
     #[inline]
     fn deref(&self) -> &str {

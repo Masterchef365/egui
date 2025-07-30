@@ -5,6 +5,7 @@
 
 #![allow(clippy::identity_op)]
 
+use alloc::vec::Vec;
 use emath::{GuiRounding as _, NumExt as _, Pos2, Rect, Rot2, Vec2, pos2, remap, vec2};
 
 use crate::{
@@ -22,7 +23,7 @@ mod precomputed_vertices {
     //     let n = 64;
     //     println!("pub const CIRCLE_{}: [Vec2; {}] = [", n, n+1);
     //     for i in 0..=n {
-    //         let a = std::f64::consts::TAU * i as f64 / n as f64;
+    //         let a = core::f64::consts::TAU * i as f64 / n as f64;
     //         println!("    vec2({:.06}, {:.06}),", a.cos(), a.sin());
     //     }
     //     println!("];")
@@ -535,6 +536,7 @@ impl Path {
 pub mod path {
     //! Helpers for constructing paths
     use crate::CornerRadiusF32;
+    use alloc::vec::Vec;
     use emath::{Pos2, Rect, pos2};
 
     /// overwrites existing points
@@ -1578,7 +1580,7 @@ impl Tessellator {
                 let eased = 2.0 * (percent - percent.powf(2.0)) * ratio + percent.powf(2.0);
 
                 // Scale the ease to the quarter
-                let t = eased * std::f32::consts::FRAC_PI_2;
+                let t = eased * core::f32::consts::FRAC_PI_2;
                 Vec2::new(radius.x * f32::cos(t), radius.y * f32::sin(t))
             })
             .collect();
@@ -2004,8 +2006,8 @@ impl Tessellator {
                        You must recreate your text shapes if pixels_per_point changes.";
             #[cfg(feature = "log")]
             log::warn!("{warn}");
-            #[cfg(not(feature = "log"))]
-            println!("{warn}");
+            //#[cfg(not(feature = "log"))]
+            //println!("{warn}");
         }
 
         out.vertices.reserve(galley.num_vertices);

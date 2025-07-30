@@ -1,3 +1,5 @@
+use alloc::{collections::btree_map, string::String, vec::Vec};
+
 use crate::{ImageData, ImageDelta, TextureId};
 
 // ----------------------------------------------------------------------------
@@ -11,7 +13,7 @@ pub struct TextureManager {
     next_id: u64,
 
     /// Information about currently allocated textures.
-    metas: ahash::HashMap<TextureId, TextureMeta>,
+    metas: btree_map::BTreeMap<TextureId, TextureMeta>,
 
     delta: TexturesDelta,
 }
@@ -69,7 +71,7 @@ impl TextureManager {
 
     /// Free an existing texture.
     pub fn free(&mut self, id: TextureId) {
-        if let std::collections::hash_map::Entry::Occupied(mut entry) = self.metas.entry(id) {
+        if let alloc::collections::btree_map::Entry::Occupied(mut entry) = self.metas.entry(id) {
             let meta = entry.get_mut();
             meta.retain_count -= 1;
             if meta.retain_count == 0 {
@@ -99,7 +101,7 @@ impl TextureManager {
     ///
     /// These should be applied to the painting subsystem each frame.
     pub fn take_delta(&mut self) -> TexturesDelta {
-        std::mem::take(&mut self.delta)
+        core::mem::take(&mut self.delta)
     }
 
     /// Get meta-data about a specific texture.
@@ -298,9 +300,9 @@ impl TexturesDelta {
     }
 }
 
-impl std::fmt::Debug for TexturesDelta {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use std::fmt::Write as _;
+impl core::fmt::Debug for TexturesDelta {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        use core::fmt::Write as _;
 
         let mut debug_struct = f.debug_struct("TexturesDelta");
         if !self.set.is_empty() {

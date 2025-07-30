@@ -1,5 +1,4 @@
-use std::sync::Arc;
-
+use alloc::{sync::Arc, vec::Vec};
 use emath::{Align, GuiRounding as _, NumExt as _, Pos2, Rect, Vec2, pos2, vec2};
 
 use crate::{Color32, Mesh, Stroke, Vertex, stroke::PathStroke, text::font::Font};
@@ -58,7 +57,7 @@ impl Paragraph {
         Self {
             cursor_x: 0.0,
             section_index_at_start,
-            glyphs: vec![],
+            glyphs: alloc::vec![],
             empty_paragraph_height: 0.0,
         }
     }
@@ -88,7 +87,7 @@ pub fn layout(fonts: &mut FontsImpl, job: Arc<LayoutJob>) -> Galley {
 
     // For most of this we ignore the y coordinate:
 
-    let mut paragraphs = vec![Paragraph::from_section_index(0)];
+    let mut paragraphs = alloc::vec![Paragraph::from_section_index(0)];
     for (section_index, section) in job.sections.iter().enumerate() {
         layout_section(fonts, &job, section_index as u32, section, &mut paragraphs);
     }
@@ -215,7 +214,7 @@ fn calculate_intrinsic_size(
             .glyphs
             .iter()
             .map(|g| g.line_height)
-            .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+            .max_by(|a, b| a.partial_cmp(b).unwrap_or(core::cmp::Ordering::Equal))
             .unwrap_or(paragraph.empty_paragraph_height);
         if idx == 0 {
             height = f32::max(height, job.first_row_min_height);
@@ -233,7 +232,7 @@ fn rows_from_paragraphs(
 ) -> Vec<PlacedRow> {
     let num_paragraphs = paragraphs.len();
 
-    let mut rows = vec![];
+    let mut rows = alloc::vec![];
 
     for (i, paragraph) in paragraphs.into_iter().enumerate() {
         if job.wrap.max_rows <= rows.len() {
@@ -248,7 +247,7 @@ fn rows_from_paragraphs(
                 pos: pos2(0.0, f32::NAN),
                 row: Arc::new(Row {
                     section_index_at_start: paragraph.section_index_at_start,
-                    glyphs: vec![],
+                    glyphs: alloc::vec![],
                     visuals: Default::default(),
                     size: vec2(0.0, paragraph.empty_paragraph_height),
                     ends_with_newline: !is_last_paragraph,
@@ -315,7 +314,7 @@ fn line_break(
                     pos: pos2(0.0, f32::NAN),
                     row: Arc::new(Row {
                         section_index_at_start: paragraph.section_index_at_start,
-                        glyphs: vec![],
+                        glyphs: alloc::vec![],
                         visuals: Default::default(),
                         size: Vec2::ZERO,
                         ends_with_newline: false,
@@ -1070,6 +1069,8 @@ fn is_cjk_break_allowed(c: char) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use alloc::string::String;
+
     use crate::AlphaFromCoverage;
 
     use super::{super::*, *};
@@ -1156,7 +1157,7 @@ mod tests {
         let galley = layout(&mut fonts, layout_job.into());
         assert_eq!(
             galley.rows.iter().map(|row| row.text()).collect::<Vec<_>>(),
-            vec!["日本語と", "Englishの混在", "した文章"]
+            alloc::vec!["日本語と", "Englishの混在", "した文章"]
         );
     }
 
@@ -1176,7 +1177,7 @@ mod tests {
         let galley = layout(&mut fonts, layout_job.into());
         assert_eq!(
             galley.rows.iter().map(|row| row.text()).collect::<Vec<_>>(),
-            vec!["日本語とEnglish", "の混在した文章"]
+            alloc::vec!["日本語とEnglish", "の混在した文章"]
         );
     }
 
@@ -1197,7 +1198,7 @@ mod tests {
         assert!(galley.elided);
         assert_eq!(
             galley.rows.iter().map(|row| row.text()).collect::<Vec<_>>(),
-            vec!["# DNA…"]
+            alloc::vec!["# DNA…"]
         );
         let row = &galley.rows[0];
         assert_eq!(row.pos, Pos2::ZERO);

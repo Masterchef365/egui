@@ -1,6 +1,7 @@
-use std::collections::BTreeMap;
-use std::sync::Arc;
+use core::collections::BTreeMap;
+use core::sync::Arc;
 
+use alloc::{string::String, vec::Vec};
 use emath::{GuiRounding as _, Vec2, vec2};
 
 use crate::{
@@ -78,7 +79,7 @@ pub struct FontImpl {
 
     ascent: f32,
     pixels_per_point: f32,
-    glyph_info_cache: RwLock<ahash::HashMap<char, GlyphInfo>>, // TODO(emilk): standard Mutex
+    glyph_info_cache: RwLock<BTreeMap<char, GlyphInfo>>, // TODO(emilk): standard Mutex
     atlas: Arc<Mutex<TextureAtlas>>,
 }
 
@@ -334,7 +335,7 @@ pub struct Font {
     replacement_glyph: (FontIndex, GlyphInfo),
     pixels_per_point: f32,
     row_height: f32,
-    glyph_info_cache: ahash::HashMap<char, (FontIndex, GlyphInfo)>,
+    glyph_info_cache: BTreeMap<char, (FontIndex, GlyphInfo)>,
 }
 
 impl Font {

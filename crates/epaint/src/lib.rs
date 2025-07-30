@@ -23,6 +23,9 @@
 #![allow(clippy::float_cmp)]
 #![allow(clippy::manual_range_contains)]
 
+#![no_std]
+extern crate alloc;
+
 mod brush;
 pub mod color;
 mod corner_radius;

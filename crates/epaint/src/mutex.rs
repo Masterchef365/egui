@@ -62,7 +62,7 @@ mod mutex_impl {
     }
 
     thread_local! {
-        static HELD_LOCKS_TLS: std::cell::RefCell<HeldLocks> = Default::default();
+        static HELD_LOCKS_TLS: core::cell::RefCell<HeldLocks> = Default::default();
     }
 
     impl<T> Mutex<T> {
@@ -75,7 +75,7 @@ mod mutex_impl {
             // Detect if we are recursively taking out a lock on this mutex.
 
             // use a pointer to the inner data as an id for this lock
-            let ptr = std::ptr::from_ref::<parking_lot::Mutex<_>>(&self.0).cast::<()>();
+            let ptr = core::ptr::from_ref::<parking_lot::Mutex<_>>(&self.0).cast::<()>();
 
             // Store it in thread local storage while we have a lock guard taken out
             HELD_LOCKS_TLS.with(|held_locks| {
@@ -100,7 +100,7 @@ mod mutex_impl {
         }
     }
 
-    impl<T> std::ops::Deref for MutexGuard<'_, T> {
+    impl<T> core::ops::Deref for MutexGuard<'_, T> {
         type Target = T;
 
         #[inline(always)]
@@ -109,7 +109,7 @@ mod mutex_impl {
         }
     }
 
-    impl<T> std::ops::DerefMut for MutexGuard<'_, T> {
+    impl<T> core::ops::DerefMut for MutexGuard<'_, T> {
         #[inline(always)]
         fn deref_mut(&mut self) -> &mut Self::Target {
             &mut self.0
@@ -157,7 +157,7 @@ mod rw_lock_impl {
 
 #[cfg(feature = "deadlock_detection")]
 mod rw_lock_impl {
-    use std::{
+    use core::{
         ops::{Deref, DerefMut},
         sync::Arc,
         thread::ThreadId,
@@ -200,7 +200,7 @@ mod rw_lock_impl {
 
     impl<T> Drop for RwLockReadGuard<'_, T> {
         fn drop(&mut self) {
-            let tid = std::thread::current().id();
+            let tid = core::thread::current().id();
             self.holders.lock().remove(&tid);
         }
     }
@@ -245,7 +245,7 @@ mod rw_lock_impl {
 
     impl<T> Drop for RwLockWriteGuard<'_, T> {
         fn drop(&mut self) {
-            let tid = std::thread::current().id();
+            let tid = core::thread::current().id();
             self.holders.lock().remove(&tid);
         }
     }
@@ -274,7 +274,7 @@ mod rw_lock_impl {
         }
 
         pub fn read(&self) -> RwLockReadGuard<'_, T> {
-            let tid = std::thread::current().id();
+            let tid = core::thread::current().id();
 
             // If it is write-locked, and we locked it (reentrancy deadlock)
             let would_deadlock =
@@ -284,7 +284,7 @@ mod rw_lock_impl {
                 "{} DEAD-LOCK DETECTED ({:?})!\n\
                     Trying to grab read-lock at:\n{}\n\
                     which is already exclusively held by current thread at:\n{}\n\n",
-                std::any::type_name::<Self>(),
+                core::any::type_name::<Self>(),
                 tid,
                 format_backtrace(&mut make_backtrace()),
                 format_backtrace(self.holders.lock().get_mut(&tid).unwrap())
@@ -302,7 +302,7 @@ mod rw_lock_impl {
         }
 
         pub fn write(&self) -> RwLockWriteGuard<'_, T> {
-            let tid = std::thread::current().id();
+            let tid = core::thread::current().id();
 
             // If it is locked in any way, and we locked it (reentrancy deadlock)
             let would_deadlock = self.lock.is_locked() && self.holders.lock().contains_key(&tid);
@@ -311,7 +311,7 @@ mod rw_lock_impl {
                 "{} DEAD-LOCK DETECTED ({:?})!\n\
                     Trying to grab write-lock at:\n{}\n\
                     which is already held by current thread at:\n{}\n\n",
-                std::any::type_name::<Self>(),
+                core::any::type_name::<Self>(),
                 tid,
                 format_backtrace(&mut make_backtrace()),
                 format_backtrace(self.holders.lock().get_mut(&tid).unwrap())
@@ -345,7 +345,7 @@ mod rw_lock_impl {
 
         // Remove irrelevant parts of the stacktrace:
         let end_offset = stacktrace
-            .find("std::sys_common::backtrace::__rust_begin_short_backtrace")
+            .find("core::sys_common::backtrace::__rust_begin_short_backtrace")
             .unwrap_or(stacktrace.len());
         let stacktrace = &stacktrace[..end_offset];
 
@@ -379,7 +379,7 @@ mod tests {
     #![allow(clippy::disallowed_methods)] // Ok for tests
 
     use crate::mutex::Mutex;
-    use std::time::Duration;
+    use core::time::Duration;
 
     #[test]
     fn lock_two_different_mutexes_single_thread() {
@@ -391,16 +391,16 @@ mod tests {
 
     #[test]
     fn lock_multiple_threads() {
-        use std::sync::Arc;
+        use core::sync::Arc;
         let one = Arc::new(Mutex::new(()));
         let our_lock = one.lock();
         let other_thread = {
             let one = Arc::clone(&one);
-            std::thread::spawn(move || {
+            core::thread::spawn(move || {
                 let _lock = one.lock();
             })
         };
-        std::thread::sleep(Duration::from_millis(200));
+        core::thread::sleep(Duration::from_millis(200));
         drop(our_lock);
         other_thread.join().unwrap();
     }
@@ -413,7 +413,7 @@ mod tests_rwlock {
     #![allow(clippy::disallowed_methods)] // Ok for tests
 
     use crate::mutex::RwLock;
-    use std::time::Duration;
+    use core::time::Duration;
 
     #[test]
     fn lock_two_different_rwlocks_single_thread() {
@@ -425,22 +425,22 @@ mod tests_rwlock {
 
     #[test]
     fn rwlock_multiple_threads() {
-        use std::sync::Arc;
+        use core::sync::Arc;
         let one = Arc::new(RwLock::new(()));
         let our_lock = one.write();
         let other_thread1 = {
             let one = Arc::clone(&one);
-            std::thread::spawn(move || {
+            core::thread::spawn(move || {
                 let _ = one.write();
             })
         };
         let other_thread2 = {
             let one = Arc::clone(&one);
-            std::thread::spawn(move || {
+            core::thread::spawn(move || {
                 let _ = one.read();
             })
         };
-        std::thread::sleep(Duration::from_millis(200));
+        core::thread::sleep(Duration::from_millis(200));
         drop(our_lock);
         other_thread1.join().unwrap();
         other_thread2.join().unwrap();
@@ -481,7 +481,7 @@ mod tests_rwlock {
 
     #[test]
     fn rwlock_short_read_foreign_read_write_reentrancy() {
-        use std::sync::Arc;
+        use core::sync::Arc;
 
         let lock = Arc::new(RwLock::new(()));
 
@@ -491,7 +491,7 @@ mod tests_rwlock {
         // Thread #1 grabs the same read lock
         let other_thread = {
             let lock = Arc::clone(&lock);
-            std::thread::spawn(move || {
+            core::thread::spawn(move || {
                 let _t1r0 = lock.read();
             })
         };
@@ -507,7 +507,7 @@ mod tests_rwlock {
     #[test]
     #[should_panic]
     fn rwlock_read_foreign_read_write_reentrancy() {
-        use std::sync::Arc;
+        use core::sync::Arc;
 
         let lock = Arc::new(RwLock::new(()));
 
@@ -517,7 +517,7 @@ mod tests_rwlock {
         // Thread #1 grabs the same read lock
         let other_thread = {
             let lock = Arc::clone(&lock);
-            std::thread::spawn(move || {
+            core::thread::spawn(move || {
                 let _t1r0 = lock.read();
             })
         };

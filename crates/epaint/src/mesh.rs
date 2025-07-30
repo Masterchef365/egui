@@ -1,4 +1,5 @@
 use crate::{Color32, TextureId, WHITE_UV, emath};
+use alloc::vec::Vec;
 use emath::{Pos2, Rect, Rot2, TSTransform, Vec2};
 
 /// The 2D vertex type.
@@ -78,9 +79,9 @@ impl Mesh {
 
     /// Returns the amount of memory used by the vertices and indices.
     pub fn bytes_used(&self) -> usize {
-        std::mem::size_of::<Self>()
-            + self.vertices.len() * std::mem::size_of::<Vertex>()
-            + self.indices.len() * std::mem::size_of::<u32>()
+        core::mem::size_of::<Self>()
+            + self.vertices.len() * core::mem::size_of::<Vertex>()
+            + self.indices.len() * core::mem::size_of::<u32>()
     }
 
     /// Are all indices within the bounds of the contained vertices?
@@ -239,14 +240,14 @@ impl Mesh {
 
         if self.vertices.len() <= MAX_SIZE as usize {
             // Common-case optimization:
-            return vec![Mesh16 {
+            return alloc::vec![Mesh16 {
                 indices: self.indices.iter().map(|&i| i as u16).collect(),
                 vertices: self.vertices,
                 texture_id: self.texture_id,
             }];
         }
 
-        let mut output = vec![];
+        let mut output = alloc::vec![];
         let mut index_cursor = 0;
 
         while index_cursor < self.indices.len() {

@@ -1,9 +1,10 @@
 #![allow(clippy::many_single_char_names)]
 #![allow(clippy::wrong_self_convention)] // False positives
 
-use std::ops::Range;
+use core::ops::Range;
 
 use crate::{Color32, PathShape, PathStroke, Shape};
+use alloc::vec::Vec;
 use emath::{Pos2, Rect, RectTransform};
 
 // ----------------------------------------------------------------------------
@@ -257,8 +258,8 @@ impl CubicBezierShape {
         let theta = (-q / (2.0 * r)).acos() / 3.0;
 
         let t1 = 2.0 * r.cbrt() * theta.cos() + h;
-        let t2 = 2.0 * r.cbrt() * (theta + 120.0 * std::f32::consts::PI / 180.0).cos() + h;
-        let t3 = 2.0 * r.cbrt() * (theta + 240.0 * std::f32::consts::PI / 180.0).cos() + h;
+        let t2 = 2.0 * r.cbrt() * (theta + 120.0 * core::f32::consts::PI / 180.0).cos() + h;
+        let t3 = 2.0 * r.cbrt() * (theta + 240.0 * core::f32::consts::PI / 180.0).cos() + h;
 
         if t1 > epsilon && t1 < 1.0 - epsilon {
             return Some(t1);
@@ -299,7 +300,7 @@ impl CubicBezierShape {
     /// the points may not be evenly distributed in the range [0.0,1.0] (t value)
     pub fn flatten(&self, tolerance: Option<f32>) -> Vec<Pos2> {
         let tolerance = tolerance.unwrap_or((self.points[0].x - self.points[3].x).abs() * 0.001);
-        let mut result = vec![self.points[0]];
+        let mut result = alloc::vec![self.points[0]];
         self.for_each_flattened_with_t(tolerance, &mut |p, _t| {
             result.push(p);
         });
@@ -520,7 +521,7 @@ impl QuadraticBezierShape {
     /// the points may not be evenly distributed in the range [0.0,1.0] (t value)
     pub fn flatten(&self, tolerance: Option<f32>) -> Vec<Pos2> {
         let tolerance = tolerance.unwrap_or((self.points[0].x - self.points[2].x).abs() * 0.001);
-        let mut result = vec![self.points[0]];
+        let mut result = alloc::vec![self.points[0]];
         self.for_each_flattened_with_t(tolerance, &mut |p, _t| {
             result.push(p);
         });

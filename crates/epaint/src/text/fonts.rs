@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, sync::Arc};
+use alloc::{collections::BTreeMap, sync::Arc};
 
 use crate::{
     AlphaFromCoverage, TextureAtlas,
@@ -8,6 +8,7 @@ use crate::{
         font::{Font, FontImpl},
     },
 };
+use alloc::{borrow::ToOwned, string::String, vec::Vec};
 use emath::{NumExt as _, OrderedFloat};
 
 #[cfg(feature = "default_fonts")]
@@ -54,9 +55,9 @@ impl FontId {
     }
 }
 
-impl std::hash::Hash for FontId {
+impl core::hash::Hash for FontId {
     #[inline(always)]
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
         let Self { size, family } = self;
         emath::OrderedFloat(*size).hash(state);
         family.hash(state);
@@ -94,8 +95,8 @@ pub enum FontFamily {
     Name(Arc<str>),
 }
 
-impl std::fmt::Display for FontFamily {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for FontFamily {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::Monospace => "Monospace".fmt(f),
             Self::Proportional => "Proportional".fmt(f),
@@ -111,7 +112,7 @@ impl std::fmt::Display for FontFamily {
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct FontData {
     /// The content of a `.ttf` or `.otf` file.
-    pub font: std::borrow::Cow<'static, [u8]>,
+    pub font: alloc::borrow::Cow<'static, [u8]>,
 
     /// Which font face in the file to use.
     /// When in doubt, use `0`.
@@ -124,7 +125,7 @@ pub struct FontData {
 impl FontData {
     pub fn from_static(font: &'static [u8]) -> Self {
         Self {
-            font: std::borrow::Cow::Borrowed(font),
+            font: alloc::borrow::Cow::Borrowed(font),
             index: 0,
             tweak: Default::default(),
         }
@@ -132,7 +133,7 @@ impl FontData {
 
     pub fn from_owned(font: Vec<u8>) -> Self {
         Self {
-            font: std::borrow::Cow::Owned(font),
+            font: alloc::borrow::Cow::Owned(font),
             index: 0,
             tweak: Default::default(),
         }
@@ -203,11 +204,11 @@ impl Default for FontTweak {
 
 fn ab_glyph_font_from_font_data(name: &str, data: &FontData) -> ab_glyph::FontArc {
     match &data.font {
-        std::borrow::Cow::Borrowed(bytes) => {
+        alloc::borrow::Cow::Borrowed(bytes) => {
             ab_glyph::FontRef::try_from_slice_and_index(bytes, data.index)
                 .map(ab_glyph::FontArc::from)
         }
-        std::borrow::Cow::Owned(bytes) => {
+        alloc::borrow::Cow::Owned(bytes) => {
             ab_glyph::FontVec::try_from_vec_and_index(bytes.clone(), data.index)
                 .map(ab_glyph::FontArc::from)
         }
@@ -229,7 +230,7 @@ fn ab_glyph_font_from_font_data(name: &str, data: &FontData) -> ab_glyph::FontAr
 ///
 /// // Install my own font (maybe supporting non-latin characters):
 /// fonts.font_data.insert("my_font".to_owned(),
-///    std::sync::Arc::new(
+///    core::sync::Arc::new(
 ///        // .ttf and .otf supported
 ///        FontData::from_static(include_bytes!("../../../epaint_default_fonts/fonts/Ubuntu-Light.ttf"))
 ///    )
@@ -353,7 +354,7 @@ impl Default for FontDefinitions {
 
         families.insert(
             FontFamily::Monospace,
-            vec![
+            alloc::vec![
                 "Hack".to_owned(),
                 "Ubuntu-Light".to_owned(), // fallback for √ etc
                 "NotoEmoji-Regular".to_owned(),
@@ -362,7 +363,7 @@ impl Default for FontDefinitions {
         );
         families.insert(
             FontFamily::Proportional,
-            vec![
+            alloc::vec![
                 "Ubuntu-Light".to_owned(),
                 "NotoEmoji-Regular".to_owned(),
                 "emoji-icon-font".to_owned(),
@@ -380,8 +381,8 @@ impl FontDefinitions {
     /// No fonts.
     pub fn empty() -> Self {
         let mut families = BTreeMap::new();
-        families.insert(FontFamily::Monospace, vec![]);
-        families.insert(FontFamily::Proportional, vec![]);
+        families.insert(FontFamily::Monospace, alloc::vec![]);
+        families.insert(FontFamily::Proportional, alloc::vec![]);
 
         Self {
             font_data: Default::default(),
@@ -653,7 +654,7 @@ pub struct FontsImpl {
     definitions: FontDefinitions,
     atlas: Arc<Mutex<TextureAtlas>>,
     font_impl_cache: FontImplCache,
-    sized_family: ahash::HashMap<(OrderedFloat<f32>, FontFamily), Font>,
+    sized_family: BTreeMap<(OrderedFloat<f32>, FontFamily), Font>,
 }
 
 impl FontsImpl {
@@ -762,7 +763,7 @@ struct CachedGalley {
 struct GalleyCache {
     /// Frame counter used to do garbage collection on the cache
     generation: u32,
-    cache: nohash_hasher::IntMap<u64, CachedGalley>,
+    cache: BTreeMap<u64, CachedGalley>,
 }
 
 impl GalleyCache {
@@ -800,7 +801,7 @@ impl GalleyCache {
         let hash = crate::util::hash(&job); // TODO(emilk): even faster hasher?
 
         let galley = match self.cache.entry(hash) {
-            std::collections::hash_map::Entry::Occupied(entry) => {
+            alloc::collections::btree_map::Entry::Occupied(entry) => {
                 // The job was found in cache - no need to re-layout.
                 let cached = entry.into_mut();
                 cached.last_used = self.generation;
@@ -821,7 +822,7 @@ impl GalleyCache {
 
                 galley
             }
-            std::collections::hash_map::Entry::Vacant(entry) => {
+            alloc::collections::btree_map::Entry::Vacant(entry) => {
                 let job = Arc::new(job);
                 if allow_split_paragraphs && should_cache_each_paragraph_individually(&job) {
                     let (child_galleys, child_hashes) =
@@ -1004,7 +1005,7 @@ struct FontImplCache {
     ab_glyph_fonts: BTreeMap<String, (FontTweak, ab_glyph::FontArc)>,
 
     /// Map font pixel sizes and names to the cached [`FontImpl`].
-    cache: ahash::HashMap<(u32, String), Arc<FontImpl>>,
+    cache: BTreeMap<(u32, String), Arc<FontImpl>>,
 }
 
 impl FontImplCache {
@@ -1075,11 +1076,13 @@ mod tests {
     use super::*;
     use crate::text::{TextWrapping, layout};
     use crate::{Stroke, text::TextFormat};
+    use alloc::format;
+    use alloc::vec::{self, Vec};
     use ecolor::Color32;
     use emath::Align;
 
     fn jobs() -> Vec<LayoutJob> {
-        vec![
+        alloc::vec![
             LayoutJob::simple(
                 String::default(),
                 FontId::new(14.0, FontFamily::Monospace),
@@ -1187,18 +1190,22 @@ mod tests {
                         let split = GalleyCache::default().layout(&mut fonts, job.clone(), true);
 
                         for (i, row) in whole.rows.iter().enumerate() {
+                            /*
                             println!(
                                 "Whole row {i}: section_index_at_start={}, first glyph section_index: {:?}",
                                 row.row.section_index_at_start,
                                 row.row.glyphs.first().map(|g| g.section_index)
                             );
+                            */
                         }
                         for (i, row) in split.rows.iter().enumerate() {
+                            /*
                             println!(
                                 "Split row {i}: section_index_at_start={}, first glyph section_index: {:?}",
                                 row.row.section_index_at_start,
                                 row.row.glyphs.first().map(|g| g.section_index)
                             );
+                            */
                         }
 
                         // Don't compare for equaliity; but format with a specific precision and make sure we hit that.

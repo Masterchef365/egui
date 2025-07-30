@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 use ecolor::Color32;
 use emath::{Rect, remap_clamp};
 
@@ -87,7 +88,7 @@ impl TextureAtlas {
             cursor: (0, 0),
             row_height: 0,
             overflowed: false,
-            discs: vec![], // will be filled in below
+            discs: alloc::vec![], // will be filled in below
             text_alpha_from_coverage,
         };
 
@@ -197,7 +198,7 @@ impl TextureAtlas {
     pub fn take_delta(&mut self) -> Option<ImageDelta> {
         let texture_options = Self::texture_options();
 
-        let dirty = std::mem::replace(&mut self.dirty, Rectu::NOTHING);
+        let dirty = core::mem::replace(&mut self.dirty, Rectu::NOTHING);
         if dirty == Rectu::NOTHING {
             None
         } else if dirty == Rectu::EVERYTHING {

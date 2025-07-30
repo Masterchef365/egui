@@ -1,6 +1,6 @@
 #![allow(clippy::derived_hash_with_manual_eq)] // We need to impl Hash for f32, but we don't implement Eq, which is fine
 
-use std::{fmt::Debug, sync::Arc};
+use core::{fmt::Debug, sync::Arc};
 
 use emath::GuiRounding as _;
 
@@ -88,9 +88,9 @@ where
     }
 }
 
-impl std::hash::Hash for Stroke {
+impl core::hash::Hash for Stroke {
     #[inline(always)]
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
         let Self { width, color } = *self;
         emath::OrderedFloat(width).hash(state);
         color.hash(state);

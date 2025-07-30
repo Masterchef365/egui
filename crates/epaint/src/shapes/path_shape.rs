@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+
 use crate::*;
 
 /// A path which can be stroked and/or filled (if closed).
