@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+use alloc::string::String;
 //! # Image loading
 //!
 //! If you just want to display some images, [`egui_extras`](https://crates.io/crates/egui_extras/)

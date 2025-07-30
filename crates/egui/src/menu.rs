@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 #![allow(deprecated)]
 //! Deprecated menu API - Use [`crate::containers::menu`] instead.
 //!

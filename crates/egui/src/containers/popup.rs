@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 #![expect(deprecated)] // This is a new, safe wrapper around the old `Memory::popup` API.
 
 use core::iter::once;

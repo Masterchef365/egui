@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+use alloc::string::String;
 //! This is an example of how to create a plugin for egui.
 //!
 //! A plugin usually consist of a struct that holds some state,

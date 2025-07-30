@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 //! Color picker widgets.
 
 use crate::util::fixed_cache::FixedCache;

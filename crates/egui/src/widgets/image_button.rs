@@ -1,4 +1,6 @@
 use crate::{
+use alloc::vec::Vec;
+use alloc::string::String;
     Color32, CornerRadius, Image, Rect, Response, Sense, Ui, Vec2, Widget, WidgetInfo, WidgetType,
     widgets,
 };

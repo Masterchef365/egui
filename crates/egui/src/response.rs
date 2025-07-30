@@ -1,4 +1,6 @@
 use core::{any::Any, sync::Arc};
+use alloc::vec::Vec;
+use alloc::string::String;
 
 use crate::{
     Context, CursorIcon, Id, LayerId, PointerButton, Popup, PopupKind, Sense, Tooltip, Ui,

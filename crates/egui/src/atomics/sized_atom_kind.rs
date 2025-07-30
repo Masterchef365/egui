@@ -2,6 +2,7 @@ use crate::{Id, Image};
 use emath::Vec2;
 use epaint::Galley;
 use alloc::sync::Arc;
+use alloc::vec::Vec;
 
 /// A sized [`crate::AtomKind`].
 #[derive(Clone, Default, Debug)]

@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+use alloc::string::String;
 //! The input needed by egui.
 
 use epaint::ColorImage;

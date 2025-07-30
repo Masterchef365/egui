@@ -1,5 +1,7 @@
 use core::{time::Duration, slice::Iter};
 use alloc::{borrow::Cow, sync::Arc};
+use alloc::vec::Vec;
+use alloc::string::String;
 
 use emath::{Align, Float as _, GuiRounding as _, NumExt as _, Rot2};
 use epaint::{

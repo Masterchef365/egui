@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+use alloc::string::String;
 // TODO(emilk): it is possible we can simplify `Element` further by
 // assuming everything is possibly serializable, and by supplying serialize/deserialize functions for them.
 // For non-serializable types, these simply return `None`.

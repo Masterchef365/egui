@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 //! Frame container
 
 use crate::{

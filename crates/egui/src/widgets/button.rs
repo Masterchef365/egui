@@ -1,4 +1,6 @@
 use crate::{
+use alloc::vec::Vec;
+use alloc::string::String;
     Atom, AtomExt as _, AtomKind, AtomLayout, AtomLayoutResponse, Color32, CornerRadius, Frame,
     Image, IntoAtoms, NumExt as _, Response, Sense, Stroke, TextWrapMode, Ui, Vec2, Widget,
     WidgetInfo, WidgetText, WidgetType,

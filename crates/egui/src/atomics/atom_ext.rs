@@ -1,5 +1,6 @@
 use crate::{Atom, FontSelection, Ui};
 use emath::Vec2;
+use alloc::vec::Vec;
 
 /// A trait for conveniently building [`Atom`]s.
 ///

@@ -2,6 +2,7 @@ use emath::GuiRounding as _;
 use epaint::text::TextFormat;
 use core::fmt::Formatter;
 use core::{borrow::Cow, sync::Arc};
+use alloc::string::String;
 
 use crate::{
     Align, Color32, FontFamily, FontSelection, Galley, Style, TextStyle, TextWrapMode, Ui, Visuals,

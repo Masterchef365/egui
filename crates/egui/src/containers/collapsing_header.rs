@@ -1,4 +1,5 @@
 use core::hash::Hash;
+use alloc::vec::Vec;
 
 use crate::{
     Context, Id, InnerResponse, NumExt as _, Rect, Response, Sense, Stroke, TextStyle,

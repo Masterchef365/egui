@@ -1,4 +1,5 @@
 use crate::{Response, Sense, Ui, Vec2, Widget, vec2};
+use alloc::vec::Vec;
 
 /// A visual separator. A horizontal or vertical line (depending on [`crate::Layout`]).
 ///

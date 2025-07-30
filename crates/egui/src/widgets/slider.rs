@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+use alloc::string::String;
 #![allow(clippy::needless_pass_by_value)] // False positives with `impl ToString`
 
 use core::ops::RangeInclusive;

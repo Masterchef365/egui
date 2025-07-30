@@ -1,5 +1,6 @@
 use alloc::sync::Arc;
 use core::{any::Any, iter::FusedIterator};
+use alloc::string::String;
 
 use crate::{Direction, Frame, Id, Rect};
 

@@ -1,4 +1,5 @@
 use epaint::Shape;
+use alloc::vec::Vec;
 
 use crate::{
     Align2, Context, Id, InnerResponse, NumExt as _, Painter, Popup, PopupCloseBehavior, Rect,

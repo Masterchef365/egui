@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 #![allow(clippy::needless_range_loop)]
 
 use core::ops::{Add, AddAssign, BitOr, BitOrAssign};

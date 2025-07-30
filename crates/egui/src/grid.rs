@@ -1,4 +1,5 @@
 use emath::GuiRounding as _;
+use alloc::vec::Vec;
 
 use crate::{
     Align2, Color32, Context, Id, InnerResponse, NumExt as _, Painter, Rect, Region, Style, Ui,

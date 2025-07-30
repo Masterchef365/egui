@@ -1,4 +1,6 @@
 use core::sync::atomic::{AtomicU64, Ordering::Relaxed};
+use alloc::vec::Vec;
+use alloc::string::String;
 
 use emath::Vec2;
 

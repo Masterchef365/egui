@@ -1,4 +1,5 @@
 use core::f32;
+use alloc::vec::Vec;
 
 use emath::{GuiRounding as _, Pos2};
 

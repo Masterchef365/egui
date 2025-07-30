@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 //! Panels are [`Ui`] regions taking up e.g. the left side of a [`Ui`] or screen.
 //!
 //! Panels can either be a child of a [`Ui`] (taking up a portion of the parent)

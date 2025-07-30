@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 #![warn(missing_docs)] // Let's keep this file well-documented.` to memory.rs
 
 use core::num::NonZeroUsize;

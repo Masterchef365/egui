@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 //! Popup menus, context menus and menu bars.
 //!
 //! Show menus via

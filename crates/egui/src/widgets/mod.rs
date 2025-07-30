@@ -1,3 +1,4 @@
+use alloc::vec::Vec;
 //! Widgets are pieces of GUI such as [`Label`], [`Button`], [`Slider`] etc.
 //!
 //! Example widget uses:

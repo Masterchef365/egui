@@ -1,4 +1,5 @@
 use core::{collections::BTreeMap, fmt::Debug};
+use alloc::vec::Vec;
 
 use crate::{
     Event, RawInput, TouchId, TouchPhase,

@@ -1,4 +1,6 @@
 use alloc::sync::Arc;
+use alloc::vec::Vec;
+use alloc::string::String;
 
 use emath::GuiRounding as _;
 use epaint::{

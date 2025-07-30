@@ -1,4 +1,6 @@
 use crate::{Layout, Painter, Pos2, Rect, Region, Vec2, grid, vec2};
+use alloc::vec::Vec;
+use alloc::string::String;
 
 #[cfg(debug_assertions)]
 use crate::{Align2, Color32, Stroke};

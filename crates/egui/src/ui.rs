@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+use alloc::string::String;
 #![warn(missing_docs)] // Let's keep `Ui` well-documented.
 #![allow(clippy::use_self)]
 

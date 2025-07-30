@@ -1,6 +1,8 @@
 use crate::{AtomKind, Id, SizedAtom, Ui};
 use emath::{NumExt as _, Vec2};
 use epaint::text::TextWrapMode;
+use alloc::vec::Vec;
+use alloc::string::String;
 
 /// A low-level ui building block.
 ///

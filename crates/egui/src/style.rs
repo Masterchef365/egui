@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+use alloc::string::String;
 //! egui theme (spacing, colors, etc).
 
 #![allow(clippy::if_same_then_else)]

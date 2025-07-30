@@ -1,3 +1,4 @@
+use alloc::string::String;
 //! Text cursor changes/interaction, without modifying the text.
 
 use epaint::text::{Galley, cursor::CCursor};

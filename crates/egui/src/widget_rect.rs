@@ -1,4 +1,5 @@
 use ahash::HashMap;
+use alloc::vec::Vec;
 
 use crate::{Id, IdMap, LayerId, Rect, Sense, WidgetInfo};
 

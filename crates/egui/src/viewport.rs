@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+use alloc::string::String;
 //! egui supports multiple viewports, corresponding to multiple native windows.
 //!
 //! Not all egui backends support multiple viewports, but `eframe` native does
