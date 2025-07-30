@@ -145,7 +145,7 @@ impl From<ViewportId> for Id {
     }
 }
 
-impl nohash_hasher::IsEnabled for ViewportId {}
+//impl nohash_hasher::IsEnabled for ViewportId {}
 
 /// A fast hash set of [`ViewportId`].
 //pub type ViewportIdSet = nohash_hasher::IntSet<ViewportId>;

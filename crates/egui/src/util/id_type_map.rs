@@ -36,7 +36,7 @@ impl From<core::any::TypeId> for TypeId {
     }
 }
 
-impl nohash_hasher::IsEnabled for TypeId {}
+//impl nohash_hasher::IsEnabled for TypeId {}
 
 // -----------------------------------------------------------------------------------------------
 

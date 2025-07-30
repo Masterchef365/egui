@@ -34,7 +34,7 @@ use core::num::NonZeroU64;
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Id(NonZeroU64);
 
-impl nohash_hasher::IsEnabled for Id {}
+//impl nohash_hasher::IsEnabled for Id {}
 
 impl Id {
     /// A special [`Id`], in particular as a key to [`crate::Memory::data`]
