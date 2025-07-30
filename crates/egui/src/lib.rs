@@ -405,6 +405,9 @@
 #![allow(clippy::float_cmp)]
 #![allow(clippy::manual_range_contains)]
 
+#![no_std]
+extern crate alloc;
+
 mod animation_manager;
 pub mod cache;
 pub mod containers;

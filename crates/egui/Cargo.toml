@@ -82,6 +82,7 @@ _override_unity = ["epaint/_override_unity"]
 [dependencies]
 emath = { workspace = true, default-features = false }
 epaint = { workspace = true, default-features = false }
+num-traits = { version = "0.2", default-features = false, features = ["libm"] }
 
 ahash.workspace = true
 bitflags.workspace = true

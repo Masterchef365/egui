@@ -1260,6 +1260,7 @@ dependencies = [
  "epaint",
  "log",
  "nohash-hasher",
+ "num-traits",
  "profiling",
  "ron",
  "serde",
