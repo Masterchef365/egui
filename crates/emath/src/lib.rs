@@ -48,9 +48,6 @@ mod vec2b;
 
 use alloc::{format, string::String};
 
-#[allow(hidden_glob_reexports)]
-use num_traits::Float;
-
 pub use self::{
     align::{Align, Align2},
     gui_rounding::{GUI_ROUNDING, GuiRounding},
@@ -405,6 +402,8 @@ pub fn exponential_smooth_factor(
     in_this_many_seconds: f32,
     dt: f32,
 ) -> f32 {
+    #[allow(hidden_glob_reexports)]
+    use num_traits::Float;
     1.0 - (1.0 - reach_this_fraction).powf(dt / in_this_many_seconds)
 }
 
