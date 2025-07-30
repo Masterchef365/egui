@@ -405,6 +405,9 @@
 #![allow(clippy::float_cmp)]
 #![allow(clippy::manual_range_contains)]
 
+// TODO: Masterchef365
+#![allow(unused)]
+
 #![no_std]
 extern crate alloc;
 

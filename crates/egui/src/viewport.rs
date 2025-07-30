@@ -67,7 +67,7 @@
 //! There are several more things related to viewports that we want to add.
 //! Read more at <https://github.com/emilk/egui/issues/3556>.
 
-use core::sync::Arc;
+use alloc::sync::Arc;
 
 use epaint::{Pos2, Vec2};
 

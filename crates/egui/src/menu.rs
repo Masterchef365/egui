@@ -26,7 +26,7 @@ use crate::{
     widgets::{Button, ImageButton},
 };
 use epaint::mutex::RwLock;
-use core::sync::Arc;
+use alloc::sync::Arc;
 
 /// What is saved between frames.
 #[derive(Clone, Default)]

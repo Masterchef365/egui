@@ -8,7 +8,7 @@ use epaint::text::TextWrapMode;
 use epaint::{Color32, Galley};
 use smallvec::SmallVec;
 use core::ops::{Deref, DerefMut};
-use core::sync::Arc;
+use alloc::sync::Arc;
 
 /// Intra-widget layout utility.
 ///

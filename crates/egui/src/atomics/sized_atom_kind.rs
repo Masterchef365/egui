@@ -1,7 +1,7 @@
 use crate::{Id, Image};
 use emath::Vec2;
 use epaint::Galley;
-use core::sync::Arc;
+use alloc::sync::Arc;
 
 /// A sized [`crate::AtomKind`].
 #[derive(Clone, Default, Debug)]

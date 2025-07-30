@@ -186,11 +186,11 @@ impl FocusDirection {
 pub struct Options {
     /// The default style for new [`Ui`](crate::Ui):s in dark mode.
     #[cfg_attr(feature = "serde", serde(skip))]
-    pub dark_style: core::sync::Arc<Style>,
+    pub dark_style: alloc::sync::Arc<Style>,
 
     /// The default style for new [`Ui`](crate::Ui):s in light mode.
     #[cfg_attr(feature = "serde", serde(skip))]
-    pub light_style: core::sync::Arc<Style>,
+    pub light_style: alloc::sync::Arc<Style>,
 
     /// Preference for selection between dark and light [`crate::Context::style`]
     /// as the active style used by all subsequent windows, panels, etc.
@@ -304,8 +304,8 @@ pub struct Options {
 impl Default for Options {
     fn default() -> Self {
         Self {
-            dark_style: core::sync::Arc::new(Theme::Dark.default_style()),
-            light_style: core::sync::Arc::new(Theme::Light.default_style()),
+            dark_style: alloc::sync::Arc::new(Theme::Dark.default_style()),
+            light_style: alloc::sync::Arc::new(Theme::Light.default_style()),
             theme_preference: Default::default(),
             fallback_theme: Theme::Dark,
             system_theme: None,
@@ -339,14 +339,14 @@ impl Options {
         }
     }
 
-    pub(crate) fn style(&self) -> &core::sync::Arc<Style> {
+    pub(crate) fn style(&self) -> &alloc::sync::Arc<Style> {
         match self.theme() {
             Theme::Dark => &self.dark_style,
             Theme::Light => &self.light_style,
         }
     }
 
-    pub(crate) fn style_mut(&mut self) -> &mut core::sync::Arc<Style> {
+    pub(crate) fn style_mut(&mut self) -> &mut alloc::sync::Arc<Style> {
         match self.theme() {
             Theme::Dark => &mut self.dark_style,
             Theme::Light => &mut self.light_style,
@@ -408,7 +408,7 @@ impl Options {
             .show(ui, |ui| {
                 theme_preference.radio_buttons(ui);
 
-                let style = core::sync::Arc::make_mut(match theme {
+                let style = alloc::sync::Arc::make_mut(match theme {
                     Theme::Dark => dark_style,
                     Theme::Light => light_style,
                 });

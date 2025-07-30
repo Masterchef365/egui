@@ -1,4 +1,4 @@
-use core::sync::Arc;
+use alloc::{string::String, sync::Arc, vec::Vec};
 
 use emath::{Rect, TSTransform};
 use epaint::{

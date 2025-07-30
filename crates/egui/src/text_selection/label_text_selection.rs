@@ -1,4 +1,4 @@
-use core::sync::Arc;
+use alloc::sync::Arc;
 
 use emath::TSTransform;
 
@@ -125,8 +125,8 @@ impl Default for LabelSelectionState {
 
 impl LabelSelectionState {
     pub(crate) fn register(ctx: &Context) {
-        ctx.on_begin_pass("LabelSelectionState", core::sync::Arc::new(Self::begin_pass));
-        ctx.on_end_pass("LabelSelectionState", core::sync::Arc::new(Self::end_pass));
+        ctx.on_begin_pass("LabelSelectionState", alloc::sync::Arc::new(Self::begin_pass));
+        ctx.on_end_pass("LabelSelectionState", alloc::sync::Arc::new(Self::end_pass));
     }
 
     pub fn load(ctx: &Context) -> Self {

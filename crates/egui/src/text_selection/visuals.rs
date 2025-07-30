@@ -1,4 +1,4 @@
-use core::sync::Arc;
+use alloc::sync::Arc;
 
 use crate::{Galley, Painter, Rect, Ui, Visuals, pos2, vec2};
 

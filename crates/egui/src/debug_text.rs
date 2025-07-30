@@ -16,7 +16,7 @@ use crate::{
 /// meaning [`Context`] calls this from its `Default` implementation,
 /// so this is marked as `pub(crate)`.
 pub(crate) fn register(ctx: &Context) {
-    ctx.on_end_pass("debug_text", core::sync::Arc::new(State::end_pass));
+    ctx.on_end_pass("debug_text", alloc::sync::Arc::new(State::end_pass));
 }
 
 /// Print this text next to the cursor at the end of the pass.

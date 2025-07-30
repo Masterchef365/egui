@@ -1,6 +1,6 @@
 // WARNING: the code in here is horrible. It is a behemoth that needs breaking up into simpler parts.
 
-use core::sync::Arc;
+use alloc::sync::Arc;
 
 use emath::GuiRounding as _;
 use epaint::{CornerRadiusF32, RectShape};

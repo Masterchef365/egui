@@ -1,4 +1,4 @@
-use core::sync::Arc;
+use alloc::sync::Arc;
 
 use emath::GuiRounding as _;
 use epaint::{

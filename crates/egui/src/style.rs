@@ -89,7 +89,7 @@ pub enum TextStyle {
     /// ```
     /// egui::TextStyle::Name("footing".into());
     /// ````
-    Name(core::sync::Arc<str>),
+    Name(alloc::sync::Arc<str>),
 }
 
 impl core::fmt::Display for TextStyle {
