@@ -13,7 +13,7 @@
 ///
 /// See [the Hack repository](https://github.com/source-foundry/Hack) for more
 /// information.
-pub const HACK_REGULAR: &[u8] = include_bytes!("../fonts/Hack-Regular.ttf");
+pub const HACK_REGULAR: &[u8] = core::include_bytes!("../fonts/Hack-Regular.ttf");
 
 /// A typeface containing emoji characters as designed for the Noto font family.
 ///
@@ -24,7 +24,7 @@ pub const HACK_REGULAR: &[u8] = include_bytes!("../fonts/Hack-Regular.ttf");
 ///
 /// See [Google Fonts](https://fonts.google.com/noto/specimen/Noto+Emoji) for
 /// more information.
-pub const NOTO_EMOJI_REGULAR: &[u8] = include_bytes!("../fonts/NotoEmoji-Regular.ttf");
+pub const NOTO_EMOJI_REGULAR: &[u8] = core::include_bytes!("../fonts/NotoEmoji-Regular.ttf");
 
 /// A typeface designed for use by Ubuntu.
 ///
@@ -33,7 +33,7 @@ pub const NOTO_EMOJI_REGULAR: &[u8] = include_bytes!("../fonts/NotoEmoji-Regular
 /// the Ubuntu brand that convey a precise, reliable and free attitude.
 ///
 /// See [Ubuntu design](https://design.ubuntu.com/font) for more information.
-pub const UBUNTU_LIGHT: &[u8] = include_bytes!("../fonts/Ubuntu-Light.ttf");
+pub const UBUNTU_LIGHT: &[u8] = core::include_bytes!("../fonts/Ubuntu-Light.ttf");
 
 /// An experimental typeface that uses standardized
 /// [UNICODE planes](http://en.wikipedia.org/wiki/Plane_(Unicode))
@@ -44,4 +44,4 @@ pub const UBUNTU_LIGHT: &[u8] = include_bytes!("../fonts/Ubuntu-Light.ttf");
 ///
 /// See [the `emoji-icon-font` repository](https://github.com/jslegers/emoji-icon-font)
 /// for more information.
-pub const EMOJI_ICON: &[u8] = include_bytes!("../fonts/emoji-icon-font.ttf");
+pub const EMOJI_ICON: &[u8] = core::include_bytes!("../fonts/emoji-icon-font.ttf");

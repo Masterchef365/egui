@@ -90,7 +90,7 @@ spin = "0.10"
 
 ahash.workspace = true
 bitflags.workspace = true
-nohash-hasher.workspace = true
+#nohash-hasher.workspace = true
 profiling.workspace = true
 smallvec.workspace = true
 unicode-segmentation.workspace = true
