@@ -1327,7 +1327,7 @@ impl Areas {
         // For all layers with sublayers, put the sublayers directly after the parent layer:
         let sublayers = core::mem::take(sublayers);
         for (parent, children) in sublayers {
-            let mut moved_layers = vec![parent];
+            let mut moved_layers = alloc::vec![parent];
             order.retain(|l| {
                 if children.contains(l) {
                     moved_layers.push(*l);
@@ -1382,7 +1382,7 @@ fn order_map_total_ordering() {
     layers.sort_by(|&a, &b| areas.compare_order(a, b));
 
     // Assert that `areas.compare_order()` forms a total ordering
-    let mut equivalence_classes = vec![0];
+    let mut equivalence_classes = alloc::vec![0];
     let mut i = 0;
     for l in layers.windows(2) {
         assert!(l[0].order <= l[1].order, "does not follow LayerId.order");

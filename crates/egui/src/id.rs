@@ -1,4 +1,4 @@
-use alloc::string::String;
+use alloc::{format, string::String};
 // TODO(emilk): have separate types `PositionId` and `UniqueId`. ?
 
 use core::num::NonZeroU64;

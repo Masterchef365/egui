@@ -1,4 +1,4 @@
-use alloc::vec::Vec;
+use alloc::{format, vec::Vec};
 use alloc::string::String;
 
 use crate::{Align, Id, IdMap, LayerId, Rangef, Rect, Vec2, WidgetRects, id::IdSet, style};

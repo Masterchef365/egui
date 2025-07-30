@@ -1,5 +1,5 @@
 //! The input needed by egui.
-use alloc::vec::Vec;
+use alloc::{format, vec::Vec};
 use alloc::string::String;
 
 use epaint::ColorImage;
@@ -95,7 +95,7 @@ impl Default for RawInput {
             time: None,
             predicted_dt: 1.0 / 60.0,
             modifiers: Modifiers::default(),
-            events: vec![],
+            events: alloc::vec![],
             hovered_files: Default::default(),
             dropped_files: Default::default(),
             focused: true, // integrations opt into global focus tracking

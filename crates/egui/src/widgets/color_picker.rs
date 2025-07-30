@@ -1,4 +1,5 @@
 //! Color picker widgets.
+use alloc::format;
 use alloc::vec::Vec;
 
 use crate::util::fixed_cache::FixedCache;
@@ -155,7 +156,7 @@ fn color_slider_1d(ui: &mut Ui, value: &mut f32, color_at: impl Fn(f32) -> Color
             let r = rect.height() / 4.0;
             let picked_color = color_at(*value);
             ui.painter().add(Shape::convex_polygon(
-                vec![
+                alloc::vec![
                     pos2(x, rect.center().y),   // tip
                     pos2(x + r, rect.bottom()), // right bottom
                     pos2(x - r, rect.bottom()), // left bottom

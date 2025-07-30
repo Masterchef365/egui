@@ -1,4 +1,6 @@
 //! Showing UI:s for egui/epaint types.
+use alloc::format;
+
 use crate::{
     Color32, CursorIcon, FontFamily, FontId, Label, Mesh, NumExt as _, Rect, Response, Sense,
     Shape, Slider, TextStyle, TextWrapMode, Ui, Widget, epaint, memory, pos2, remap_clamp, vec2,

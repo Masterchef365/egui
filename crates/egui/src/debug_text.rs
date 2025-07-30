@@ -4,7 +4,7 @@
 //! which is stored using [`Context::data_mut`].
 //! The plugin registers itself onto a specific [`Context`]
 //! to get callbacks on certain events ([`Context::on_begin_pass`], [`Context::on_end_pass`]).
-use alloc::vec::Vec;
+use alloc::{format, vec::Vec};
 use alloc::string::String;
 
 use crate::{

@@ -357,7 +357,7 @@ pub fn paint_default_icon(ui: &mut Ui, openness: f32, response: &Response) {
     // Draw a pointy triangle arrow:
     let rect = Rect::from_center_size(rect.center(), vec2(rect.width(), rect.height()) * 0.75);
     let rect = rect.expand(visuals.expansion);
-    let mut points = vec![rect.left_top(), rect.right_top(), rect.center_bottom()];
+    let mut points = alloc::vec![rect.left_top(), rect.right_top(), rect.center_bottom()];
     use core::f32::consts::TAU;
     let rotation = emath::Rot2::from_angle(remap(openness, 0.0..=1.0, -TAU / 4.0..=0.0));
     for p in &mut points {

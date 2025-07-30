@@ -123,7 +123,7 @@ impl Widget for Checkbox<'_> {
                 } else if *checked {
                     // Check mark:
                     ui.painter().add(Shape::line(
-                        vec![
+                        alloc::vec![
                             pos2(small_icon_rect.left(), small_icon_rect.center().y),
                             pos2(small_icon_rect.center().x, small_icon_rect.bottom()),
                             pos2(small_icon_rect.right(), small_icon_rect.top()),

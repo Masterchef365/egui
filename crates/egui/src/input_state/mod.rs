@@ -1,3 +1,4 @@
+use alloc::format;
 use alloc::vec::Vec;
 mod touch_state;
 
@@ -1023,7 +1024,7 @@ impl Default for PointerState {
             last_click_time: f64::NEG_INFINITY,
             last_last_click_time: f64::NEG_INFINITY,
             last_move_time: f64::NEG_INFINITY,
-            pointer_events: vec![],
+            pointer_events: alloc::vec![],
             options: Default::default(),
         }
     }

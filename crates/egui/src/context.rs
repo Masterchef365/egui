@@ -1,4 +1,5 @@
 #![warn(missing_docs)] use alloc::borrow::Cow;
+use alloc::format;
 // Let's keep `Context` well-documented.
 use alloc::{sync::Arc, vec::Vec};
 use alloc::string::String;

@@ -1,4 +1,4 @@
-use alloc::sync::Arc;
+use alloc::{format, sync::Arc};
 use alloc::vec::Vec;
 use alloc::string::String;
 
@@ -636,7 +636,7 @@ impl LabelSelectionState {
 
         let cursor_range = cursor_state.range(galley);
 
-        let mut new_vertex_indices = vec![];
+        let mut new_vertex_indices = alloc::vec![];
 
         if let Some(cursor_range) = cursor_range {
             paint_text_selection(

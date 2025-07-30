@@ -1,6 +1,6 @@
 //! egui theme (spacing, colors, etc).
 #![allow(clippy::if_same_then_else)]
-use alloc::vec::Vec;
+use alloc::{format, vec::Vec};
 use alloc::string::String;
 
 use emath::Align;
@@ -1710,7 +1710,7 @@ impl Style {
             crate::ComboBox::from_id_salt("text_wrap_mode")
                 .selected_text(format!("{wrap_mode:?}"))
                 .show_ui(ui, |ui| {
-                    let all_wrap_mode: Vec<Option<TextWrapMode>> = vec![
+                    let all_wrap_mode: Vec<Option<TextWrapMode>> = alloc::vec![
                         None,
                         Some(TextWrapMode::Extend),
                         Some(TextWrapMode::Wrap),

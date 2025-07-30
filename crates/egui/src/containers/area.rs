@@ -700,7 +700,7 @@ fn automatic_area_position(ctx: &Context, layer_id: LayerId) -> Pos2 {
     }
 
     // Separate existing rectangles into columns:
-    let mut column_bbs = vec![existing[0]];
+    let mut column_bbs = alloc::vec![existing[0]];
 
     for &rect in &existing {
         let current_column_bb = column_bbs.last_mut().unwrap();

@@ -455,7 +455,7 @@ impl Frame {
             frame_shape
         } else {
             let shadow = shadow.as_shape(widget_rect, corner_radius);
-            Shape::Vec(vec![Shape::from(shadow), frame_shape])
+            Shape::Vec(alloc::vec![Shape::from(shadow), frame_shape])
         }
     }
 }
