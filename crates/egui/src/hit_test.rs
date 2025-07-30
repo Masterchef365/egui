@@ -1,9 +1,9 @@
-use ahash::HashMap;
 use alloc::vec::Vec;
 
 use emath::TSTransform;
+use hashbrown::{HashMap, HashSet};
 
-use crate::{LayerId, Pos2, Rect, Sense, WidgetRect, WidgetRects, ahash, emath, id::IdSet};
+use crate::{LayerId, Pos2, Rect, Sense, WidgetRect, WidgetRects, emath, id::IdSet};
 
 /// Result of a hit-test against [`WidgetRects`].
 ///
@@ -115,7 +115,7 @@ pub fn hit_test(
     // but if the pointer is at the edge of a layer, we might include widgets in
     // a layer behind it.
 
-    let mut included_layers: ahash::HashSet<LayerId> = Default::default();
+    let mut included_layers: HashSet<LayerId> = Default::default();
     for hit in close.iter().rev() {
         included_layers.insert(hit.layer_id);
         let hit_covers_search_area = contains_circle(hit.interact_rect, pos, search_radius);

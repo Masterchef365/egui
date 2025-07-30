@@ -64,8 +64,6 @@ use core::{
     sync::Arc,
 };
 
-use ahash::HashMap;
-
 use emath::{Float as _, OrderedFloat};
 use epaint::{ColorImage, TextureHandle, TextureId, Vec2, mutex::Mutex, textures::TextureOptions};
 

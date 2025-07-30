@@ -1,9 +1,10 @@
 use alloc::vec::Vec;
 use alloc::string::String;
+use hashbrown::HashMap;
 //! Handles paint layers, i.e. how things
 //! are sometimes painted behind or in front of other things.
 
-use crate::{Id, IdMap, Rect, ahash, epaint};
+use crate::{Id, IdMap, Rect, epaint};
 use epaint::{ClippedShape, Shape, emath::TSTransform};
 
 /// Different layer categories
@@ -222,7 +223,7 @@ impl GraphicLayers {
     pub fn drain(
         &mut self,
         area_order: &[LayerId],
-        to_global: &ahash::HashMap<LayerId, TSTransform>,
+        to_global: &HashMap<LayerId, TSTransform>,
     ) -> Vec<ClippedShape> {
         profiling::function_scope!();
 

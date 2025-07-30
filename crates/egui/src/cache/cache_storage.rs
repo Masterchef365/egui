@@ -23,7 +23,7 @@ use super::CacheTrait;
 /// ```
 #[derive(Default)]
 pub struct CacheStorage {
-    caches: ahash::HashMap<core::any::TypeId, Box<dyn CacheTrait>>,
+    caches: HashMap<core::any::TypeId, Box<dyn CacheTrait>>,
 }
 
 impl CacheStorage {

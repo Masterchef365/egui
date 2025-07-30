@@ -156,7 +156,7 @@ impl UiStackInfo {
 ///
 /// All tagging is transient, and will only live as long as the parent [`crate::Ui`], i.e. within a single render frame.
 #[derive(Clone, Default, Debug)]
-pub struct UiTags(pub ahash::HashMap<String, Option<Arc<dyn Any + Send + Sync + 'static>>>);
+pub struct UiTags(pub HashMap<String, Option<Arc<dyn Any + Send + Sync + 'static>>>);
 
 impl UiTags {
     #[inline]
