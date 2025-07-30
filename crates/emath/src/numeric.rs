@@ -1,3 +1,5 @@
+use num_traits::Float;
+
 /// Implemented for all builtin numeric types
 pub trait Numeric: Clone + Copy + PartialEq + PartialOrd + 'static {
     /// Is this an integer type?

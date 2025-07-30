@@ -1,3 +1,5 @@
+use num_traits::Float;
+
 use core::fmt;
 
 use crate::{Div, Mul, NumExt as _, Pos2, Rangef, Rot2, Vec2, lerp, pos2, vec2};

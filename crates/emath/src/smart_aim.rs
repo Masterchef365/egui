@@ -1,4 +1,6 @@
 //! Find "simple" numbers is some range. Used by sliders.
+use num_traits::Float;
+
 
 const NUM_DECIMALS: usize = 15;
 

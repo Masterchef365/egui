@@ -1,5 +1,3 @@
-#![no_std]
-extern crate alloc;
 
 //! Opinionated 2D math library for building GUIs.
 //!
@@ -24,6 +22,9 @@ extern crate alloc;
 
 #![allow(clippy::float_cmp)]
 
+#![no_std]
+extern crate alloc;
+
 use core::ops::{Add, Div, Mul, RangeInclusive, Sub};
 
 // ----------------------------------------------------------------------------
@@ -46,6 +47,8 @@ mod vec2;
 mod vec2b;
 
 use alloc::{format, string::String};
+
+#[allow(hidden_glob_reexports)]
 use num_traits::Float;
 
 pub use self::{

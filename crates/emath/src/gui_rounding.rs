@@ -1,3 +1,4 @@
+use num_traits::Float;
 /// We (sometimes) round sizes and coordinates to an even multiple of this value.
 ///
 /// This is only used for rounding _logical UI points_, used for widget coordinates and sizes.

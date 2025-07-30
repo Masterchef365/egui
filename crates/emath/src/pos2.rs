@@ -1,3 +1,5 @@
+use num_traits::Float;
+
 use core::{
     fmt,
     ops::{Add, AddAssign, MulAssign, Sub, SubAssign},

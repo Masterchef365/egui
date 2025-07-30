@@ -1,4 +1,4 @@
-use core::collections::VecDeque;
+use alloc::collections::VecDeque;
 
 /// This struct tracks recent values of some time series.
 ///

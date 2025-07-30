@@ -1,3 +1,4 @@
+use num_traits::Float;
 use super::Vec2;
 
 // {s,c} represents the rotation matrix:

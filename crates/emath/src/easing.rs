@@ -1,3 +1,4 @@
+//!
 //! Easing functions for animations.
 //!
 //! Contains most easing functions from <https://easings.net/>.
@@ -6,6 +7,7 @@
 //!
 //! Derived from <https://github.com/warrenm/AHEasing/blob/master/AHEasing/easing.c>.
 use core::f32::consts::PI;
+use num_traits::Float;
 
 #[inline]
 fn powf(base: f32, exp: f32) -> f32 {
