@@ -1,6 +1,6 @@
+#![warn(missing_docs)] // Let's keep `Context` well-documented.
 use alloc::vec::Vec;
 use alloc::string::String;
-#![warn(missing_docs)] // Let's keep `Context` well-documented.
 
 use core::{borrow::Cow, cell::RefCell, panic::Location, sync::Arc, time::Duration};
 

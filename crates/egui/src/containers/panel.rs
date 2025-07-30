@@ -1,4 +1,3 @@
-use alloc::vec::Vec;
 //! Panels are [`Ui`] regions taking up e.g. the left side of a [`Ui`] or screen.
 //!
 //! Panels can either be a child of a [`Ui`] (taking up a portion of the parent)
@@ -15,6 +14,7 @@ use alloc::vec::Vec;
 //! ⚠ Always add any [`CentralPanel`] last.
 //!
 //! Add your [`crate::Window`]:s after any top-level panels.
+use alloc::vec::Vec;
 
 use emath::GuiRounding as _;
 

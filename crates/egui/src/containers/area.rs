@@ -1,8 +1,8 @@
-use alloc::vec::Vec;
 //! Area is a [`Ui`] that has no parent, it floats on the background.
 //! It has no frame or own size. It is potentially movable.
 //! It is the foundation for windows and popups.
 
+use alloc::vec::Vec;
 use emath::GuiRounding as _;
 
 use crate::{

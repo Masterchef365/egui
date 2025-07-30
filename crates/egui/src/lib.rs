@@ -1,5 +1,3 @@
-use alloc::vec::Vec;
-use alloc::string::String;
 //! `egui`:  an easy-to-use GUI in pure Rust!
 //!
 //! Try the live web demo: <https://www.egui.rs/#demo>. Read more about egui at <https://github.com/emilk/egui>.
@@ -412,6 +410,9 @@ use alloc::string::String;
 
 #![no_std]
 extern crate alloc;
+
+use alloc::vec::Vec;
+use alloc::string::String;
 
 mod animation_manager;
 pub mod cache;

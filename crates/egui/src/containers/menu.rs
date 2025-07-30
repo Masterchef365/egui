@@ -1,4 +1,3 @@
-use alloc::vec::Vec;
 //! Popup menus, context menus and menu bars.
 //!
 //! Show menus via
@@ -8,6 +7,7 @@ use alloc::vec::Vec;
 //! - [`Response::context_menu`]
 //!
 //! See [`MenuBar`] for an example.
+use alloc::vec::Vec;
 
 use crate::style::StyleModifier;
 use crate::{

@@ -1,5 +1,5 @@
-use alloc::vec::Vec;
 #![allow(clippy::needless_range_loop)]
+use alloc::vec::Vec;
 
 use core::ops::{Add, AddAssign, BitOr, BitOrAssign};
 
