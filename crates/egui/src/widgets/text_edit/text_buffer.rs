@@ -1,6 +1,5 @@
 use alloc::{borrow::Cow, string::String};
 use core::ops::Range;
-use alloc::string::String;
 
 use epaint::{
     Galley,

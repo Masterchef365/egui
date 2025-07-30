@@ -1,4 +1,3 @@
-use alloc::vec::Vec;
 #![allow(deprecated)]
 //! Deprecated menu API - Use [`crate::containers::menu`] instead.
 //!
@@ -16,6 +15,7 @@ use alloc::vec::Vec;
 //!     });
 //! }
 //! ```
+use alloc::vec::Vec;
 
 use super::{
     Align, Context, Id, InnerResponse, PointerState, Pos2, Rect, Response, Sense, TextStyle, Ui,

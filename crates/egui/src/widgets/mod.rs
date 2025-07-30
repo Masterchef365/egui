@@ -1,9 +1,9 @@
-use alloc::vec::Vec;
 //! Widgets are pieces of GUI such as [`Label`], [`Button`], [`Slider`] etc.
 //!
 //! Example widget uses:
 //! * `ui.add(Label::new("Text").text_color(color::red));`
 //! * `if ui.add(Button::new("Click me")).clicked() { … }`
+use alloc::vec::Vec;
 
 use crate::{Response, Ui, epaint};
 

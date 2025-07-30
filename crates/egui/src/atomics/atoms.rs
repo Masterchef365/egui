@@ -2,7 +2,6 @@ use crate::{Atom, AtomKind, Image, WidgetText};
 use smallvec::SmallVec;
 use alloc::{borrow::Cow, vec::Vec};
 use core::ops::{Deref, DerefMut};
-use alloc::vec::Vec;
 
 // Rarely there should be more than 2 atoms in one Widget.
 // I guess it could happen in a menu button with Image and right text...

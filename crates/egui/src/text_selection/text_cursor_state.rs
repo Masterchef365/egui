@@ -1,5 +1,5 @@
-use alloc::string::String;
 //! Text cursor changes/interaction, without modifying the text.
+use alloc::string::String;
 
 use epaint::text::{Galley, cursor::CCursor};
 use unicode_segmentation::UnicodeSegmentation as _;

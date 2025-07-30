@@ -1,5 +1,3 @@
-use alloc::vec::Vec;
-use alloc::string::String;
 //! # Image loading
 //!
 //! If you just want to display some images, [`egui_extras`](https://crates.io/crates/egui_extras/)
@@ -53,6 +51,8 @@ use alloc::string::String;
 //! The loaders are free to derive as much meaning from the URI as they wish to.
 //! For example, a loader may determine that it doesn't support loading a specific URI
 //! if the protocol does not match what it expects.
+use alloc::vec::Vec;
+use alloc::string::String;
 
 mod bytes_loader;
 mod texture_loader;

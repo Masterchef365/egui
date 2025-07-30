@@ -1,7 +1,7 @@
-use alloc::vec::Vec;
-use alloc::string::String;
 #![warn(missing_docs)] // Let's keep `Ui` well-documented.
 #![allow(clippy::use_self)]
+use alloc::vec::Vec;
+use alloc::string::String;
 
 use emath::GuiRounding as _;
 use epaint::mutex::RwLock;

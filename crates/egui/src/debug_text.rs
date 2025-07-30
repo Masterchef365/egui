@@ -1,11 +1,11 @@
-use alloc::vec::Vec;
-use alloc::string::String;
 //! This is an example of how to create a plugin for egui.
 //!
 //! A plugin usually consist of a struct that holds some state,
 //! which is stored using [`Context::data_mut`].
 //! The plugin registers itself onto a specific [`Context`]
 //! to get callbacks on certain events ([`Context::on_begin_pass`], [`Context::on_end_pass`]).
+use alloc::vec::Vec;
+use alloc::string::String;
 
 use crate::{
     Align, Align2, Color32, Context, FontFamily, FontId, Id, Rect, Shape, Vec2, WidgetText, text,

@@ -1,5 +1,5 @@
-use alloc::vec::Vec;
 //! Color picker widgets.
+use alloc::vec::Vec;
 
 use crate::util::fixed_cache::FixedCache;
 use crate::{

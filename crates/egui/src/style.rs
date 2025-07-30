@@ -1,8 +1,7 @@
+//! egui theme (spacing, colors, etc).
+#![allow(clippy::if_same_then_else)]
 use alloc::vec::Vec;
 use alloc::string::String;
-//! egui theme (spacing, colors, etc).
-
-#![allow(clippy::if_same_then_else)]
 
 use emath::Align;
 use epaint::{AlphaFromCoverage, CornerRadius, Shadow, Stroke, text::FontTweak};

@@ -1,8 +1,8 @@
+//! Handles paint layers, i.e. how things
+//! are sometimes painted behind or in front of other things.
 use alloc::vec::Vec;
 use alloc::string::String;
 use hashbrown::HashMap;
-//! Handles paint layers, i.e. how things
-//! are sometimes painted behind or in front of other things.
 
 use crate::{Id, IdMap, Rect, epaint};
 use epaint::{ClippedShape, Shape, emath::TSTransform};
