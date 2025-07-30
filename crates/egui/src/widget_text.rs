@@ -1,9 +1,10 @@
+use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use emath::GuiRounding as _;
 use epaint::text::TextFormat;
 use core::fmt::Formatter;
 use alloc::{borrow::Cow, sync::Arc};
-use alloc::string::String;
+use alloc::string::{String, ToString};
 
 use crate::{
     Align, Color32, FontFamily, FontSelection, Galley, Style, TextStyle, TextWrapMode, Ui, Visuals,

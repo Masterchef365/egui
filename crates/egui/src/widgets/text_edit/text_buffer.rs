@@ -1,4 +1,4 @@
-use alloc::{borrow::Cow, string::String};
+use alloc::{borrow::{Cow, ToOwned}, string::String};
 use core::ops::Range;
 
 use epaint::{

@@ -1,6 +1,7 @@
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use alloc::string::String;
+use hashbrown::HashMap;
 // TODO(emilk): it is possible we can simplify `Element` further by
 // assuming everything is possibly serializable, and by supplying serialize/deserialize functions for them.
 // For non-serializable types, these simply return `None`.
@@ -353,7 +354,8 @@ use crate::Id;
 #[derive(Clone, Debug)]
 // We use `id XOR typeid` as a key, so we don't need to hash again!
 pub struct IdTypeMap {
-    map: nohash_hasher::IntMap<u64, Element>,
+    //map: nohash_hasher::IntMap<u64, Element>,
+    map: HashMap<u64, Element>,
 
     max_bytes_per_type: usize,
 }

@@ -1,5 +1,5 @@
 //! Showing UI:s for egui/epaint types.
-use alloc::format;
+use alloc::{format, string::ToString};
 
 use crate::{
     Color32, CursorIcon, FontFamily, FontId, Label, Mesh, NumExt as _, Rect, Response, Sense,
