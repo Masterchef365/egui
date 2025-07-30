@@ -1,3 +1,5 @@
+use hashbrown::HashMap;
+
 use super::CacheTrait;
 
 /// Something that does an expensive computation that we want to cache
@@ -12,7 +14,7 @@ pub trait ComputerMut<Key, Value>: 'static + Send + Sync {
 pub struct FrameCache<Value, Computer> {
     generation: u32,
     computer: Computer,
-    cache: nohash_hasher::IntMap<u64, (u32, Value)>,
+    cache: HashMap<u64, (u32, Value)>,
 }
 
 impl<Value, Computer> Default for FrameCache<Value, Computer>

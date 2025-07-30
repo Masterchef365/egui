@@ -1,11 +1,14 @@
-#![warn(missing_docs)] use alloc::borrow::Cow;
+#![warn(missing_docs)] 
+use alloc::borrow::Cow;
 use alloc::boxed::Box;
 use alloc::collections::btree_map::BTreeMap;
 use alloc::format;
 // Let's keep `Context` well-documented.
 use alloc::{sync::Arc, vec::Vec};
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use epaint::mutex::Mutex;
+use alloc::borrow::ToOwned;
+
 
 use core::{cell::RefCell, panic::Location, time::Duration};
 
@@ -3803,12 +3806,15 @@ impl Context {
     /// * Call [`Context::run`] with [`ImmediateViewport::viewport_ui_cb`].
     /// * Handle the output from [`Context::run`], including rendering
     pub fn set_immediate_viewport_renderer(
-        callback: impl for<'a> Fn(&Self, ImmediateViewport<'a>) + 'static,
+        callback: impl for<'a> Fn(&Self, ImmediateViewport<'a>) + Send + 'static,
     ) {
         let callback = Box::new(callback);
+        /*
         IMMEDIATE_VIEWPORT_RENDERER.with(|render_sync| {
             render_sync.replace(Some(callback));
         });
+        */
+        IMMEDIATE_VIEWPORT_RENDERER.lock().replace(callback);
     }
 
     /// If `true`, [`Self::show_viewport_deferred`] and [`Self::show_viewport_immediate`] will
@@ -3940,8 +3946,9 @@ impl Context {
             return viewport_ui_cb(self, ViewportClass::Embedded);
         }
 
-        IMMEDIATE_VIEWPORT_RENDERER.with(|immediate_viewport_renderer| {
-            let immediate_viewport_renderer = immediate_viewport_renderer.borrow();
+        //IMMEDIATE_VIEWPORT_RENDERER.with(|immediate_viewport_renderer| {
+            //let immediate_viewport_renderer = immediate_viewport_renderer.borrow();
+            let immediate_viewport_renderer = IMMEDIATE_VIEWPORT_RENDERER.lock();
             let Some(immediate_viewport_renderer) = immediate_viewport_renderer.as_ref() else {
                 // This egui backend does not support multiple viewports.
                 return viewport_ui_cb(self, ViewportClass::Embedded);
@@ -3979,7 +3986,7 @@ impl Context {
             out.expect(
                 "egui backend is implemented incorrectly - the user callback was never called",
             )
-        })
+        //})
     }
 }
 
