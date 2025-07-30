@@ -568,7 +568,7 @@ impl ContextImpl {
             nodes.insert(id, root_node);
             viewport.this_pass.accesskit_state = Some(AccessKitPassState {
                 nodes,
-                parent_stack: vec![id],
+                parent_stack: alloc::vec![id],
             });
         }
 
@@ -2571,7 +2571,7 @@ impl ContextImpl {
                     // that affect a viewport while its egui logic is running.
                     core::mem::take(&mut viewport.commands)
                 } else {
-                    vec![]
+                    alloc::vec![]
                 };
 
                 (
@@ -3281,9 +3281,9 @@ impl Context {
             byte_size: usize,
         }
 
-        let mut byte_loaders = vec![];
-        let mut image_loaders = vec![];
-        let mut texture_loaders = vec![];
+        let mut byte_loaders = alloc::vec![];
+        let mut image_loaders = alloc::vec![];
+        let mut texture_loaders = alloc::vec![];
 
         {
             let loaders = self.loaders();

@@ -356,7 +356,7 @@ impl ViewportInfo {
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct HoveredFile {
     /// Set by the `egui-winit` backend.
-    pub path: Option<core::path::PathBuf>,
+    pub path: Option<String>,
 
     /// With the `eframe` web backend, this is set to the mime-type of the file (if available).
     pub mime: String,
@@ -367,7 +367,7 @@ pub struct HoveredFile {
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct DroppedFile {
     /// Set by the `egui-winit` backend.
-    pub path: Option<core::path::PathBuf>,
+    pub path: Option<String>,
 
     /// Name of the file. Set by the `eframe` web backend.
     pub name: String,

@@ -459,7 +459,7 @@ impl WrapApp {
                 let mut text = "Dropping files:\n".to_owned();
                 for file in &i.raw.hovered_files {
                     if let Some(path) = &file.path {
-                        write!(text, "\n{}", path.display()).ok();
+                        write!(text, "\n{}", path).ok();
                     } else if !file.mime.is_empty() {
                         write!(text, "\n{}", file.mime).ok();
                     } else {
@@ -498,7 +498,7 @@ impl WrapApp {
                 .show(ctx, |ui| {
                     for file in &self.dropped_files {
                         let mut info = if let Some(path) = &file.path {
-                            path.display().to_string()
+                            path.clone()
                         } else if !file.name.is_empty() {
                             file.name.clone()
                         } else {
