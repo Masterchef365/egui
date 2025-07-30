@@ -45,6 +45,9 @@ mod ts_transform;
 mod vec2;
 mod vec2b;
 
+use alloc::{format, string::String};
+use num_traits::Float;
+
 pub use self::{
     align::{Align, Align2},
     gui_rounding::{GUI_ROUNDING, GuiRounding},

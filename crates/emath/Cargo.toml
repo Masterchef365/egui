@@ -29,6 +29,7 @@ default = []
 
 [dependencies]
 #libm = "0.2"
+num-traits = { version = "0.2", default-features = false, features = ["libm"] }
 #! ### Optional dependencies
 
 ## [`bytemuck`](https://docs.rs/bytemuck) enables you to cast `emath` types to `&[u8]`.
