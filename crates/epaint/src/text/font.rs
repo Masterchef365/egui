@@ -1,5 +1,5 @@
-use core::collections::BTreeMap;
-use core::sync::Arc;
+use alloc::collections::BTreeMap;
+use alloc::sync::Arc;
 
 use alloc::{string::String, vec::Vec};
 use emath::{GuiRounding as _, Vec2, vec2};

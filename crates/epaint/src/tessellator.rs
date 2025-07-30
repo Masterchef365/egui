@@ -2006,7 +2006,8 @@ impl Tessellator {
                        You must recreate your text shapes if pixels_per_point changes.";
             #[cfg(feature = "log")]
             log::warn!("{warn}");
-            //#[cfg(not(feature = "log"))]
+            #[cfg(not(feature = "log"))]
+            let _ = warn;
             //println!("{warn}");
         }
 

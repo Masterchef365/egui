@@ -1,4 +1,5 @@
-use core::{fmt::Debug, sync::Arc};
+use core::fmt::Debug;
+use alloc::sync::Arc;
 
 use ecolor::Color32;
 use emath::{Pos2, Rect};

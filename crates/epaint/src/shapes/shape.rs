@@ -1,8 +1,6 @@
 //! The different shapes that can be painted.
 
-use core::sync::Arc;
-
-use alloc::{string::ToString, vec::Vec};
+use alloc::{string::ToString, sync::Arc, vec::Vec};
 use emath::{Align2, Pos2, Rangef, Rect, TSTransform, Vec2, pos2};
 
 use crate::{

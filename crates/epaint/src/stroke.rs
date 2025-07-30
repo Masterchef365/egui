@@ -1,6 +1,7 @@
 #![allow(clippy::derived_hash_with_manual_eq)] // We need to impl Hash for f32, but we don't implement Eq, which is fine
 
-use core::{fmt::Debug, sync::Arc};
+use core::fmt::Debug;
+use alloc::sync::Arc;
 
 use emath::GuiRounding as _;
 
