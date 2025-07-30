@@ -2784,7 +2784,7 @@ impl Ui {
         let column_width = (self.available_width() - total_spacing) / (num_columns as f32);
         let top_left = self.cursor().min;
 
-        let mut columns: Vec<Self> = (0..num_columns)
+        let mut columns: Vec<Self> = core::Iterator::collect((0..num_columns)
             .map(|col_idx| {
                 let pos = top_left + vec2((col_idx as f32) * (column_width + spacing), 0.0);
                 let child_rect = Rect::from_min_max(
@@ -2798,8 +2798,7 @@ impl Ui {
                 );
                 column_ui.set_width(column_width);
                 column_ui
-            })
-            .collect();
+            }));
 
         let result = add_contents(&mut columns[..]);
 

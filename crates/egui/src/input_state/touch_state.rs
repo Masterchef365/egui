@@ -1,4 +1,5 @@
-use core::{collections::BTreeMap, fmt::Debug};
+use core::fmt::Debug;
+use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
 
 use crate::{

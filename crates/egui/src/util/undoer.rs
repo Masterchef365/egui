@@ -1,4 +1,5 @@
-use core::collections::VecDeque;
+use std::collections::VecDeque;
+
 use alloc::vec::Vec;
 
 #[derive(Clone, Debug, PartialEq)]
