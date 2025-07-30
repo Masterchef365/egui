@@ -55,13 +55,13 @@ impl Id {
 
     /// Generate a new [`Id`] by hashing some source (e.g. a string or integer).
     pub fn new(source: impl core::hash::Hash) -> Self {
-        Self::from_hash(RandomState::with_seeds(1, 2, 3, 4).hash_one(source))
+        Self::from_hash(ahash::RandomState::with_seeds(1, 2, 3, 4).hash_one(source))
     }
 
     /// Generate a new [`Id`] by hashing the parent [`Id`] and the given argument.
     pub fn with(self, child: impl core::hash::Hash) -> Self {
         use core::hash::{BuildHasher as _, Hasher as _};
-        let mut hasher = RandomState::with_seeds(1, 2, 3, 4).build_hasher();
+        let mut hasher = ahash::RandomState::with_seeds(1, 2, 3, 4).build_hasher();
         hasher.write_u64(self.0.get());
         child.hash(&mut hasher);
         Self::from_hash(hasher.finish())

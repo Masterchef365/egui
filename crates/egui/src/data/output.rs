@@ -1,6 +1,7 @@
 //! All the data egui returns to the backend at the end of each frame.
 use alloc::{format, vec::Vec};
 use alloc::string::{String, ToString};
+use alloc::borrow::ToOwned;
 
 use crate::{RepaintCause, ViewportIdMap, ViewportOutput, WidgetType};
 

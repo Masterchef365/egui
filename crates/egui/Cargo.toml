@@ -88,7 +88,7 @@ hashbrown = { version = "0.15", features = ["alloc"] }
 once_cell = { version = "1.21", default-features = false, features = ["alloc", "critical-section"] }
 spin = "0.10"
 
-#ahash.workspace = true
+ahash.workspace = true
 bitflags.workspace = true
 nohash-hasher.workspace = true
 profiling.workspace = true

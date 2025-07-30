@@ -1264,6 +1264,7 @@ name = "egui"
 version = "0.32.0"
 dependencies = [
  "accesskit",
+ "ahash",
  "backtrace",
  "bitflags 2.9.0",
  "document-features",
