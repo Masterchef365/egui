@@ -1,6 +1,6 @@
 //! All the data egui returns to the backend at the end of each frame.
 use alloc::{format, vec::Vec};
-use alloc::string::String;
+use alloc::string::{String, ToString};
 
 use crate::{RepaintCause, ViewportIdMap, ViewportOutput, WidgetType};
 
@@ -55,10 +55,10 @@ impl FullOutput {
 
         for (id, new_viewport) in viewport_output {
             match self.viewport_output.entry(id) {
-                core::collections::hash_map::Entry::Vacant(entry) => {
+                hashbrown::hash_map::Entry::Vacant(entry) => {
                     entry.insert(new_viewport);
                 }
-                core::collections::hash_map::Entry::Occupied(mut entry) => {
+                hashbrown::hash_map::Entry::Occupied(mut entry) => {
                     entry.get_mut().append(new_viewport);
                 }
             }

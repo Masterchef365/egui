@@ -1,5 +1,6 @@
 use alloc::{format, vec::Vec};
 use alloc::string::String;
+use hashbrown::HashMap;
 
 use crate::{Align, Id, IdMap, LayerId, Rangef, Rect, Vec2, WidgetRects, id::IdSet, style};
 

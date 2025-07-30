@@ -1,3 +1,4 @@
+use alloc::boxed::Box;
 use alloc::vec::Vec;
 use alloc::string::String;
 // TODO(emilk): it is possible we can simplify `Element` further by

@@ -1,6 +1,8 @@
-#![allow(clippy::needless_pass_by_value)] // False positives with `impl ToString`
+// False positives with `impl ToString`
+#![allow(clippy::needless_pass_by_value)]
+use alloc::boxed::Box;
 use alloc::{format, vec::Vec};
-use alloc::string::String;
+use alloc::string::{String, ToString};
 
 use core::{cmp::Ordering, ops::RangeInclusive};
 

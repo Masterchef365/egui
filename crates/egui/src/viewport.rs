@@ -66,7 +66,7 @@
 //! ## Future work
 //! There are several more things related to viewports that we want to add.
 //! Read more at <https://github.com/emilk/egui/issues/3556>.
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 use alloc::string::String;
 
 use alloc::sync::Arc;
@@ -148,10 +148,12 @@ impl From<ViewportId> for Id {
 impl nohash_hasher::IsEnabled for ViewportId {}
 
 /// A fast hash set of [`ViewportId`].
-pub type ViewportIdSet = nohash_hasher::IntSet<ViewportId>;
+//pub type ViewportIdSet = nohash_hasher::IntSet<ViewportId>;
+pub type ViewportIdSet = hashbrown::HashSet<ViewportId>;
 
 /// A fast hash map from [`ViewportId`] to `T`.
-pub type ViewportIdMap<T> = nohash_hasher::IntMap<ViewportId, T>;
+//pub type ViewportIdMap<T> = nohash_hasher::IntMap<ViewportId, T>;
+pub type ViewportIdMap<T> = hashbrown::HashMap<ViewportId, T>;
 
 // ----------------------------------------------------------------------------
 

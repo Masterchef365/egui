@@ -1,6 +1,6 @@
 use alloc::{format, sync::Arc};
 use alloc::vec::Vec;
-use alloc::string::String;
+use alloc::string::{String, ToString};
 
 use emath::GuiRounding as _;
 use epaint::{

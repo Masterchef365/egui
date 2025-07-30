@@ -1,3 +1,4 @@
+use alloc::boxed::Box;
 use emath::GuiRounding as _;
 use epaint::text::TextFormat;
 use core::fmt::Formatter;

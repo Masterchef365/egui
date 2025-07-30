@@ -376,7 +376,7 @@ pub struct DroppedFile {
     pub mime: String,
 
     /// Set by the `eframe` web backend.
-    pub last_modified: Option<core::time::SystemTime>,
+    pub last_modified: Option<u64>,
 
     /// Set by the `eframe` web backend.
     pub bytes: Option<alloc::sync::Arc<[u8]>>,

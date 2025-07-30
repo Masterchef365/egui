@@ -1,4 +1,4 @@
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use crate::{
     CursorIcon, Label, Response, Sense, Stroke, Ui, Widget, WidgetInfo, WidgetText, WidgetType,
     epaint, text_selection,

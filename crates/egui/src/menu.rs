@@ -15,7 +15,7 @@
 //!     });
 //! }
 //! ```
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 
 use super::{
     Align, Context, Id, InnerResponse, PointerState, Pos2, Rect, Response, Sense, TextStyle, Ui,

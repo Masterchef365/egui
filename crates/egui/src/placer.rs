@@ -1,6 +1,6 @@
 use crate::{Layout, Painter, Pos2, Rect, Region, Vec2, grid, vec2};
 use alloc::vec::Vec;
-use alloc::string::String;
+use alloc::string::{String, ToString};
 
 #[cfg(debug_assertions)]
 use crate::{Align2, Color32, Stroke};
@@ -282,6 +282,8 @@ impl Placer {
 impl Placer {
     #[cfg(debug_assertions)]
     pub(crate) fn debug_paint_cursor(&self, painter: &crate::Painter, text: impl ToString) {
+        use alloc::string::ToString;
+
         let stroke = Stroke::new(1.0, Color32::DEBUG_COLOR);
 
         if let Some(grid) = &self.grid {

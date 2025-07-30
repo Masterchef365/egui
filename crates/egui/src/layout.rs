@@ -1,6 +1,6 @@
 use emath::GuiRounding as _;
 use alloc::vec::Vec;
-use alloc::string::String;
+use alloc::string::{String, ToString};
 
 use crate::{
     Align,

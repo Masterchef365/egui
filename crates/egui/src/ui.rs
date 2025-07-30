@@ -1,8 +1,9 @@
 #![warn(missing_docs)] // Let's keep `Ui` well-documented.
 #![allow(clippy::use_self)]
+use alloc::boxed::Box;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use alloc::string::String;
+use alloc::string::{String, ToString};
 
 use emath::GuiRounding as _;
 use epaint::mutex::RwLock;
@@ -2785,7 +2786,7 @@ impl Ui {
         let column_width = (self.available_width() - total_spacing) / (num_columns as f32);
         let top_left = self.cursor().min;
 
-        let mut columns: Vec<Self> = core::Iterator::collect((0..num_columns)
+        let mut columns: Vec<Self> = core::iter::Iterator::collect((0..num_columns)
             .map(|col_idx| {
                 let pos = top_left + vec2((col_idx as f32) * (column_width + spacing), 0.0);
                 let child_rect = Rect::from_min_max(

@@ -230,19 +230,19 @@ impl DerefMut for Atoms<'_> {
 
 impl<'a, T: Into<Atom<'a>>> From<Vec<T>> for Atoms<'a> {
     fn from(vec: Vec<T>) -> Self {
-        Atoms(core::Iterator::collect(vec.into_iter().map(Into::into)))
+        Atoms(core::iter::Iterator::collect(vec.into_iter().map(Into::into)))
     }
 }
 
 impl<'a, T: Into<Atom<'a>> + Clone> From<&[T]> for Atoms<'a> {
     fn from(slice: &[T]) -> Self {
-        Atoms(core::Iterator::collect(slice.iter().cloned().map(Into::into)))
+        Atoms(core::iter::Iterator::collect(slice.iter().cloned().map(Into::into)))
     }
 }
 
 impl<'a, Item: Into<Atom<'a>>> FromIterator<Item> for Atoms<'a> {
     fn from_iter<T: IntoIterator<Item = Item>>(iter: T) -> Self {
-        Atoms(core::Iterator::collect(iter.into_iter().map(Into::into)))
+        Atoms(core::iter::Iterator::collect(iter.into_iter().map(Into::into)))
     }
 }
 
