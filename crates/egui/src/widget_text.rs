@@ -1,7 +1,7 @@
 use emath::GuiRounding as _;
 use epaint::text::TextFormat;
-use std::fmt::Formatter;
-use std::{borrow::Cow, sync::Arc};
+use core::fmt::Formatter;
+use core::{borrow::Cow, sync::Arc};
 
 use crate::{
     Align, Color32, FontFamily, FontSelection, Galley, Style, TextStyle, TextWrapMode, Ui, Visuals,
@@ -521,8 +521,8 @@ pub enum WidgetText {
     Galley(Arc<Galley>),
 }
 
-impl std::fmt::Debug for WidgetText {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for WidgetText {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         let text = self.text();
         match self {
             Self::Text(_) => write!(f, "Text({text:?})"),

@@ -7,5 +7,5 @@ pub trait CacheTrait: 'static + Send + Sync {
     /// Number of values currently in the cache.
     fn len(&self) -> usize;
 
-    fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
+    fn as_any_mut(&mut self) -> &mut dyn core::any::Any;
 }

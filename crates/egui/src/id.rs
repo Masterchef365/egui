@@ -1,6 +1,6 @@
 // TODO(emilk): have separate types `PositionId` and `UniqueId`. ?
 
-use std::num::NonZeroU64;
+use core::num::NonZeroU64;
 
 /// egui tracks widgets frame-to-frame using [`Id`]s.
 ///
@@ -53,13 +53,13 @@ impl Id {
     }
 
     /// Generate a new [`Id`] by hashing some source (e.g. a string or integer).
-    pub fn new(source: impl std::hash::Hash) -> Self {
+    pub fn new(source: impl core::hash::Hash) -> Self {
         Self::from_hash(ahash::RandomState::with_seeds(1, 2, 3, 4).hash_one(source))
     }
 
     /// Generate a new [`Id`] by hashing the parent [`Id`] and the given argument.
-    pub fn with(self, child: impl std::hash::Hash) -> Self {
-        use std::hash::{BuildHasher as _, Hasher as _};
+    pub fn with(self, child: impl core::hash::Hash) -> Self {
+        use core::hash::{BuildHasher as _, Hasher as _};
         let mut hasher = ahash::RandomState::with_seeds(1, 2, 3, 4).build_hasher();
         hasher.write_u64(self.0.get());
         child.hash(&mut hasher);
@@ -85,8 +85,8 @@ impl Id {
     }
 }
 
-impl std::fmt::Debug for Id {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for Id {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{:04X}", self.value() as u16)
     }
 }
@@ -108,8 +108,8 @@ impl From<String> for Id {
 
 #[test]
 fn id_size() {
-    assert_eq!(std::mem::size_of::<Id>(), 8);
-    assert_eq!(std::mem::size_of::<Option<Id>>(), 8);
+    assert_eq!(core::mem::size_of::<Id>(), 8);
+    assert_eq!(core::mem::size_of::<Option<Id>>(), 8);
 }
 
 // ----------------------------------------------------------------------------

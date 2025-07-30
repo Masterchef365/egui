@@ -1,6 +1,6 @@
 #![warn(missing_docs)] // Let's keep `Context` well-documented.
 
-use std::{borrow::Cow, cell::RefCell, panic::Location, sync::Arc, time::Duration};
+use core::{borrow::Cow, cell::RefCell, panic::Location, sync::Arc, time::Duration};
 
 use emath::{GuiRounding as _, OrderedFloat};
 use epaint::{
@@ -139,7 +139,7 @@ impl ContextImpl {
     fn begin_pass_repaint_logic(&mut self, viewport_id: ViewportId) {
         let viewport = self.viewports.entry(viewport_id).or_default();
 
-        std::mem::swap(
+        core::mem::swap(
             &mut viewport.repaint.prev_causes,
             &mut viewport.repaint.causes,
         );
@@ -299,14 +299,14 @@ pub struct RepaintCause {
     pub reason: Cow<'static, str>,
 }
 
-impl std::fmt::Debug for RepaintCause {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for RepaintCause {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{}:{} {}", self.file, self.line, self.reason)
     }
 }
 
-impl std::fmt::Display for RepaintCause {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for RepaintCause {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{}:{} {}", self.file, self.line, self.reason)
     }
 }
@@ -411,7 +411,7 @@ struct ContextImpl {
     /// `pixels_per_point`.
     /// This is because the `Fonts` depend on `pixels_per_point` for the font atlas
     /// as well as kerning, font sizes, etc.
-    fonts: std::collections::BTreeMap<OrderedFloat<f32>, Fonts>,
+    fonts: core::collections::BTreeMap<OrderedFloat<f32>, Fonts>,
     font_definitions: FontDefinitions,
 
     memory: Memory,
@@ -497,7 +497,7 @@ impl ContextImpl {
 
         self.memory.begin_pass(&new_raw_input, &all_viewport_ids);
 
-        viewport.input = std::mem::take(&mut viewport.input).begin_pass(
+        viewport.input = core::mem::take(&mut viewport.input).begin_pass(
             new_raw_input,
             viewport.repaint.requested_immediate_repaint_prev_pass(),
             pixels_per_point,
@@ -650,7 +650,7 @@ impl ContextImpl {
     fn accesskit_node_builder(&mut self, id: Id) -> &mut accesskit::Node {
         let state = self.viewport().this_pass.accesskit_state.as_mut().unwrap();
         let builders = &mut state.nodes;
-        if let std::collections::hash_map::Entry::Vacant(entry) = builders.entry(id) {
+        if let core::collections::hash_map::Entry::Vacant(entry) = builders.entry(id) {
             entry.insert(Default::default());
             let parent_id = state.parent_stack.last().unwrap();
             let parent_builder = builders.get_mut(parent_id).unwrap();
@@ -754,13 +754,13 @@ impl ContextImpl {
 #[derive(Clone)]
 pub struct Context(Arc<RwLock<ContextImpl>>);
 
-impl std::fmt::Debug for Context {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for Context {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("Context").finish_non_exhaustive()
     }
 }
 
-impl std::cmp::PartialEq for Context {
+impl core::cmp::PartialEq for Context {
     fn eq(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.0, &other.0)
     }
@@ -845,7 +845,7 @@ impl Context {
             self.write(|ctx| {
                 let viewport = ctx.viewport_for(viewport_id);
                 viewport.output.num_completed_passes =
-                    std::mem::take(&mut output.platform_output.num_completed_passes);
+                    core::mem::take(&mut output.platform_output.num_completed_passes);
                 output.platform_output.request_discard_reasons.clear();
             });
 
@@ -1727,7 +1727,7 @@ impl Context {
     /// See [`Self::request_repaint_after`] for details.
     #[track_caller]
     pub fn request_repaint_after_secs(&self, seconds: f32) {
-        if let Ok(duration) = std::time::Duration::try_from_secs_f32(seconds) {
+        if let Ok(duration) = core::time::Duration::try_from_secs_f32(seconds) {
             self.request_repaint_after(duration);
         }
     }
@@ -2461,7 +2461,7 @@ impl ContextImpl {
         // Inform the backend of all textures that have been updated (including font atlas).
         let textures_delta = self.tex_manager.0.write().take_delta();
 
-        let mut platform_output: PlatformOutput = std::mem::take(&mut viewport.output);
+        let mut platform_output: PlatformOutput = core::mem::take(&mut viewport.output);
 
         #[cfg(feature = "accesskit")]
         {
@@ -2501,7 +2501,7 @@ impl ContextImpl {
             }
         }
 
-        std::mem::swap(&mut viewport.prev_pass, &mut viewport.this_pass);
+        core::mem::swap(&mut viewport.prev_pass, &mut viewport.this_pass);
 
         if repaint_needed {
             self.request_repaint(ended_viewport_id, RepaintCause::new());
@@ -2561,7 +2561,7 @@ impl ContextImpl {
                     // Let the primary immediate viewport handle the commands of its children too.
                     // This can make things easier for the backend, as otherwise we may get commands
                     // that affect a viewport while its egui logic is running.
-                    std::mem::take(&mut viewport.commands)
+                    core::mem::take(&mut viewport.commands)
                 } else {
                     vec![]
                 };
@@ -2590,7 +2590,7 @@ impl ContextImpl {
             self.memory.set_viewport_id(viewport_id);
         }
 
-        let active_pixels_per_point: std::collections::BTreeSet<OrderedFloat<f32>> = self
+        let active_pixels_per_point: core::collections::BTreeSet<OrderedFloat<f32>> = self
             .viewports
             .values()
             .map(|v| v.input.pixels_per_point.into())

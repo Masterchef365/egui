@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
+use core::sync::atomic::{AtomicU64, Ordering::Relaxed};
 
 use emath::Vec2;
 

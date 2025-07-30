@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use core::sync::Arc;
 
 use crate::{Galley, Painter, Rect, Ui, Visuals, pos2, vec2};
 

@@ -1,6 +1,6 @@
 #![allow(clippy::needless_pass_by_value)] // False positives with `impl ToString`
 
-use std::{cmp::Ordering, ops::RangeInclusive};
+use core::{cmp::Ordering, ops::RangeInclusive};
 
 use crate::{
     Button, CursorIcon, Id, Key, MINUS_CHAR_STR, Modifiers, NumExt as _, Response, RichText, Sense,
@@ -776,7 +776,7 @@ mod tests {
     macro_rules! total_assert_eq {
         ($a:expr, $b:expr) => {
             assert!(
-                matches!($a.total_cmp(&$b), std::cmp::Ordering::Equal),
+                matches!($a.total_cmp(&$b), core::cmp::Ordering::Equal),
                 "{} != {}",
                 $a,
                 $b

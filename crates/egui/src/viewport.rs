@@ -67,7 +67,7 @@
 //! There are several more things related to viewports that we want to add.
 //! Read more at <https://github.com/emilk/egui/issues/3556>.
 
-use std::sync::Arc;
+use core::sync::Arc;
 
 use epaint::{Pos2, Vec2};
 
@@ -120,8 +120,8 @@ impl Default for ViewportId {
     }
 }
 
-impl std::fmt::Debug for ViewportId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for ViewportId {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         self.0.short_debug_format().fmt(f)
     }
 }
@@ -131,7 +131,7 @@ impl ViewportId {
     pub const ROOT: Self = Self(Id::NULL);
 
     #[inline]
-    pub fn from_hash_of(source: impl std::hash::Hash) -> Self {
+    pub fn from_hash_of(source: impl core::hash::Hash) -> Self {
         Self(Id::new(source))
     }
 }
@@ -177,8 +177,8 @@ impl IconData {
     }
 }
 
-impl std::fmt::Debug for IconData {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for IconData {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("IconData")
             .field("width", &self.width)
             .field("height", &self.height)
@@ -1190,7 +1190,7 @@ pub struct ViewportOutput {
     /// but if you haven't, you can use this instead.
     ///
     /// If the duration is zero, schedule a repaint immediately.
-    pub repaint_delay: std::time::Duration,
+    pub repaint_delay: core::time::Duration,
 }
 
 impl ViewportOutput {

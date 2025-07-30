@@ -1,4 +1,4 @@
-use std::{hash::Hash, sync::Arc};
+use core::{hash::Hash, sync::Arc};
 
 use crate::ClosableTag;
 #[expect(unused_imports)] // Used for doclinks

@@ -3,7 +3,7 @@
 
 use emath::GuiRounding as _;
 use epaint::mutex::RwLock;
-use std::{any::Any, hash::Hash, sync::Arc};
+use core::{any::Any, hash::Hash, sync::Arc};
 
 use crate::ClosableTag;
 #[cfg(debug_assertions)]
@@ -1547,7 +1547,7 @@ impl Ui {
     ///
     /// ```
     /// # use egui::*;
-    /// # use std::f32::consts::TAU;
+    /// # use core::f32::consts::TAU;
     /// # egui::__run_test_ui(|ui| {
     /// let size = Vec2::splat(16.0);
     /// let (response, painter) = ui.allocate_painter(size, Sense::hover());
@@ -2195,7 +2195,7 @@ impl Ui {
     /// but is shown to the user in fractions of one Tau (i.e. fractions of one turn).
     /// The angle is NOT wrapped, so the user may select, for instance 2𝞃 (720°)
     pub fn drag_angle_tau(&mut self, radians: &mut f32) -> Response {
-        use std::f32::consts::TAU;
+        use core::f32::consts::TAU;
 
         let mut taus = *radians / TAU;
         let mut response = self.add(DragValue::new(&mut taus).speed(0.01).suffix("τ"));
@@ -2840,7 +2840,7 @@ impl Ui {
         let column_width = (self.available_width() - total_spacing) / (NUM_COL as f32);
         let top_left = self.cursor().min;
 
-        let mut columns = std::array::from_fn(|col_idx| {
+        let mut columns = core::array::from_fn(|col_idx| {
             let pos = top_left + vec2((col_idx as f32) * (column_width + spacing), 0.0);
             let child_rect = Rect::from_min_max(
                 pos,

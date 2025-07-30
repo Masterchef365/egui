@@ -1,4 +1,4 @@
-use std::{any::Any, sync::Arc};
+use core::{any::Any, sync::Arc};
 
 use crate::{Context, CursorIcon, Id};
 

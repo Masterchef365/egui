@@ -1,6 +1,6 @@
 #![allow(clippy::needless_range_loop)]
 
-use std::ops::{Add, AddAssign, BitOr, BitOrAssign};
+use core::ops::{Add, AddAssign, BitOr, BitOrAssign};
 
 use crate::{
     Context, CursorIcon, Id, NumExt as _, Pos2, Rangef, Rect, Sense, Ui, UiBuilder, UiKind,
@@ -417,13 +417,13 @@ impl ScrollArea {
     /// A source for the unique [`Id`], e.g. `.id_source("second_scroll_area")` or `.id_source(loop_index)`.
     #[inline]
     #[deprecated = "Renamed id_salt"]
-    pub fn id_source(self, id_salt: impl std::hash::Hash) -> Self {
+    pub fn id_source(self, id_salt: impl core::hash::Hash) -> Self {
         self.id_salt(id_salt)
     }
 
     /// A source for the unique [`Id`], e.g. `.id_salt("second_scroll_area")` or `.id_salt(loop_index)`.
     #[inline]
-    pub fn id_salt(mut self, id_salt: impl std::hash::Hash) -> Self {
+    pub fn id_salt(mut self, id_salt: impl core::hash::Hash) -> Self {
         self.id_salt = Some(Id::new(id_salt));
         self
     }
@@ -870,7 +870,7 @@ impl ScrollArea {
 
         let saved_scroll_target = content_ui
             .ctx()
-            .pass_state_mut(|state| std::mem::take(&mut state.scroll_target));
+            .pass_state_mut(|state| core::mem::take(&mut state.scroll_target));
 
         Prepared {
             id,
@@ -924,7 +924,7 @@ impl ScrollArea {
         ui: &mut Ui,
         row_height_sans_spacing: f32,
         total_rows: usize,
-        add_contents: impl FnOnce(&mut Ui, std::ops::Range<usize>) -> R,
+        add_contents: impl FnOnce(&mut Ui, core::ops::Range<usize>) -> R,
     ) -> ScrollAreaOutput<R> {
         let spacing = ui.spacing().item_spacing;
         let row_height_with_spacing = row_height_sans_spacing + spacing.y;
@@ -1010,7 +1010,7 @@ impl Prepared {
 
         let scroll_delta = content_ui
             .ctx()
-            .pass_state_mut(|state| std::mem::take(&mut state.scroll_delta));
+            .pass_state_mut(|state| core::mem::take(&mut state.scroll_delta));
 
         for d in 0..2 {
             // PassState::scroll_delta is inverted from the way we apply the delta, so we need to negate it.

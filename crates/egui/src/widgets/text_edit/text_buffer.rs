@@ -1,4 +1,4 @@
-use std::{borrow::Cow, ops::Range};
+use core::{borrow::Cow, ops::Range};
 
 use epaint::{
     Galley,
@@ -183,7 +183,7 @@ pub trait TextBuffer {
     /// Here is an example usage:
     /// ```
     /// use egui::TextBuffer;
-    /// use std::any::TypeId;
+    /// use core::any::TypeId;
     ///
     /// struct ExampleBuffer {}
     ///
@@ -191,7 +191,7 @@ pub trait TextBuffer {
     ///     fn is_mutable(&self) -> bool { unimplemented!() }
     ///     fn as_str(&self) -> &str { unimplemented!() }
     ///     fn insert_text(&mut self, text: &str, char_index: usize) -> usize { unimplemented!() }
-    ///     fn delete_char_range(&mut self, char_range: std::ops::Range<usize>) { unimplemented!() }
+    ///     fn delete_char_range(&mut self, char_range: core::ops::Range<usize>) { unimplemented!() }
     ///
     ///     // Implement it like the following:
     ///     fn type_id(&self) -> TypeId {
@@ -208,7 +208,7 @@ pub trait TextBuffer {
     ///     }
     /// }
     /// ```
-    fn type_id(&self) -> std::any::TypeId;
+    fn type_id(&self) -> core::any::TypeId;
 }
 
 impl TextBuffer for String {
@@ -253,11 +253,11 @@ impl TextBuffer for String {
     }
 
     fn take(&mut self) -> String {
-        std::mem::take(self)
+        core::mem::take(self)
     }
 
-    fn type_id(&self) -> std::any::TypeId {
-        std::any::TypeId::of::<Self>()
+    fn type_id(&self) -> core::any::TypeId {
+        core::any::TypeId::of::<Self>()
     }
 }
 
@@ -287,11 +287,11 @@ impl TextBuffer for Cow<'_, str> {
     }
 
     fn take(&mut self) -> String {
-        std::mem::take(self).into_owned()
+        core::mem::take(self).into_owned()
     }
 
-    fn type_id(&self) -> std::any::TypeId {
-        std::any::TypeId::of::<Cow<'_, str>>()
+    fn type_id(&self) -> core::any::TypeId {
+        core::any::TypeId::of::<Cow<'_, str>>()
     }
 }
 
@@ -311,7 +311,7 @@ impl TextBuffer for &str {
 
     fn delete_char_range(&mut self, _ch_range: Range<usize>) {}
 
-    fn type_id(&self) -> std::any::TypeId {
-        std::any::TypeId::of::<&str>()
+    fn type_id(&self) -> core::any::TypeId {
+        core::any::TypeId::of::<&str>()
     }
 }

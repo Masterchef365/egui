@@ -55,7 +55,7 @@
 mod bytes_loader;
 mod texture_loader;
 
-use std::{
+use core::{
     borrow::Cow,
     fmt::{Debug, Display},
     ops::Deref,
@@ -108,13 +108,13 @@ impl LoadError {
                 detected_format.as_ref().map_or(0, |s| s.len())
             }
             Self::Loading(message) => message.len(),
-            _ => std::mem::size_of::<Self>(),
+            _ => core::mem::size_of::<Self>(),
         }
     }
 }
 
 impl Display for LoadError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::NoImageLoaders => f.write_str(
                 "No image loaders are installed. If you're trying to load some images \
@@ -136,9 +136,9 @@ impl Display for LoadError {
     }
 }
 
-impl std::error::Error for LoadError {}
+impl core::error::Error for LoadError {}
 
-pub type Result<T, E = LoadError> = std::result::Result<T, E>;
+pub type Result<T, E = LoadError> = core::result::Result<T, E>;
 
 /// Given as a hint for image loading requests.
 ///
@@ -209,7 +209,7 @@ pub enum Bytes {
 }
 
 impl Debug for Bytes {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::Static(arg0) => f.debug_tuple("Static").field(&arg0.len()).finish(),
             Self::Shared(arg0) => f.debug_tuple("Shared").field(&arg0.len()).finish(),
@@ -266,7 +266,7 @@ impl Deref for Bytes {
 
 /// Represents bytes which are currently being loaded.
 ///
-/// This is similar to [`std::task::Poll`], but the `Pending` variant
+/// This is similar to [`core::task::Poll`], but the `Pending` variant
 /// contains an optional `size`, which may be used during layout to
 /// pre-allocate space the image.
 #[derive(Clone)]
@@ -365,7 +365,7 @@ pub trait BytesLoader {
 
 /// Represents an image which is currently being loaded.
 ///
-/// This is similar to [`std::task::Poll`], but the `Pending` variant
+/// This is similar to [`core::task::Poll`], but the `Pending` variant
 /// contains an optional `size`, which may be used during layout to
 /// pre-allocate space the image.
 #[derive(Clone)]
@@ -483,7 +483,7 @@ impl<'a> From<&'a TextureHandle> for SizedTexture {
 
 /// Represents a texture is currently being loaded.
 ///
-/// This is similar to [`std::task::Poll`], but the `Pending` variant
+/// This is similar to [`core::task::Poll`], but the `Pending` variant
 /// contains an optional `size`, which may be used during layout to
 /// pre-allocate space the image.
 #[derive(Clone, Copy)]

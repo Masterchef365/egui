@@ -7,8 +7,8 @@ use emath::{Align2, GuiRounding as _, NumExt as _, Rect, Vec2};
 use epaint::text::TextWrapMode;
 use epaint::{Color32, Galley};
 use smallvec::SmallVec;
-use std::ops::{Deref, DerefMut};
-use std::sync::Arc;
+use core::ops::{Deref, DerefMut};
+use core::sync::Arc;
 
 /// Intra-widget layout utility.
 ///
@@ -342,7 +342,7 @@ impl<'atom> AllocatedAtomLayout<'atom> {
         F: FnMut(SizedAtomKind<'atom>) -> SizedAtomKind<'atom>,
     {
         for kind in self.iter_kinds_mut() {
-            *kind = f(std::mem::take(kind));
+            *kind = f(core::mem::take(kind));
         }
     }
 

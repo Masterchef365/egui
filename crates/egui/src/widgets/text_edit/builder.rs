@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use core::sync::Arc;
 
 use emath::{Rect, TSTransform};
 use epaint::{
@@ -168,13 +168,13 @@ impl<'t> TextEdit<'t> {
 
     /// A source for the unique [`Id`], e.g. `.id_source("second_text_edit_field")` or `.id_source(loop_index)`.
     #[inline]
-    pub fn id_source(self, id_salt: impl std::hash::Hash) -> Self {
+    pub fn id_source(self, id_salt: impl core::hash::Hash) -> Self {
         self.id_salt(id_salt)
     }
 
     /// A source for the unique [`Id`], e.g. `.id_salt("second_text_edit_field")` or `.id_salt(loop_index)`.
     #[inline]
-    pub fn id_salt(mut self, id_salt: impl std::hash::Hash) -> Self {
+    pub fn id_salt(mut self, id_salt: impl core::hash::Hash) -> Self {
         self.id_salt = Some(Id::new(id_salt));
         self
     }
@@ -863,7 +863,7 @@ impl TextEdit<'_> {
 
 fn mask_if_password(is_password: bool, text: &str) -> String {
     fn mask_password(text: &str) -> String {
-        std::iter::repeat_n(
+        core::iter::repeat_n(
             epaint::text::PASSWORD_REPLACEMENT_CHAR,
             text.chars().count(),
         )

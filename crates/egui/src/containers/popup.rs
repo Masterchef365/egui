@@ -1,6 +1,6 @@
 #![expect(deprecated)] // This is a new, safe wrapper around the old `Memory::popup` API.
 
-use std::iter::once;
+use core::iter::once;
 
 use emath::{Align, Pos2, Rect, RectAlign, Vec2, vec2};
 

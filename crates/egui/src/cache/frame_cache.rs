@@ -48,19 +48,19 @@ impl<Value, Computer> FrameCache<Value, Computer> {
     /// or recompute and store in the cache.
     pub fn get<Key>(&mut self, key: Key) -> Value
     where
-        Key: Copy + std::hash::Hash,
+        Key: Copy + core::hash::Hash,
         Value: Clone,
         Computer: ComputerMut<Key, Value>,
     {
         let hash = crate::util::hash(key);
 
         match self.cache.entry(hash) {
-            std::collections::hash_map::Entry::Occupied(entry) => {
+            core::collections::hash_map::Entry::Occupied(entry) => {
                 let cached = entry.into_mut();
                 cached.0 = self.generation;
                 cached.1.clone()
             }
-            std::collections::hash_map::Entry::Vacant(entry) => {
+            core::collections::hash_map::Entry::Vacant(entry) => {
                 let value = self.computer.compute(key);
                 entry.insert((self.generation, value.clone()));
                 value
@@ -80,7 +80,7 @@ impl<Value: 'static + Send + Sync, Computer: 'static + Send + Sync> CacheTrait
         self.cache.len()
     }
 
-    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+    fn as_any_mut(&mut self) -> &mut dyn core::any::Any {
         self
     }
 }

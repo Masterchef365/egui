@@ -172,7 +172,7 @@ fn test_clean_symbol_name() {
 /// * `/Users/emilk/.cargo/registry/src/github.com-1ecc6299db9ec823/tokio-1.24.1/src/runtime/runtime.rs`
 /// * `crates/rerun/src/main.rs`
 /// * `/rustc/d5a82bbd26e1ad8b7401f6a718a9c57c96905483/library/core/src/ops/function.rs`
-fn shorten_source_file_path(path: &std::path::Path) -> String {
+fn shorten_source_file_path(path: &core::path::Path) -> String {
     // Look for `src` and strip everything up to it.
 
     let components: Vec<_> = path.iter().map(|path| path.to_string_lossy()).collect();
@@ -215,8 +215,8 @@ fn test_shorten_path() {
         ),
         ("/weird/path/file.rs", "/weird/path/file.rs"),
     ] {
-        use std::str::FromStr as _;
-        let before = std::path::PathBuf::from_str(before).unwrap();
+        use core::str::FromStr as _;
+        let before = core::path::PathBuf::from_str(before).unwrap();
         assert_eq!(shorten_source_file_path(&before), after);
     }
 }

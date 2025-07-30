@@ -26,7 +26,7 @@ use crate::{
     widgets::{Button, ImageButton},
 };
 use epaint::mutex::RwLock;
-use std::sync::Arc;
+use core::sync::Arc;
 
 /// What is saved between frames.
 #[derive(Clone, Default)]
@@ -60,7 +60,7 @@ impl BarState {
     }
 }
 
-impl std::ops::Deref for BarState {
+impl core::ops::Deref for BarState {
     type Target = MenuRootManager;
 
     fn deref(&self) -> &Self::Target {
@@ -68,7 +68,7 @@ impl std::ops::Deref for BarState {
     }
 }
 
-impl std::ops::DerefMut for BarState {
+impl core::ops::DerefMut for BarState {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.open_menu
     }
@@ -322,7 +322,7 @@ impl MenuRootManager {
     }
 }
 
-impl std::ops::Deref for MenuRootManager {
+impl core::ops::Deref for MenuRootManager {
     type Target = Option<MenuRoot>;
 
     fn deref(&self) -> &Self::Target {
@@ -330,7 +330,7 @@ impl std::ops::Deref for MenuRootManager {
     }
 }
 
-impl std::ops::DerefMut for MenuRootManager {
+impl core::ops::DerefMut for MenuRootManager {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.inner
     }

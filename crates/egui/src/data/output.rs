@@ -53,10 +53,10 @@ impl FullOutput {
 
         for (id, new_viewport) in viewport_output {
             match self.viewport_output.entry(id) {
-                std::collections::hash_map::Entry::Vacant(entry) => {
+                core::collections::hash_map::Entry::Vacant(entry) => {
                     entry.insert(new_viewport);
                 }
-                std::collections::hash_map::Entry::Occupied(mut entry) => {
+                core::collections::hash_map::Entry::Occupied(mut entry) => {
                     entry.get_mut().append(new_viewport);
                 }
             }
@@ -226,7 +226,7 @@ impl PlatformOutput {
 
     /// Take everything ephemeral (everything except `cursor_icon` currently)
     pub fn take(&mut self) -> Self {
-        let taken = std::mem::take(self);
+        let taken = core::mem::take(self);
         self.cursor_icon = taken.cursor_icon; // everything else is ephemeral
         taken
     }
@@ -499,8 +499,8 @@ impl OutputEvent {
     }
 }
 
-impl std::fmt::Debug for OutputEvent {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for OutputEvent {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Self::Clicked(wi) => write!(f, "Clicked({wi:?})"),
             Self::DoubleClicked(wi) => write!(f, "DoubleClicked({wi:?})"),
@@ -538,14 +538,14 @@ pub struct WidgetInfo {
     pub value: Option<f64>,
 
     /// Selected range of characters in [`Self::current_text_value`].
-    pub text_selection: Option<std::ops::RangeInclusive<usize>>,
+    pub text_selection: Option<core::ops::RangeInclusive<usize>>,
 
     /// The hint text for text edit fields.
     pub hint_text: Option<String>,
 }
 
-impl std::fmt::Debug for WidgetInfo {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for WidgetInfo {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let Self {
             typ,
             enabled,
@@ -673,7 +673,7 @@ impl WidgetInfo {
     #[expect(clippy::needless_pass_by_value)]
     pub fn text_selection_changed(
         enabled: bool,
-        text_selection: std::ops::RangeInclusive<usize>,
+        text_selection: core::ops::RangeInclusive<usize>,
         current_text_value: impl ToString,
     ) -> Self {
         Self {

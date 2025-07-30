@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use core::sync::Arc;
 
 use emath::TSTransform;
 
@@ -47,8 +47,8 @@ fn pos_in_galley(galley: &Galley, ccursor: CCursor) -> Pos2 {
     galley.pos_from_cursor(ccursor).center()
 }
 
-impl std::fmt::Debug for WidgetTextCursor {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for WidgetTextCursor {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("WidgetTextCursor")
             .field("widget_id", &self.widget_id.short_debug_format())
             .field("ccursor", &self.ccursor.index)
@@ -125,8 +125,8 @@ impl Default for LabelSelectionState {
 
 impl LabelSelectionState {
     pub(crate) fn register(ctx: &Context) {
-        ctx.on_begin_pass("LabelSelectionState", std::sync::Arc::new(Self::begin_pass));
-        ctx.on_end_pass("LabelSelectionState", std::sync::Arc::new(Self::end_pass));
+        ctx.on_begin_pass("LabelSelectionState", core::sync::Arc::new(Self::begin_pass));
+        ctx.on_end_pass("LabelSelectionState", core::sync::Arc::new(Self::end_pass));
     }
 
     pub fn load(ctx: &Context) -> Self {
@@ -222,7 +222,7 @@ impl LabelSelectionState {
             state.is_dragging = false;
         }
 
-        let text_to_copy = std::mem::take(&mut state.text_to_copy);
+        let text_to_copy = core::mem::take(&mut state.text_to_copy);
         if !text_to_copy.is_empty() {
             ctx.copy_text(text_to_copy);
         }

@@ -3,11 +3,11 @@
 // For non-serializable types, these simply return `None`.
 // This will also allow users to pick their own serialization format per type.
 
-use std::{any::Any, sync::Arc};
+use core::{any::Any, sync::Arc};
 
 // -----------------------------------------------------------------------------------------------
 
-/// Like [`std::any::TypeId`], but can be serialized and deserialized.
+/// Like [`core::any::TypeId`], but can be serialized and deserialized.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 pub struct TypeId(u64);
@@ -15,7 +15,7 @@ pub struct TypeId(u64);
 impl TypeId {
     #[inline]
     pub fn of<T: Any + 'static>() -> Self {
-        std::any::TypeId::of::<T>().into()
+        core::any::TypeId::of::<T>().into()
     }
 
     #[inline(always)]
@@ -24,9 +24,9 @@ impl TypeId {
     }
 }
 
-impl From<std::any::TypeId> for TypeId {
+impl From<core::any::TypeId> for TypeId {
     #[inline]
-    fn from(id: std::any::TypeId) -> Self {
+    fn from(id: core::any::TypeId) -> Self {
         Self(epaint::util::hash(id))
     }
 }
@@ -114,8 +114,8 @@ impl Clone for Element {
     }
 }
 
-impl std::fmt::Debug for Element {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for Element {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match &self {
             Self::Value { value, .. } => f
                 .debug_struct("Element::Value")
@@ -294,7 +294,7 @@ fn from_ron_str<T: serde::de::DeserializeOwned>(ron: &str) -> Option<T> {
             #[cfg(feature = "log")]
             log::warn!(
                 "egui: Failed to deserialize {} from memory: {}, ron error: {:?}",
-                std::any::type_name::<T>(),
+                core::any::type_name::<T>(),
                 _err,
                 ron
             );
@@ -308,7 +308,7 @@ fn from_ron_str<T: serde::de::DeserializeOwned>(ron: &str) -> Option<T> {
 use crate::Id;
 
 // TODO(emilk): make IdTypeMap generic over the key (`Id`), and make a library of IdTypeMap.
-/// Stores values identified by an [`Id`] AND the [`std::any::TypeId`] of the value.
+/// Stores values identified by an [`Id`] AND the [`core::any::TypeId`] of the value.
 ///
 /// In other words, it maps `(Id, TypeId)` to any value you want.
 ///
@@ -435,7 +435,7 @@ impl IdTypeMap {
         insert_with: impl FnOnce() -> T,
     ) -> &mut T {
         let hash = hash(TypeId::of::<T>(), id);
-        use std::collections::hash_map::Entry;
+        use core::collections::hash_map::Entry;
         match self.map.entry(hash) {
             Entry::Vacant(vacant) => vacant
                 .insert(Element::new_temp(insert_with()))
@@ -453,7 +453,7 @@ impl IdTypeMap {
         insert_with: impl FnOnce() -> T,
     ) -> &mut T {
         let hash = hash(TypeId::of::<T>(), id);
-        use std::collections::hash_map::Entry;
+        use core::collections::hash_map::Entry;
         match self.map.entry(hash) {
             Entry::Vacant(vacant) => vacant
                 .insert(Element::new_persisted(insert_with()))
@@ -488,7 +488,7 @@ impl IdTypeMap {
     pub fn remove_temp<T: 'static + Default>(&mut self, id: Id) -> Option<T> {
         let hash = hash(TypeId::of::<T>(), id);
         let mut element = self.map.remove(&hash)?;
-        Some(std::mem::take(element.get_mut_temp()?))
+        Some(core::mem::take(element.get_mut_temp()?))
     }
 
     /// Note all state of the given type.
@@ -576,7 +576,7 @@ impl PersistedMap {
     fn from_map(map: &IdTypeMap) -> Self {
         profiling::function_scope!();
 
-        use std::collections::BTreeMap;
+        use core::collections::BTreeMap;
 
         let mut types_map: nohash_hasher::IntMap<TypeId, TypeStats> = Default::default();
         #[derive(Default)]

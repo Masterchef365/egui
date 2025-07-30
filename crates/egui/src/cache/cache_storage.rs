@@ -23,13 +23,13 @@ use super::CacheTrait;
 /// ```
 #[derive(Default)]
 pub struct CacheStorage {
-    caches: ahash::HashMap<std::any::TypeId, Box<dyn CacheTrait>>,
+    caches: ahash::HashMap<core::any::TypeId, Box<dyn CacheTrait>>,
 }
 
 impl CacheStorage {
     pub fn cache<Cache: CacheTrait + Default>(&mut self) -> &mut Cache {
         self.caches
-            .entry(std::any::TypeId::of::<Cache>())
+            .entry(core::any::TypeId::of::<Cache>())
             .or_insert_with(|| Box::<Cache>::default())
             .as_any_mut()
             .downcast_mut::<Cache>()
@@ -57,8 +57,8 @@ impl Clone for CacheStorage {
     }
 }
 
-impl std::fmt::Debug for CacheStorage {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Debug for CacheStorage {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(
             f,
             "FrameCacheStorage[{} caches with {} elements]",

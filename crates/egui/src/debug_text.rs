@@ -16,7 +16,7 @@ use crate::{
 /// meaning [`Context`] calls this from its `Default` implementation,
 /// so this is marked as `pub(crate)`.
 pub(crate) fn register(ctx: &Context) {
-    ctx.on_end_pass("debug_text", std::sync::Arc::new(State::end_pass));
+    ctx.on_end_pass("debug_text", core::sync::Arc::new(State::end_pass));
 }
 
 /// Print this text next to the cursor at the end of the pass.
@@ -36,7 +36,7 @@ pub fn print(ctx: &Context, text: impl Into<WidgetText>) {
         return;
     }
 
-    let location = std::panic::Location::caller();
+    let location = core::panic::Location::caller();
     let location = format!("{}:{}", location.file(), location.line());
     ctx.data_mut(|data| {
         // We use `Id::NULL` as the id, since we only have one instance of this plugin.

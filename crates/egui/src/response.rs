@@ -1,4 +1,4 @@
-use std::{any::Any, sync::Arc};
+use core::{any::Any, sync::Arc};
 
 use crate::{
     Context, CursorIcon, Id, LayerId, PointerButton, Popup, PopupKind, Sense, Tooltip, Ui,
@@ -1023,7 +1023,7 @@ impl Response {
 /// ```
 ///
 /// Now `draw_vec2(ui, foo).hovered` is true if either [`DragValue`](crate::DragValue) were hovered.
-impl std::ops::BitOr for Response {
+impl core::ops::BitOr for Response {
     type Output = Self;
 
     fn bitor(self, rhs: Self) -> Self {
@@ -1044,7 +1044,7 @@ impl std::ops::BitOr for Response {
 /// if response.hovered() { ui.label("You hovered at least one of the widgets"); }
 /// # });
 /// ```
-impl std::ops::BitOrAssign for Response {
+impl core::ops::BitOrAssign for Response {
     fn bitor_assign(&mut self, rhs: Self) {
         *self = self.union(rhs);
     }

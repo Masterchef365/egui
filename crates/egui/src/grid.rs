@@ -59,7 +59,7 @@ type ColorPickerFn = Box<dyn Send + Sync + Fn(usize, &Style) -> Option<Color32>>
 
 pub(crate) struct GridLayout {
     ctx: Context,
-    style: std::sync::Arc<Style>,
+    style: core::sync::Arc<Style>,
     id: Id,
 
     /// First frame (no previous know state).
@@ -322,7 +322,7 @@ pub struct Grid {
 
 impl Grid {
     /// Create a new [`Grid`] with a locally unique identifier.
-    pub fn new(id_salt: impl std::hash::Hash) -> Self {
+    pub fn new(id_salt: impl core::hash::Hash) -> Self {
         Self {
             id_salt: Id::new(id_salt),
             num_columns: None,

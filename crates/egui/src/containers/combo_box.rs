@@ -48,7 +48,7 @@ pub struct ComboBox {
 
 impl ComboBox {
     /// Create new [`ComboBox`] with id and label
-    pub fn new(id_salt: impl std::hash::Hash, label: impl Into<WidgetText>) -> Self {
+    pub fn new(id_salt: impl core::hash::Hash, label: impl Into<WidgetText>) -> Self {
         Self {
             id_salt: Id::new(id_salt),
             label: Some(label.into()),
@@ -77,7 +77,7 @@ impl ComboBox {
     }
 
     /// Without label.
-    pub fn from_id_salt(id_salt: impl std::hash::Hash) -> Self {
+    pub fn from_id_salt(id_salt: impl core::hash::Hash) -> Self {
         Self {
             id_salt: Id::new(id_salt),
             label: Default::default(),
@@ -92,7 +92,7 @@ impl ComboBox {
 
     /// Without label.
     #[deprecated = "Renamed from_id_salt"]
-    pub fn from_id_source(id_salt: impl std::hash::Hash) -> Self {
+    pub fn from_id_source(id_salt: impl core::hash::Hash) -> Self {
         Self::from_id_salt(id_salt)
     }
 

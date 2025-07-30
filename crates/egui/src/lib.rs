@@ -559,7 +559,7 @@ pub fn warn_if_debug_build(ui: &mut crate::Ui) {
 macro_rules! include_image {
     ($path:expr $(,)?) => {
         $crate::ImageSource::Bytes {
-            uri: ::std::borrow::Cow::Borrowed(concat!("bytes://", $path)),
+            uri: ::core::borrow::Cow::Borrowed(concat!("bytes://", $path)),
             bytes: $crate::load::Bytes::Static(include_bytes!($path)),
         }
     };

@@ -1,6 +1,6 @@
 #![warn(missing_docs)] // Let's keep this file well-documented.` to memory.rs
 
-use std::num::NonZeroUsize;
+use core::num::NonZeroUsize;
 
 use ahash::{HashMap, HashSet};
 use epaint::emath::TSTransform;
@@ -186,11 +186,11 @@ impl FocusDirection {
 pub struct Options {
     /// The default style for new [`Ui`](crate::Ui):s in dark mode.
     #[cfg_attr(feature = "serde", serde(skip))]
-    pub dark_style: std::sync::Arc<Style>,
+    pub dark_style: core::sync::Arc<Style>,
 
     /// The default style for new [`Ui`](crate::Ui):s in light mode.
     #[cfg_attr(feature = "serde", serde(skip))]
-    pub light_style: std::sync::Arc<Style>,
+    pub light_style: core::sync::Arc<Style>,
 
     /// Preference for selection between dark and light [`crate::Context::style`]
     /// as the active style used by all subsequent windows, panels, etc.
@@ -304,8 +304,8 @@ pub struct Options {
 impl Default for Options {
     fn default() -> Self {
         Self {
-            dark_style: std::sync::Arc::new(Theme::Dark.default_style()),
-            light_style: std::sync::Arc::new(Theme::Light.default_style()),
+            dark_style: core::sync::Arc::new(Theme::Dark.default_style()),
+            light_style: core::sync::Arc::new(Theme::Light.default_style()),
             theme_preference: Default::default(),
             fallback_theme: Theme::Dark,
             system_theme: None,
@@ -339,14 +339,14 @@ impl Options {
         }
     }
 
-    pub(crate) fn style(&self) -> &std::sync::Arc<Style> {
+    pub(crate) fn style(&self) -> &core::sync::Arc<Style> {
         match self.theme() {
             Theme::Dark => &self.dark_style,
             Theme::Light => &self.light_style,
         }
     }
 
-    pub(crate) fn style_mut(&mut self) -> &mut std::sync::Arc<Style> {
+    pub(crate) fn style_mut(&mut self) -> &mut core::sync::Arc<Style> {
         match self.theme() {
             Theme::Dark => &mut self.dark_style,
             Theme::Light => &mut self.light_style,
@@ -408,7 +408,7 @@ impl Options {
             .show(ui, |ui| {
                 theme_preference.radio_buttons(ui);
 
-                let style = std::sync::Arc::make_mut(match theme {
+                let style = core::sync::Arc::make_mut(match theme {
                     Theme::Dark => dark_style,
                     Theme::Light => light_style,
                 });
@@ -896,7 +896,7 @@ impl Memory {
         if let Some(modal_layer) = self.focus().and_then(|f| f.top_modal_layer) {
             matches!(
                 self.areas().compare_order(layer_id, modal_layer),
-                std::cmp::Ordering::Equal | std::cmp::Ordering::Greater
+                core::cmp::Ordering::Equal | core::cmp::Ordering::Greater
             )
         } else {
             true
@@ -936,7 +936,7 @@ impl Memory {
         if let Some(current) = self.focus().and_then(|f| f.top_modal_layer_current_frame) {
             if matches!(
                 self.areas().compare_order(layer_id, current),
-                std::cmp::Ordering::Less
+                core::cmp::Ordering::Less
             ) {
                 return;
             }
@@ -1174,13 +1174,13 @@ impl Areas {
 
     /// Compare the order of two layers, based on the order list from last frame.
     ///
-    /// May return [`std::cmp::Ordering::Equal`] if the layers are not in the order list.
-    pub(crate) fn compare_order(&self, a: LayerId, b: LayerId) -> std::cmp::Ordering {
+    /// May return [`core::cmp::Ordering::Equal`] if the layers are not in the order list.
+    pub(crate) fn compare_order(&self, a: LayerId, b: LayerId) -> core::cmp::Ordering {
         // Sort by layer `order` first and use `order_map` to resolve disputes.
         // If `order_map` only contains one layer ID, then the other one will be
         // lower because `None < Some(x)`.
         match a.order.cmp(&b.order) {
-            std::cmp::Ordering::Equal => self.order_map.get(&a).cmp(&self.order_map.get(&b)),
+            core::cmp::Ordering::Equal => self.order_map.get(&a).cmp(&self.order_map.get(&b)),
             cmp => cmp,
         }
     }
@@ -1317,14 +1317,14 @@ impl Areas {
             ..
         } = self;
 
-        std::mem::swap(visible_areas_last_frame, visible_areas_current_frame);
+        core::mem::swap(visible_areas_last_frame, visible_areas_current_frame);
         visible_areas_current_frame.clear();
 
         order.sort_by_key(|layer| (layer.order, wants_to_be_on_top.contains(layer)));
         wants_to_be_on_top.clear();
 
         // For all layers with sublayers, put the sublayers directly after the parent layer:
-        let sublayers = std::mem::take(sublayers);
+        let sublayers = core::mem::take(sublayers);
         for (parent, children) in sublayers {
             let mut moved_layers = vec![parent];
             order.retain(|l| {
@@ -1385,14 +1385,14 @@ fn order_map_total_ordering() {
     let mut i = 0;
     for l in layers.windows(2) {
         assert!(l[0].order <= l[1].order, "does not follow LayerId.order");
-        if areas.compare_order(l[0], l[1]) != std::cmp::Ordering::Equal {
+        if areas.compare_order(l[0], l[1]) != core::cmp::Ordering::Equal {
             i += 1;
         }
         equivalence_classes.push(i);
     }
     assert_eq!(layers.len(), equivalence_classes.len());
-    for (&l1, c1) in std::iter::zip(&layers, &equivalence_classes) {
-        for (&l2, c2) in std::iter::zip(&layers, &equivalence_classes) {
+    for (&l1, c1) in core::iter::zip(&layers, &equivalence_classes) {
+        for (&l2, c2) in core::iter::zip(&layers, &equivalence_classes) {
             assert_eq!(
                 c1.cmp(c2),
                 areas.compare_order(l1, l2),

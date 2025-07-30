@@ -8,7 +8,7 @@ use crate::{
     emath::{NumExt as _, Pos2, Rect, Vec2, vec2},
     util::History,
 };
-use std::{
+use core::{
     collections::{BTreeMap, HashSet},
     time::Duration,
 };
