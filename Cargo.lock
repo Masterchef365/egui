@@ -1442,6 +1442,7 @@ version = "0.32.0"
 dependencies = [
  "bytemuck",
  "document-features",
+ "libm",
  "mint",
  "serde",
 ]

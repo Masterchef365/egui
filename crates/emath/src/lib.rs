@@ -1,3 +1,6 @@
+#![no_std]
+extern crate alloc;
+
 //! Opinionated 2D math library for building GUIs.
 //!
 //! Includes vectors, positions, rectangles etc.
@@ -21,7 +24,7 @@
 
 #![allow(clippy::float_cmp)]
 
-use std::ops::{Add, Div, Mul, RangeInclusive, Sub};
+use core::ops::{Add, Div, Mul, RangeInclusive, Sub};
 
 // ----------------------------------------------------------------------------
 
@@ -252,7 +255,7 @@ fn test_format() {
     assert_eq!(format_with_minimum_decimals(3.14, 2), "3.14");
     assert_eq!(format_with_minimum_decimals(3.14, 3), "3.140");
     assert_eq!(
-        format_with_minimum_decimals(std::f64::consts::PI, 2),
+        format_with_minimum_decimals(core::f64::consts::PI, 2),
         "3.14159"
     );
 }
@@ -348,7 +351,7 @@ impl_num_ext!(Pos2);
 
 /// Wrap angle to `[-PI, PI]` range.
 pub fn normalized_angle(mut angle: f32) -> f32 {
-    use std::f32::consts::{PI, TAU};
+    use core::f32::consts::{PI, TAU};
     angle %= TAU;
     if angle > PI {
         angle -= TAU;
@@ -368,7 +371,7 @@ fn test_normalized_angle() {
         };
     }
 
-    use std::f32::consts::TAU;
+    use core::f32::consts::TAU;
     almost_eq!(normalized_angle(-3.0 * TAU), 0.0);
     almost_eq!(normalized_angle(-2.3 * TAU), -0.3 * TAU);
     almost_eq!(normalized_angle(-TAU), 0.0);

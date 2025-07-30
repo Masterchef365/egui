@@ -5,7 +5,7 @@
 //! All functions take a value in `[0, 1]` and return a value in `[0, 1]`.
 //!
 //! Derived from <https://github.com/warrenm/AHEasing/blob/master/AHEasing/easing.c>.
-use std::f32::consts::PI;
+use core::f32::consts::PI;
 
 #[inline]
 fn powf(base: f32, exp: f32) -> f32 {

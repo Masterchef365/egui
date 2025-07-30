@@ -1,5 +1,5 @@
-use std::fmt;
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use core::fmt;
+use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use crate::Vec2b;
 
@@ -200,7 +200,7 @@ impl Vec2 {
     ///
     /// ```
     /// # use emath::Vec2;
-    /// use std::f32::consts::TAU;
+    /// use core::f32::consts::TAU;
     ///
     /// assert_eq!(Vec2::ZERO.angle(), 0.0);
     /// assert_eq!(Vec2::angled(0.0).angle(), 0.0);
@@ -223,7 +223,7 @@ impl Vec2 {
     ///
     /// ```
     /// # use emath::Vec2;
-    /// use std::f32::consts::TAU;
+    /// use core::f32::consts::TAU;
     ///
     /// assert_eq!(Vec2::angled(0.0), Vec2::X);
     /// assert!((Vec2::angled(0.25 * TAU) - Vec2::Y).length() < 1e-5);
@@ -322,7 +322,7 @@ impl Vec2 {
     }
 }
 
-impl std::ops::Index<usize> for Vec2 {
+impl core::ops::Index<usize> for Vec2 {
     type Output = f32;
 
     #[inline(always)]
@@ -335,7 +335,7 @@ impl std::ops::Index<usize> for Vec2 {
     }
 }
 
-impl std::ops::IndexMut<usize> for Vec2 {
+impl core::ops::IndexMut<usize> for Vec2 {
     #[inline(always)]
     fn index_mut(&mut self, index: usize) -> &mut f32 {
         match index {
@@ -514,7 +514,7 @@ mod test {
 
     #[test]
     fn test_vec2() {
-        use std::f32::consts::TAU;
+        use core::f32::consts::TAU;
 
         assert_eq!(Vec2::ZERO.angle(), 0.0);
         assert_eq!(Vec2::angled(0.0).angle(), 0.0);
@@ -547,7 +547,7 @@ mod test {
     #[test]
     fn test_vec2_normalized() {
         fn generate_spiral(n: usize, start: Vec2, end: Vec2) -> impl Iterator<Item = Vec2> {
-            let angle_step = 2.0 * std::f32::consts::PI / n as f32;
+            let angle_step = 2.0 * core::f32::consts::PI / n as f32;
             let radius_step = (end.length() - start.length()) / n as f32;
 
             (0..n).map(move |i| {
