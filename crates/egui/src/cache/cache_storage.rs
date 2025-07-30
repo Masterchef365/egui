@@ -1,3 +1,6 @@
+use alloc::boxed::Box;
+use hashbrown::HashMap;
+
 use super::CacheTrait;
 
 /// A typemap of many caches, all implemented with [`CacheTrait`].

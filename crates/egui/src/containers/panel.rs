@@ -14,7 +14,7 @@
 //! ⚠ Always add any [`CentralPanel`] last.
 //!
 //! Add your [`crate::Window`]:s after any top-level panels.
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 
 use emath::GuiRounding as _;
 

@@ -55,12 +55,12 @@ impl<Value, Computer> FrameCache<Value, Computer> {
         let hash = crate::util::hash(key);
 
         match self.cache.entry(hash) {
-            core::collections::hash_map::Entry::Occupied(entry) => {
+            hashbrown::hash_map::Entry::Occupied(entry) => {
                 let cached = entry.into_mut();
                 cached.0 = self.generation;
                 cached.1.clone()
             }
-            core::collections::hash_map::Entry::Vacant(entry) => {
+            hashbrown::hash_map::Entry::Vacant(entry) => {
                 let value = self.computer.compute(key);
                 entry.insert((self.generation, value.clone()));
                 value

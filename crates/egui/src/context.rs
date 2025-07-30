@@ -1,4 +1,6 @@
 #![warn(missing_docs)] use alloc::borrow::Cow;
+use alloc::boxed::Box;
+use alloc::collections::btree_map::BTreeMap;
 use alloc::format;
 // Let's keep `Context` well-documented.
 use alloc::{sync::Arc, vec::Vec};
@@ -73,7 +75,7 @@ thread_local! {
     static IMMEDIATE_VIEWPORT_RENDERER: RefCell<Option<Box<ImmediateViewportRendererCallback>>> = Default::default();
 }
 */
-static IMMEDIATE_VIEWPORT_RENDERER: OnceCell<Arc<Mutex<Option<Box<CallbackType>>>>> = OnceCell::new();
+static IMMEDIATE_VIEWPORT_RENDERER: once_cell::unsync::OnceCell<Arc<Mutex<Option<Box<ImmediateViewportRendererCallback>>>>> = once_cell::unsync::OnceCell::new();
 
 // ----------------------------------------------------------------------------
 
@@ -419,7 +421,7 @@ struct ContextImpl {
     /// `pixels_per_point`.
     /// This is because the `Fonts` depend on `pixels_per_point` for the font atlas
     /// as well as kerning, font sizes, etc.
-    fonts: core::collections::BTreeMap<OrderedFloat<f32>, Fonts>,
+    fonts: BTreeMap<OrderedFloat<f32>, Fonts>,
     font_definitions: FontDefinitions,
 
     memory: Memory,
@@ -658,7 +660,7 @@ impl ContextImpl {
     fn accesskit_node_builder(&mut self, id: Id) -> &mut accesskit::Node {
         let state = self.viewport().this_pass.accesskit_state.as_mut().unwrap();
         let builders = &mut state.nodes;
-        if let core::collections::hash_map::Entry::Vacant(entry) = builders.entry(id) {
+        if let hashbrown::hash_map::Entry::Vacant(entry) = builders.entry(id) {
             entry.insert(Default::default());
             let parent_id = state.parent_stack.last().unwrap();
             let parent_builder = builders.get_mut(parent_id).unwrap();
@@ -2598,7 +2600,7 @@ impl ContextImpl {
             self.memory.set_viewport_id(viewport_id);
         }
 
-        let active_pixels_per_point: core::collections::BTreeSet<OrderedFloat<f32>> = self
+        let active_pixels_per_point: alloc::collections::BTreeSet<OrderedFloat<f32>> = self
             .viewports
             .values()
             .map(|v| v.input.pixels_per_point.into())

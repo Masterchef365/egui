@@ -1,5 +1,5 @@
 #![allow(clippy::needless_range_loop)]
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 
 use core::ops::{Add, AddAssign, BitOr, BitOrAssign};
 

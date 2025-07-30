@@ -1,5 +1,5 @@
 //! Frame container
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 
 use crate::{
     InnerResponse, Response, Sense, Style, Ui, UiBuilder, UiKind, UiStackInfo, epaint,
