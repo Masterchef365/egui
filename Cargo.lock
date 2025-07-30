@@ -1267,10 +1267,12 @@ dependencies = [
  "log",
  "nohash-hasher",
  "num-traits",
+ "once_cell",
  "profiling",
  "ron",
  "serde",
  "smallvec",
+ "spin",
  "unicode-segmentation",
 ]
 
@@ -1557,11 +1559,11 @@ dependencies = [
  "log",
  "mimalloc",
  "nohash-hasher",
- "parking_lot",
  "profiling",
  "rayon",
  "serde",
  "similar-asserts",
+ "spin",
 ]
 
 [[package]]
@@ -3927,6 +3929,15 @@ checksum = "c970269d99b64e60ec3bd6ad27270092a5394c4e309314b18ae3fe575695fbe8"
 dependencies = [
  "libc",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "spin"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d5fe4ccb98d9c292d56fec89a5e07da7fc4cf0dc11e156b41793132775d3e591"
+dependencies = [
+ "lock_api",
 ]
 
 [[package]]

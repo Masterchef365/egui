@@ -6,19 +6,19 @@
 mod mutex_impl {
     /// Provides interior mutability.
     ///
-    /// This is a thin wrapper around [`parking_lot::Mutex`], except if
+    /// This is a thin wrapper around [`spin::Mutex`], except if
     /// the feature `deadlock_detection` is turned enabled, in which case
     /// extra checks are added to detect deadlocks.
     #[derive(Default)]
-    pub struct Mutex<T>(parking_lot::Mutex<T>);
+    pub struct Mutex<T>(spin::Mutex<T>);
 
     /// The lock you get from [`Mutex`].
-    pub use parking_lot::MutexGuard;
+    pub use spin::MutexGuard;
 
     impl<T> Mutex<T> {
         #[inline(always)]
         pub fn new(val: T) -> Self {
-            Self(parking_lot::Mutex::new(val))
+            Self(spin::Mutex::new(val))
         }
 
         #[inline(always)]
@@ -32,14 +32,14 @@ mod mutex_impl {
 mod mutex_impl {
     /// Provides interior mutability.
     ///
-    /// This is a thin wrapper around [`parking_lot::Mutex`], except if
+    /// This is a thin wrapper around [`spin::Mutex`], except if
     /// the feature `deadlock_detection` is turned enabled, in which case
     /// extra checks are added to detect deadlocks.
     #[derive(Default)]
-    pub struct Mutex<T>(parking_lot::Mutex<T>);
+    pub struct Mutex<T>(spin::Mutex<T>);
 
     /// The lock you get from [`Mutex`].
-    pub struct MutexGuard<'a, T>(parking_lot::MutexGuard<'a, T>, *const ());
+    pub struct MutexGuard<'a, T>(spin::MutexGuard<'a, T>, *const ());
 
     #[derive(Default)]
     struct HeldLocks(Vec<*const ()>);
@@ -68,14 +68,14 @@ mod mutex_impl {
     impl<T> Mutex<T> {
         #[inline(always)]
         pub fn new(val: T) -> Self {
-            Self(parking_lot::Mutex::new(val))
+            Self(spin::Mutex::new(val))
         }
 
         pub fn lock(&self) -> MutexGuard<'_, T> {
             // Detect if we are recursively taking out a lock on this mutex.
 
             // use a pointer to the inner data as an id for this lock
-            let ptr = core::ptr::from_ref::<parking_lot::Mutex<_>>(&self.0).cast::<()>();
+            let ptr = core::ptr::from_ref::<spin::Mutex<_>>(&self.0).cast::<()>();
 
             // Store it in thread local storage while we have a lock guard taken out
             HELD_LOCKS_TLS.with(|held_locks| {
@@ -122,35 +122,38 @@ mod mutex_impl {
 #[cfg(not(feature = "deadlock_detection"))]
 mod rw_lock_impl {
     /// The lock you get from [`RwLock::read`].
-    pub use parking_lot::MappedRwLockReadGuard as RwLockReadGuard;
+    //pub use spin::MappedRwLockReadGuard as RwLockReadGuard;
+    pub use spin::RwLockReadGuard;
 
     /// The lock you get from [`RwLock::write`].
-    pub use parking_lot::MappedRwLockWriteGuard as RwLockWriteGuard;
+    pub use spin::RwLockWriteGuard;
 
     /// Provides interior mutability.
     ///
-    /// This is a thin wrapper around [`parking_lot::RwLock`], except if
+    /// This is a thin wrapper around [`spin::RwLock`], except if
     /// the feature `deadlock_detection` is turned enabled, in which case
     /// extra checks are added to detect deadlocks.
     #[derive(Default)]
-    pub struct RwLock<T: ?Sized>(parking_lot::RwLock<T>);
+    pub struct RwLock<T: ?Sized>(spin::RwLock<T>);
 
     impl<T> RwLock<T> {
         #[inline(always)]
         pub fn new(val: T) -> Self {
-            Self(parking_lot::RwLock::new(val))
+            Self(spin::RwLock::new(val))
         }
     }
 
     impl<T: ?Sized> RwLock<T> {
         #[inline(always)]
         pub fn read(&self) -> RwLockReadGuard<'_, T> {
-            parking_lot::RwLockReadGuard::map(self.0.read(), |v| v)
+            //spin::RwLockReadGuard::map(self.0.read(), |v| v)
+            self.0.read()
         }
 
         #[inline(always)]
         pub fn write(&self) -> RwLockWriteGuard<'_, T> {
-            parking_lot::RwLockWriteGuard::map(self.0.write(), |v| v)
+            //spin::RwLockWriteGuard::map(self.0.write(), |v| v)
+            self.0.write()
         }
     }
 }
@@ -164,14 +167,14 @@ mod rw_lock_impl {
     };
 
     use ahash::HashMap;
-    use parking_lot::{MappedRwLockReadGuard, MappedRwLockWriteGuard};
+    use spin::{MappedRwLockReadGuard, MappedRwLockWriteGuard};
 
     /// The lock you get from [`RwLock::read`].
     pub struct RwLockReadGuard<'a, T> {
         // The option is used only because we need to `take()` the guard out of self
         // when doing remappings (`map()`), i.e. it's used as a safe `ManuallyDrop`.
         guard: Option<MappedRwLockReadGuard<'a, T>>,
-        holders: Arc<parking_lot::Mutex<HashMap<ThreadId, backtrace::Backtrace>>>,
+        holders: Arc<spin::Mutex<HashMap<ThreadId, backtrace::Backtrace>>>,
     }
 
     impl<'a, T> RwLockReadGuard<'a, T> {
@@ -184,7 +187,7 @@ mod rw_lock_impl {
                 guard: s
                     .guard
                     .take()
-                    .map(|g| parking_lot::MappedRwLockReadGuard::map(g, f)),
+                    .map(|g| spin::MappedRwLockReadGuard::map(g, f)),
                 holders: Arc::clone(&s.holders),
             }
         }
@@ -210,7 +213,7 @@ mod rw_lock_impl {
         // The option is used only because we need to `take()` the guard out of self
         // when doing remappings (`map()`), i.e. it's used as a safe `ManuallyDrop`.
         guard: Option<MappedRwLockWriteGuard<'a, T>>,
-        holders: Arc<parking_lot::Mutex<HashMap<ThreadId, backtrace::Backtrace>>>,
+        holders: Arc<spin::Mutex<HashMap<ThreadId, backtrace::Backtrace>>>,
     }
 
     impl<'a, T> RwLockWriteGuard<'a, T> {
@@ -223,7 +226,7 @@ mod rw_lock_impl {
                 guard: s
                     .guard
                     .take()
-                    .map(|g| parking_lot::MappedRwLockWriteGuard::map(g, f)),
+                    .map(|g| spin::MappedRwLockWriteGuard::map(g, f)),
                 holders: Arc::clone(&s.holders),
             }
         }
@@ -252,23 +255,23 @@ mod rw_lock_impl {
 
     /// Provides interior mutability.
     ///
-    /// This is a thin wrapper around [`parking_lot::RwLock`], except if
+    /// This is a thin wrapper around [`spin::RwLock`], except if
     /// the feature `deadlock_detection` is turned enabled, in which case
     /// extra checks are added to detect deadlocks.
     #[derive(Default)]
     pub struct RwLock<T> {
-        lock: parking_lot::RwLock<T>,
-        // Technically we'd need a list of backtraces per thread-id since parking_lot's
+        lock: spin::RwLock<T>,
+        // Technically we'd need a list of backtraces per thread-id since spin's
         // read-locks are reentrant.
         // In practice it's not that useful to have the whole list though, so we only
         // keep track of the first backtrace for now.
-        holders: Arc<parking_lot::Mutex<HashMap<ThreadId, backtrace::Backtrace>>>,
+        holders: Arc<spin::Mutex<HashMap<ThreadId, backtrace::Backtrace>>>,
     }
 
     impl<T> RwLock<T> {
         pub fn new(val: T) -> Self {
             Self {
-                lock: parking_lot::RwLock::new(val),
+                lock: spin::RwLock::new(val),
                 holders: Default::default(),
             }
         }
@@ -296,7 +299,7 @@ mod rw_lock_impl {
                 .or_insert_with(make_backtrace);
 
             RwLockReadGuard {
-                guard: parking_lot::RwLockReadGuard::map(self.lock.read(), |v| v).into(),
+                guard: spin::RwLockReadGuard::map(self.lock.read(), |v| v).into(),
                 holders: Arc::clone(&self.holders),
             }
         }
@@ -323,7 +326,7 @@ mod rw_lock_impl {
                 .or_insert_with(make_backtrace);
 
             RwLockWriteGuard {
-                guard: parking_lot::RwLockWriteGuard::map(self.lock.write(), |v| v).into(),
+                guard: spin::RwLockWriteGuard::map(self.lock.write(), |v| v).into(),
                 holders: Arc::clone(&self.holders),
             }
         }
@@ -475,7 +478,7 @@ mod tests_rwlock {
         let one = RwLock::new(());
         let _a1 = one.read();
         // This is legal: this test suite specifically targets native, which relies
-        // on parking_lot's rw-locks, which are reentrant.
+        // on spin's rw-locks, which are reentrant.
         let _a2 = one.read();
     }
 

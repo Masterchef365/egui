@@ -3,6 +3,7 @@ use alloc::format;
 // Let's keep `Context` well-documented.
 use alloc::{sync::Arc, vec::Vec};
 use alloc::string::String;
+use epaint::mutex::Mutex;
 
 use core::{cell::RefCell, panic::Location, time::Duration};
 
@@ -67,9 +68,12 @@ pub struct RequestRepaintInfo {
 
 // ----------------------------------------------------------------------------
 
+/*
 thread_local! {
     static IMMEDIATE_VIEWPORT_RENDERER: RefCell<Option<Box<ImmediateViewportRendererCallback>>> = Default::default();
 }
+*/
+static IMMEDIATE_VIEWPORT_RENDERER: OnceCell<Arc<Mutex<Option<Box<CallbackType>>>>> = OnceCell::new();
 
 // ----------------------------------------------------------------------------
 

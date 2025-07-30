@@ -82,8 +82,11 @@ _override_unity = ["epaint/_override_unity"]
 [dependencies]
 emath = { workspace = true, default-features = false }
 epaint = { workspace = true, default-features = false }
+
 num-traits = { version = "0.2", default-features = false, features = ["libm"] }
 hashbrown = { version = "0.15", features = ["alloc"] }
+once_cell = { version = "1.21", default-features = false, features = ["alloc"] }
+spin = "0.10"
 
 #ahash.workspace = true
 bitflags.workspace = true
