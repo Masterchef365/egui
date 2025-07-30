@@ -3,9 +3,10 @@ use alloc::vec::Vec;
 use alloc::string::String;
 
 use emath::Vec2;
+use hashbrown::HashMap;
 
 use super::{
-    BytesLoader as _, Context, HashMap, ImagePoll, Mutex, SizeHint, SizedTexture, TextureHandle,
+    BytesLoader as _, Context, ImagePoll, Mutex, SizeHint, SizedTexture, TextureHandle,
     TextureLoadResult, TextureLoader, TextureOptions, TexturePoll,
 };
 

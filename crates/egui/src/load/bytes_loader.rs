@@ -1,5 +1,8 @@
+use alloc::borrow::Cow;
+use hashbrown::HashMap;
+
 use super::{
-    Bytes, BytesLoadResult, BytesLoader, BytesPoll, Context, Cow, HashMap, LoadError, Mutex,
+    Bytes, BytesLoadResult, BytesLoader, BytesPoll, Context, LoadError, Mutex,
     generate_loader_id,
 };
 

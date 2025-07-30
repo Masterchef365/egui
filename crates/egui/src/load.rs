@@ -51,17 +51,15 @@
 //! The loaders are free to derive as much meaning from the URI as they wish to.
 //! For example, a loader may determine that it doesn't support loading a specific URI
 //! if the protocol does not match what it expects.
-use alloc::vec::Vec;
+use alloc::{sync::Arc, vec::Vec};
 use alloc::string::String;
 
 mod bytes_loader;
 mod texture_loader;
 
 use core::{
-    borrow::Cow,
     fmt::{Debug, Display},
     ops::Deref,
-    sync::Arc,
 };
 
 use emath::{Float as _, OrderedFloat};

@@ -1,11 +1,12 @@
 #![warn(missing_docs)] // Let's keep `Ui` well-documented.
 #![allow(clippy::use_self)]
+use alloc::sync::Arc;
 use alloc::vec::Vec;
 use alloc::string::String;
 
 use emath::GuiRounding as _;
 use epaint::mutex::RwLock;
-use core::{any::Any, hash::Hash, sync::Arc};
+use core::{any::Any, hash::Hash};
 
 use crate::ClosableTag;
 #[cfg(debug_assertions)]

@@ -5,7 +5,8 @@ use alloc::string::String;
 // For non-serializable types, these simply return `None`.
 // This will also allow users to pick their own serialization format per type.
 
-use core::{any::Any, sync::Arc};
+use core::any::Any;
+use alloc::sync::Arc;
 
 // -----------------------------------------------------------------------------------------------
 
@@ -437,7 +438,7 @@ impl IdTypeMap {
         insert_with: impl FnOnce() -> T,
     ) -> &mut T {
         let hash = hash(TypeId::of::<T>(), id);
-        use core::collections::hash_map::Entry;
+        use hashbrown::hash_map::Entry;
         match self.map.entry(hash) {
             Entry::Vacant(vacant) => vacant
                 .insert(Element::new_temp(insert_with()))
@@ -455,7 +456,7 @@ impl IdTypeMap {
         insert_with: impl FnOnce() -> T,
     ) -> &mut T {
         let hash = hash(TypeId::of::<T>(), id);
-        use core::collections::hash_map::Entry;
+        use hashbrown::hash_map::Entry;
         match self.map.entry(hash) {
             Entry::Vacant(vacant) => vacant
                 .insert(Element::new_persisted(insert_with()))
@@ -578,7 +579,7 @@ impl PersistedMap {
     fn from_map(map: &IdTypeMap) -> Self {
         profiling::function_scope!();
 
-        use core::collections::BTreeMap;
+        use alloc::BTreeMap;
 
         let mut types_map: nohash_hasher::IntMap<TypeId, TypeStats> = Default::default();
         #[derive(Default)]

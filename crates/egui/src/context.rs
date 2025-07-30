@@ -1,8 +1,9 @@
-#![warn(missing_docs)] // Let's keep `Context` well-documented.
-use alloc::vec::Vec;
+#![warn(missing_docs)] use alloc::borrow::Cow;
+// Let's keep `Context` well-documented.
+use alloc::{sync::Arc, vec::Vec};
 use alloc::string::String;
 
-use core::{borrow::Cow, cell::RefCell, panic::Location, sync::Arc, time::Duration};
+use core::{cell::RefCell, panic::Location, time::Duration};
 
 use emath::{GuiRounding as _, OrderedFloat};
 use epaint::{
