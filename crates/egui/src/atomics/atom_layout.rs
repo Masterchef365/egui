@@ -1,6 +1,6 @@
 use crate::atomics::ATOMS_SMALL_VEC_SIZE;
-use crate::{
 use alloc::vec::Vec;
+use crate::{
     AtomKind, Atoms, Frame, Id, Image, IntoAtoms, Response, Sense, SizedAtom, SizedAtomKind, Ui,
     Widget,
 };

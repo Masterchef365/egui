@@ -85,7 +85,7 @@ epaint = { workspace = true, default-features = false }
 num-traits = { version = "0.2", default-features = false, features = ["libm"] }
 hashbrown = { version = "0.15", features = ["alloc"] }
 
-ahash.workspace = true
+#ahash.workspace = true
 bitflags.workspace = true
 nohash-hasher.workspace = true
 profiling.workspace = true

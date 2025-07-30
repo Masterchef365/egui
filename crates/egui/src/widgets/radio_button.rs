@@ -1,6 +1,6 @@
-use crate::{
 use alloc::vec::Vec;
 use alloc::string::String;
+use crate::{
     Atom, AtomLayout, Atoms, Id, IntoAtoms, NumExt as _, Response, Sense, Ui, Vec2, Widget,
     WidgetInfo, WidgetType, epaint,
 };
