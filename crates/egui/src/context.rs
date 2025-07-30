@@ -75,7 +75,8 @@ thread_local! {
     static IMMEDIATE_VIEWPORT_RENDERER: RefCell<Option<Box<ImmediateViewportRendererCallback>>> = Default::default();
 }
 */
-static IMMEDIATE_VIEWPORT_RENDERER: once_cell::unsync::OnceCell<Arc<Mutex<Option<Box<ImmediateViewportRendererCallback>>>>> = once_cell::unsync::OnceCell::new();
+//static IMMEDIATE_VIEWPORT_RENDERER: once_cell::unsync::OnceCell<Arc<Mutex<Option<Box<ImmediateViewportRendererCallback>>>>> = once_cell::unsync::OnceCell::new();
+static IMMEDIATE_VIEWPORT_RENDERER: once_cell::sync::Lazy<Mutex<Option<Box<ImmediateViewportRendererCallback>>>> = once_cell::sync::Lazy::new(|| Default::default());
 
 // ----------------------------------------------------------------------------
 

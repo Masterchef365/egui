@@ -85,7 +85,7 @@ epaint = { workspace = true, default-features = false }
 
 num-traits = { version = "0.2", default-features = false, features = ["libm"] }
 hashbrown = { version = "0.15", features = ["alloc"] }
-once_cell = { version = "1.21", default-features = false, features = ["alloc"] }
+once_cell = { version = "1.21", default-features = false, features = ["alloc", "critical-section"] }
 spin = "0.10"
 
 #ahash.workspace = true

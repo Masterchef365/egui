@@ -248,7 +248,7 @@ impl ViewportIdPair {
 pub type DeferredViewportUiCallback = dyn Fn(&Context) + Sync + Send;
 
 /// Render the given viewport, calling the given ui callback.
-pub type ImmediateViewportRendererCallback = dyn for<'a> Fn(&Context, ImmediateViewport<'a>);
+pub type ImmediateViewportRendererCallback = dyn for<'a> Fn(&Context, ImmediateViewport<'a>) + Send;
 
 /// Control the building of a new egui viewport (i.e. native window).
 ///

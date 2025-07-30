@@ -12,9 +12,7 @@ use crate::{
 };
 use alloc::collections::BTreeMap;
 use hashbrown::HashSet;
-use core::{
-    time::Duration,
-};
+use core::time::Duration;
 
 pub use crate::Key;
 pub use touch_state::MultiTouchInfo;
