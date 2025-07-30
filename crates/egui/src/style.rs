@@ -6,7 +6,8 @@ use alloc::string::String;
 
 use emath::Align;
 use epaint::{AlphaFromCoverage, CornerRadius, Shadow, Stroke, text::FontTweak};
-use core::{collections::BTreeMap, ops::RangeInclusive, sync::Arc};
+use core::{ops::RangeInclusive, sync::Arc};
+use alloc::collections::BTreeMap;
 
 use crate::{
     ComboBox, CursorIcon, FontFamily, FontId, Grid, Margin, Response, RichText, TextWrapMode,

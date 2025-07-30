@@ -3,7 +3,7 @@ use alloc::vec::Vec;
 
 use core::num::NonZeroUsize;
 
-use alloc::collections::{BTreeMap, BTreeStep};
+use hashbrown::{HashMap, HashSet};
 use epaint::emath::TSTransform;
 
 use crate::{
@@ -97,7 +97,7 @@ pub struct Memory {
     /// * [`crate::Context::set_transform_layer`]
     /// * [`crate::Context::layer_transform_to_global`]
     /// * [`crate::Context::layer_transform_from_global`]
-    pub to_global: BTreeMap<LayerId, TSTransform>,
+    pub to_global: HashMap<LayerId, TSTransform>,
 
     // -------------------------------------------------
     // Per-viewport:
@@ -1124,7 +1124,7 @@ impl Memory {
 // ----------------------------------------------------------------------------
 
 /// Map containing the index of each layer in the order list, for quick lookups.
-type OrderMap = BTreeMap<LayerId, usize>;
+type OrderMap = HashMap<LayerId, usize>;
 
 /// Keeps track of [`Area`](crate::containers::area::Area)s, which are free-floating [`Ui`](crate::Ui)s.
 /// These [`Area`](crate::containers::area::Area)s can be in any [`Order`].
@@ -1134,8 +1134,8 @@ type OrderMap = BTreeMap<LayerId, usize>;
 pub struct Areas {
     areas: IdMap<area::AreaState>,
 
-    visible_areas_last_frame: ahash::BTreeStep<LayerId>,
-    visible_areas_current_frame: ahash::BTreeStep<LayerId>,
+    visible_areas_last_frame: HashSet<LayerId>,
+    visible_areas_current_frame: HashSet<LayerId>,
 
     // ----------------------------
     // Everything below this is general to all layers, not just areas.
@@ -1151,12 +1151,12 @@ pub struct Areas {
     /// If several layers want to be on top, they will keep their relative order.
     /// This means closing three windows and then reopening them all in one frame
     /// results in them being sent to the top and keeping their previous internal order.
-    wants_to_be_on_top: ahash::BTreeStep<LayerId>,
+    wants_to_be_on_top: HashSet<LayerId>,
 
     /// The sublayers that each layer has.
     ///
     /// The parent sublayer is moved directly above the child sublayers in the ordering.
-    sublayers: ahash::BTreeMap<LayerId, BTreeStep<LayerId>>,
+    sublayers: HashMap<LayerId, HashSet<LayerId>>,
 }
 
 impl Areas {
@@ -1198,7 +1198,7 @@ impl Areas {
     pub fn layer_id_at(
         &self,
         pos: Pos2,
-        layer_to_global: &BTreeMap<LayerId, TSTransform>,
+        layer_to_global: &HashMap<LayerId, TSTransform>,
     ) -> Option<LayerId> {
         for layer in self.order.iter().rev() {
             if self.is_visible(layer) {
@@ -1228,7 +1228,7 @@ impl Areas {
             || self.visible_areas_current_frame.contains(layer_id)
     }
 
-    pub fn visible_layer_ids(&self) -> ahash::BTreeStep<LayerId> {
+    pub fn visible_layer_ids(&self) -> HashSet<LayerId> {
         self.visible_areas_last_frame
             .iter()
             .copied()
