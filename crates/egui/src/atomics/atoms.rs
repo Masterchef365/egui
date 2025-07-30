@@ -207,12 +207,14 @@ macro_rules! all_the_atoms {
     };
 }
 
+/* TODO: Masterchef365
 all_the_atoms!();
 all_the_atoms!(T0, T1);
 all_the_atoms!(T0, T1, T2);
 all_the_atoms!(T0, T1, T2, T3);
 all_the_atoms!(T0, T1, T2, T3, T4);
 all_the_atoms!(T0, T1, T2, T3, T4, T5);
+*/
 
 impl<'a> Deref for Atoms<'a> {
     type Target = [Atom<'a>];

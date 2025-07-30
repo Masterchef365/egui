@@ -1,4 +1,5 @@
-use core::{borrow::Cow, ops::Range};
+use alloc::{borrow::Cow, string::String};
+use core::ops::Range;
 
 use epaint::{
     Galley,

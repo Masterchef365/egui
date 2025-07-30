@@ -96,6 +96,7 @@ impl<'a> Atom<'a> {
     }
 }
 
+/* TODO: Masterchef365
 impl<'a, T> From<T> for Atom<'a>
 where
     T: Into<AtomKind<'a>>,
@@ -107,3 +108,4 @@ where
         }
     }
 }
+*/

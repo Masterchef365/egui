@@ -109,6 +109,7 @@ impl<'a> From<Image<'a>> for AtomKind<'a> {
     }
 }
 
+/* TODO: Masterchef365
 impl<T> From<T> for AtomKind<'_>
 where
     T: Into<WidgetText>,
@@ -117,3 +118,4 @@ where
         AtomKind::Text(value.into())
     }
 }
+*/

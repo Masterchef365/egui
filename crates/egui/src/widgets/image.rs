@@ -1,4 +1,5 @@
-use core::{borrow::Cow, slice::Iter, sync::Arc, time::Duration};
+use core::{time::Duration, slice::Iter};
+use alloc::{borrow::Cow, sync::Arc};
 
 use emath::{Align, Float as _, GuiRounding as _, NumExt as _, Rot2};
 use epaint::{
@@ -287,11 +288,13 @@ impl<'a> Image<'a> {
     }
 }
 
+/* TODO: Masterchef365
 impl<'a, T: Into<ImageSource<'a>>> From<T> for Image<'a> {
     fn from(value: T) -> Self {
         Image::new(value)
     }
 }
+*/
 
 impl<'a> Image<'a> {
     /// Returns the size the image will occupy in the final UI.
