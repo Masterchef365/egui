@@ -1,4 +1,5 @@
 use alloc::boxed::Box;
+use alloc::collections::btree_map::BTreeMap;
 use alloc::vec::Vec;
 use alloc::string::String;
 use hashbrown::HashMap;
@@ -580,11 +581,9 @@ struct PersistedMap(Vec<(u64, SerializedElement)>);
 #[cfg(feature = "persistence")]
 impl PersistedMap {
     fn from_map(map: &IdTypeMap) -> Self {
-        profiling::function_scope!();
+        //profiling::function_scope!();
 
-        use alloc::BTreeMap;
-
-        let mut types_map: nohash_hasher::IntMap<TypeId, TypeStats> = Default::default();
+        let mut types_map: HashMap<TypeId, TypeStats> = Default::default();
         #[derive(Default)]
         struct TypeStats {
             num_bytes: usize,
@@ -599,7 +598,7 @@ impl PersistedMap {
         let max_bytes_per_type = map.max_bytes_per_type;
 
         {
-            profiling::scope!("gather");
+            //profiling::scope!("gather");
             for (hash, element) in &map.map {
                 if let Some(element) = element.to_serialize() {
                     let stats = types_map.entry(element.type_id).or_default();
@@ -613,10 +612,10 @@ impl PersistedMap {
             }
         }
 
-        let mut persisted = vec![];
+        let mut persisted = alloc::vec![];
 
         {
-            profiling::scope!("gc");
+            //profiling::scope!("gc");
             for stats in types_map.values() {
                 let mut bytes_written = 0;
 
@@ -640,7 +639,7 @@ impl PersistedMap {
     }
 
     fn into_map(self) -> IdTypeMap {
-        profiling::function_scope!();
+        //profiling::function_scope!();
         let map = self
             .0
             .into_iter()
@@ -677,7 +676,7 @@ impl serde::Serialize for IdTypeMap {
     where
         S: serde::Serializer,
     {
-        profiling::scope!("IdTypeMap::serialize");
+        //profiling::scope!("IdTypeMap::serialize");
         PersistedMap::from_map(self).serialize(serializer)
     }
 }
@@ -688,7 +687,7 @@ impl<'de> serde::Deserialize<'de> for IdTypeMap {
     where
         D: serde::Deserializer<'de>,
     {
-        profiling::scope!("IdTypeMap::deserialize");
+        //profiling::scope!("IdTypeMap::deserialize");
         <PersistedMap>::deserialize(deserializer).map(PersistedMap::into_map)
     }
 }

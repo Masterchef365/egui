@@ -2063,6 +2063,7 @@ dependencies = [
  "equivalent",
  "foldhash",
  "rustc-std-workspace-alloc",
+ "serde",
 ]
 
 [[package]]
