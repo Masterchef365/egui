@@ -76,7 +76,8 @@ ecolor.workspace = true
 
 #ab_glyph = { version = "0.2.11", default-features = false, features = ["libm"] }
 num-traits = { version = "0.2", default-features = false, features = ["libm"] }
-ab_glyph = { path = "../../../ab-glyph/glyph", default-features = false, features = ["libm"] }
+#ab_glyph = { path = "../../../ab-glyph/glyph", default-features = false, features = ["libm"] }
+ab_glyph = { git = "https://github.com/Masterchef365/ab-glyph.git", branch = "no_std" }
 ahash.workspace = true
 #nohash-hasher.workspace = true
 #parking_lot.workspace = true   # Using parking_lot over std::sync::Mutex gives 50% speedups in some real-world scenarios.

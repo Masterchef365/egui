@@ -15,9 +15,9 @@ dependencies = [
 [[package]]
 name = "ab_glyph"
 version = "0.2.31"
+source = "git+https://github.com/Masterchef365/ab-glyph.git?branch=no_std#1f11b167b39ef0ef9d74de9194745460009d073c"
 dependencies = [
  "ab_glyph_rasterizer 0.1.9",
- "libm",
  "owned_ttf_parser",
 ]
 
@@ -30,9 +30,7 @@ checksum = "c71b1793ee61086797f5c80b6efa2b8ffa6d5dd703f118545808a7f2e27f7046"
 [[package]]
 name = "ab_glyph_rasterizer"
 version = "0.1.9"
-dependencies = [
- "libm",
-]
+source = "git+https://github.com/Masterchef365/ab-glyph.git?branch=no_std#1f11b167b39ef0ef9d74de9194745460009d073c"
 
 [[package]]
 name = "accesskit"
@@ -165,12 +163,6 @@ checksum = "8e60d3430d3a69478ad0993f19238d2df97c507009a52b3c10addcd7f6bcb916"
 dependencies = [
  "memchr",
 ]
-
-[[package]]
-name = "allocator-api2"
-version = "0.2.21"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
 name = "android-activity"
@@ -2059,10 +2051,7 @@ version = "0.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf151400ff0baff5465007dd2f3e717f3fe502074ca563069ce3a6629d07b289"
 dependencies = [
- "allocator-api2",
- "equivalent",
  "foldhash",
- "rustc-std-workspace-alloc",
  "serde",
 ]
 
@@ -3642,12 +3631,6 @@ name = "rustc-hash"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
-
-[[package]]
-name = "rustc-std-workspace-alloc"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f9d441c3b2ebf55cebf796bfdc265d67fa09db17b7bb6bd4be75c509e1e8fec3"
 
 [[package]]
 name = "rustix"
