@@ -1,6 +1,7 @@
 use alloc::vec::Vec;
 use ecolor::Color32;
 use emath::{Rect, remap_clamp};
+use num_traits::float::Float;
 
 use crate::{AlphaFromCoverage, ColorImage, ImageDelta};
 

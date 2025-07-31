@@ -1232,7 +1232,9 @@ dependencies = [
  "color-hex",
  "document-features",
  "emath",
+ "num-traits",
  "serde",
+ "spin",
 ]
 
 [[package]]
@@ -1580,6 +1582,7 @@ dependencies = [
  "epaint_default_fonts",
  "log",
  "mimalloc",
+ "num-traits",
  "profiling",
  "rayon",
  "serde",

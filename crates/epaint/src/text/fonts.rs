@@ -10,6 +10,7 @@ use crate::{
 };
 use alloc::{borrow::ToOwned, string::String, vec::Vec};
 use emath::{NumExt as _, OrderedFloat};
+use num_traits::float::Float;
 
 #[cfg(feature = "default_fonts")]
 use epaint_default_fonts::{EMOJI_ICON, HACK_REGULAR, NOTO_EMOJI_REGULAR, UBUNTU_LIGHT};

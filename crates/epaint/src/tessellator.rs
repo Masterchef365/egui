@@ -14,6 +14,7 @@ use crate::{
     StrokeKind, TextShape, TextureId, Vertex, WHITE_UV, color::ColorMode, emath,
     stroke::PathStroke, texture_atlas::PreparedDisc,
 };
+use num_traits::float::Float;
 
 // ----------------------------------------------------------------------------
 

@@ -1,6 +1,7 @@
 use crate::{
     Color32, Rgba, gamma_u8_from_linear_f32, linear_f32_from_gamma_u8, linear_u8_from_linear_f32,
 };
+use num_traits::float::Float;
 
 /// Hue, saturation, value, alpha. All in the range [0, 1].
 /// No premultiplied alpha.

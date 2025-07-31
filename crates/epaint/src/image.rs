@@ -4,6 +4,8 @@ use emath::Vec2;
 use crate::{Color32, textures::TextureOptions};
 use alloc::sync::Arc;
 
+use num_traits::float::Float;
+
 /// An image stored in RAM.
 ///
 /// To load an image file, see [`ColorImage::from_rgba_unmultiplied`].

@@ -1,4 +1,5 @@
 use crate::CornerRadius;
+use num_traits::float::Float;
 
 /// How rounded the corners of things should be, in `f32`.
 ///

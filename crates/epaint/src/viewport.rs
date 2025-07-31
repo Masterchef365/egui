@@ -1,4 +1,5 @@
 use crate::Rect;
+use num_traits::float::Float;
 
 /// Size of the viewport in whole, physical pixels.
 pub struct ViewportInPixels {

@@ -21,6 +21,9 @@
 
 #![allow(clippy::wrong_self_convention)]
 
+#![no_std]
+extern crate alloc;
+
 #[cfg(feature = "cint")]
 mod cint_impl;
 
@@ -44,6 +47,8 @@ pub use rgba::*;
 
 mod hex_color_runtime;
 pub use hex_color_runtime::*;
+
+use num_traits::float::Float;
 
 // ----------------------------------------------------------------------------
 // Color conversion:

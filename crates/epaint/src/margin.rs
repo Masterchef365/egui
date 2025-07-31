@@ -1,4 +1,5 @@
 use emath::{Rect, Vec2, vec2};
+use num_traits::float::Float;
 
 /// A value for all four sides of a rectangle,
 /// often used to express padding or spacing.

@@ -9,6 +9,7 @@ use crate::{
     mutex::{Mutex, RwLock},
     text::FontTweak,
 };
+use num_traits::float::Float;
 
 // ----------------------------------------------------------------------------
 

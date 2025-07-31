@@ -4,6 +4,7 @@ use emath::{Align, GuiRounding as _, NumExt as _, Pos2, Rect, Vec2, pos2, vec2};
 use crate::{Color32, Mesh, Stroke, Vertex, stroke::PathStroke, text::font::Font};
 
 use super::{FontsImpl, Galley, Glyph, LayoutJob, LayoutSection, PlacedRow, Row, RowVisuals};
+use num_traits::float::Float;
 
 // ----------------------------------------------------------------------------
 

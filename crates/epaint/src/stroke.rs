@@ -4,6 +4,7 @@ use core::fmt::Debug;
 use alloc::sync::Arc;
 
 use emath::GuiRounding as _;
+use num_traits::float::Float;
 
 use super::{Color32, ColorMode, Pos2, Rect, emath};
 

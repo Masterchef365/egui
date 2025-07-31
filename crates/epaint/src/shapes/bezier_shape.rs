@@ -6,6 +6,7 @@ use core::ops::Range;
 use crate::{Color32, PathShape, PathStroke, Shape};
 use alloc::vec::Vec;
 use emath::{Pos2, Rect, RectTransform};
+use num_traits::float::Float;
 
 // ----------------------------------------------------------------------------
 

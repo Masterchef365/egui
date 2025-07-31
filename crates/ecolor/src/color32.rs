@@ -1,3 +1,6 @@
+use alloc::boxed::Box;
+use spin::once::Once;
+
 use crate::{Rgba, fast_round, linear_f32_from_linear_u8};
 
 /// This format is used for space-efficient color representation (32 bits).
@@ -29,15 +32,15 @@ use crate::{Rgba, fast_round, linear_f32_from_linear_u8};
 #[cfg_attr(feature = "bytemuck", derive(bytemuck::Pod, bytemuck::Zeroable))]
 pub struct Color32(pub(crate) [u8; 4]);
 
-impl std::fmt::Debug for Color32 {
+impl core::fmt::Debug for Color32 {
     /// Prints the contents with premultiplied alpha!
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let [r, g, b, a] = self.0;
         write!(f, "#{r:02X}_{g:02X}_{b:02X}_{a:02X}")
     }
 }
 
-impl std::ops::Index<usize> for Color32 {
+impl core::ops::Index<usize> for Color32 {
     type Output = u8;
 
     #[inline]
@@ -46,7 +49,7 @@ impl std::ops::Index<usize> for Color32 {
     }
 }
 
-impl std::ops::IndexMut<usize> for Color32 {
+impl core::ops::IndexMut<usize> for Color32 {
     #[inline]
     fn index_mut(&mut self, index: usize) -> &mut u8 {
         &mut self.0[index]
@@ -130,7 +133,6 @@ impl Color32 {
     /// but for transparent colors what you get back might be slightly different (rounding errors).
     #[inline]
     pub fn from_rgba_unmultiplied(r: u8, g: u8, b: u8, a: u8) -> Self {
-        use std::sync::OnceLock;
         match a {
             // common-case optimization:
             0 => Self::TRANSPARENT,
@@ -139,8 +141,8 @@ impl Color32 {
             255 => Self::from_rgb(r, g, b),
 
             a => {
-                static LOOKUP_TABLE: OnceLock<Box<[u8]>> = OnceLock::new();
-                let lut = LOOKUP_TABLE.get_or_init(|| {
+                static LOOKUP_TABLE: Once<Box<[u8]>> = Once::new();
+                let lut = LOOKUP_TABLE.call_once(|| {
                     (0..=u16::MAX)
                         .map(|i| {
                             let [value, alpha] = i.to_ne_bytes();
@@ -356,7 +358,7 @@ impl Color32 {
     }
 }
 
-impl std::ops::Mul for Color32 {
+impl core::ops::Mul for Color32 {
     type Output = Self;
 
     /// Fast gamma-space multiplication.
@@ -371,7 +373,7 @@ impl std::ops::Mul for Color32 {
     }
 }
 
-impl std::ops::Add for Color32 {
+impl core::ops::Add for Color32 {
     type Output = Self;
 
     #[inline]
