@@ -3,6 +3,7 @@ use crate::{
     Color32, CornerRadius, NumExt as _, Pos2, Rect, Response, Rgba, Sense, Shape, Stroke,
     TextStyle, TextWrapMode, Ui, Vec2, Widget, WidgetInfo, WidgetText, WidgetType, lerp, vec2,
 };
+use num_traits::float::Float;
 
 enum ProgressBarText {
     Custom(WidgetText),

@@ -53,6 +53,7 @@
 //! if the protocol does not match what it expects.
 use alloc::{sync::Arc, vec::Vec};
 use alloc::string::String;
+use num_traits::float::Float;
 
 mod bytes_loader;
 mod texture_loader;

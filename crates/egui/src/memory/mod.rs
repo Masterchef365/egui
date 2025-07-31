@@ -13,6 +13,7 @@ use crate::{
 
 mod theme;
 pub use theme::{Theme, ThemePreference};
+use num_traits::float::Float;
 
 // ----------------------------------------------------------------------------
 

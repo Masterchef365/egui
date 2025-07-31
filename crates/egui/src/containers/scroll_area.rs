@@ -1,5 +1,6 @@
 #![allow(clippy::needless_range_loop)]
 use alloc::{boxed::Box, vec::Vec};
+use num_traits::float::Float;
 
 use core::ops::{Add, AddAssign, BitOr, BitOrAssign};
 

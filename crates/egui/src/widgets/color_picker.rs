@@ -12,6 +12,7 @@ use epaint::{
     ecolor::{Color32, Hsva, HsvaGamma, Rgba},
     pos2, vec2,
 };
+use num_traits::float::Float;
 
 fn contrast_color(color: impl Into<Rgba>) -> Color32 {
     if color.into().intensity() < 0.5 {

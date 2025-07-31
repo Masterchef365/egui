@@ -4,6 +4,7 @@
 
 use alloc::vec::Vec;
 use emath::GuiRounding as _;
+use num_traits::float::Float;
 
 use crate::{
     Align2, Context, Id, InnerResponse, LayerId, Layout, NumExt as _, Order, Pos2, Rect, Response,

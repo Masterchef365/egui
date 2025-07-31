@@ -11,6 +11,7 @@ use crate::{
     Response, Sense, TextStyle, TextWrapMode, Ui, Vec2, Widget, WidgetInfo, WidgetText, emath,
     epaint, lerp, pos2, remap, remap_clamp, style, style::HandleShape, vec2,
 };
+use num_traits::float::Float;
 
 use super::drag_value::clamp_value_to_range;
 

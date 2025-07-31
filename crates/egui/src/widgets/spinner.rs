@@ -1,5 +1,6 @@
 use epaint::{Color32, Pos2, Rect, Shape, Stroke, emath::lerp, vec2};
 use alloc::vec::Vec;
+use num_traits::float::Float;
 
 use crate::{Response, Sense, Ui, Widget, WidgetInfo, WidgetType};
 

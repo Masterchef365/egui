@@ -1,5 +1,6 @@
 use alloc::boxed::Box;
 use alloc::vec::Vec;
+use num_traits::float::Float;
 // WARNING: the code in here is horrible. It is a behemoth that needs breaking up into simpler parts.
 
 use alloc::sync::Arc;

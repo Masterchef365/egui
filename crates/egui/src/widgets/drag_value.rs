@@ -10,6 +10,7 @@ use crate::{
     Button, CursorIcon, Id, Key, MINUS_CHAR_STR, Modifiers, NumExt as _, Response, RichText, Sense,
     TextEdit, TextWrapMode, Ui, Widget, WidgetInfo, emath, text,
 };
+use num_traits::float::Float;
 
 // ----------------------------------------------------------------------------
 

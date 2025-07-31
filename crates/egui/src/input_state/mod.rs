@@ -17,6 +17,7 @@ use core::time::Duration;
 pub use crate::Key;
 pub use touch_state::MultiTouchInfo;
 use touch_state::TouchState;
+use num_traits::float::Float;
 
 /// Options for input state handling.
 #[derive(Clone, Copy, Debug, PartialEq)]

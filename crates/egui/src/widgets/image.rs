@@ -16,6 +16,7 @@ use crate::{
     load::{Bytes, SizeHint, SizedTexture, TextureLoadResult, TexturePoll},
     pos2,
 };
+use num_traits::float::Float;
 
 /// A widget which displays an image.
 ///
