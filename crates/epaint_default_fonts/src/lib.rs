@@ -2,6 +2,8 @@
 //!
 //! This is intended to be consumed through the `epaint` crate.
 
+#![no_std]
+
 /// A typeface designed for source code.
 ///
 /// Hack is designed to be a workhorse typeface for source code. It has deep
