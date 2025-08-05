@@ -45,6 +45,7 @@ pub struct ComboBox {
     icon: Option<IconPainter>,
     wrap_mode: Option<TextWrapMode>,
     close_behavior: Option<PopupCloseBehavior>,
+    popup_style: StyleModifier,
 }
 
 impl ComboBox {
@@ -59,6 +60,7 @@ impl ComboBox {
             icon: None,
             wrap_mode: None,
             close_behavior: None,
+            popup_style: StyleModifier::default(),
         }
     }
 
@@ -74,6 +76,7 @@ impl ComboBox {
             icon: None,
             wrap_mode: None,
             close_behavior: None,
+            popup_style: StyleModifier::default(),
         }
     }
 
@@ -88,6 +91,7 @@ impl ComboBox {
             icon: None,
             wrap_mode: None,
             close_behavior: None,
+            popup_style: StyleModifier::default(),
         }
     }
 
@@ -192,6 +196,16 @@ impl ComboBox {
         self
     }
 
+    /// Set the style of the popup menu.
+    ///
+    /// Could for example be used with [`crate::containers::menu::menu_style`] to get the frame-less
+    /// menu button style.
+    #[inline]
+    pub fn popup_style(mut self, popup_style: StyleModifier) -> Self {
+        self.popup_style = popup_style;
+        self
+    }
+
     /// Show the combo box, with the given ui code for the menu contents.
     ///
     /// Returns `InnerResponse { inner: None }` if the combo box is closed.
@@ -217,6 +231,7 @@ impl ComboBox {
             icon,
             wrap_mode,
             close_behavior,
+            popup_style,
         } = self;
 
         let button_id = ui.make_persistent_id(id_salt);
@@ -230,6 +245,7 @@ impl ComboBox {
                 icon,
                 wrap_mode,
                 close_behavior,
+                popup_style,
                 (width, height),
             );
             if let Some(label) = label {
@@ -312,6 +328,7 @@ fn combo_box_dyn<'c, R>(
     icon: Option<IconPainter>,
     wrap_mode: Option<TextWrapMode>,
     close_behavior: Option<PopupCloseBehavior>,
+    popup_style: StyleModifier,
     (width, height): (Option<f32>, Option<f32>),
 ) -> InnerResponse<Option<R>> {
     let popup_id = ComboBox::widget_to_popup_id(button_id);
@@ -380,9 +397,9 @@ fn combo_box_dyn<'c, R>(
 
     let inner = Popup::menu(&button_response)
         .id(popup_id)
-        .style(StyleModifier::default())
         .width(button_response.rect.width())
         .close_behavior(close_behavior)
+        .style(popup_style)
         .show(|ui| {
             ui.set_min_width(ui.available_width());
 
