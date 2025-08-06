@@ -713,6 +713,8 @@ impl Focus {
         let mut best_score = f32::INFINITY;
         let mut best_id = None;
 
+        // iteration order should only matter in case of a tie, and that should be very rare
+        #[expect(clippy::iter_over_hash_type)]
         for (candidate_id, candidate_rect) in &self.focus_widgets_cache {
             if *candidate_id == current_focused.id {
                 continue;
@@ -961,6 +963,7 @@ impl Memory {
     /// Forget window positions, sizes etc.
     /// Can be used to auto-layout windows.
     pub fn reset_areas(&mut self) {
+        #[expect(clippy::iter_over_hash_type)]
         for area in self.areas.values_mut() {
             *area = Default::default();
         }
@@ -1326,12 +1329,14 @@ impl Areas {
         wants_to_be_on_top.clear();
 
         // For all layers with sublayers, put the sublayers directly after the parent layer:
-        let sublayers = core::mem::take(sublayers);
-        for (parent, children) in sublayers {
-            let mut moved_layers = alloc::vec![parent];
+        // (it doesn't matter in which order we replace parents with their children)
+        #[expect(clippy::iter_over_hash_type)]
+        for (parent, children) in core::mem::take(sublayers) {
+            let mut moved_layers = vec![parent]; // parent first…
+
             order.retain(|l| {
                 if children.contains(l) {
-                    moved_layers.push(*l);
+                    moved_layers.push(*l); // …followed by children
                     false
                 } else {
                     true
@@ -1340,7 +1345,7 @@ impl Areas {
             let Some(parent_pos) = order.iter().position(|l| l == &parent) else {
                 continue;
             };
-            order.splice(parent_pos..=parent_pos, moved_layers);
+            order.splice(parent_pos..=parent_pos, moved_layers); // replace the parent with itself and its children
         }
 
         self.order_map = self

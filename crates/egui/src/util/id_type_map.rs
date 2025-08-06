@@ -581,7 +581,8 @@ struct PersistedMap(Vec<(u64, SerializedElement)>);
 #[cfg(feature = "persistence")]
 impl PersistedMap {
     fn from_map(map: &IdTypeMap) -> Self {
-        //profiling::function_scope!();
+        #![expect(clippy::iter_over_hash_type)] // the serialized order doesn't matter
+        profiling::function_scope!();
 
         let mut types_map: HashMap<TypeId, TypeStats> = Default::default();
         #[derive(Default)]
