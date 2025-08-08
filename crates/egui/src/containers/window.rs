@@ -619,7 +619,7 @@ impl Window<'_> {
                             *where_to_put_header_background,
                             RectShape::filled(title_bar.inner_rect, round, header_color),
                         );
-                    };
+                    }
 
                     if false {
                         ctx.debug_painter().debug_rect(

@@ -1273,7 +1273,7 @@ impl Context {
                             viewport.this_pass.scroll_delta.0 += DISTANCE * Vec2::RIGHT;
                         }
                         _ => return false,
-                    };
+                    }
                     true
                 });
         });

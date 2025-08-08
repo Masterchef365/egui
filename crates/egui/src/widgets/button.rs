@@ -327,7 +327,7 @@ impl<'a> Button<'a> {
                     .fill(fill)
                     .stroke(stroke)
                     .corner_radius(corner_radius.unwrap_or(visuals.corner_radius));
-            };
+            }
 
             prepared.paint(ui)
         } else {

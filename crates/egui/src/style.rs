@@ -2140,7 +2140,7 @@ impl Visuals {
                     ui.color_edit_button_srgba(color);
                 } else {
                     *color = None;
-                };
+                }
             });
 
             ui.end_row();
