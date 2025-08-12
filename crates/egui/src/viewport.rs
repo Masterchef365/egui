@@ -634,6 +634,8 @@ impl ViewportBuilder {
     }
 
     /// Control if window is always-on-top, always-on-bottom, or neither.
+    ///
+    /// For platform compatibility see [`crate::viewport::WindowLevel`] documentation
     #[inline]
     pub fn with_window_level(mut self, level: WindowLevel) -> Self {
         self.window_level = Some(level);
@@ -641,6 +643,8 @@ impl ViewportBuilder {
     }
 
     /// This window is always on top
+    ///
+    /// For platform compatibility see [`crate::viewport::WindowLevel`] documentation
     #[inline]
     pub fn with_always_on_top(self) -> Self {
         self.with_window_level(WindowLevel::AlwaysOnTop)
@@ -902,6 +906,7 @@ impl ViewportBuilder {
     }
 }
 
+/// For winit platform compatibility, see [`winit::WindowLevel` documentation](https://docs.rs/winit/latest/winit/window/enum.WindowLevel.html#platform-specific)
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum WindowLevel {
