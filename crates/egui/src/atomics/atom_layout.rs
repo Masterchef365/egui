@@ -1,8 +1,8 @@
 use crate::atomics::ATOMS_SMALL_VEC_SIZE;
 use alloc::vec::Vec;
 use crate::{
-    AtomKind, Atoms, Frame, Id, Image, IntoAtoms, Response, Sense, SizedAtom, SizedAtomKind, Ui,
-    Widget,
+    AtomKind, Atoms, FontSelection, Frame, Id, Image, IntoAtoms, Response, Sense, SizedAtom,
+    SizedAtomKind, Ui, Widget,
 };
 use emath::{Align2, GuiRounding as _, NumExt as _, Rect, Vec2};
 use epaint::text::TextWrapMode;
@@ -37,6 +37,7 @@ pub struct AtomLayout<'a> {
     pub(crate) frame: Frame,
     pub(crate) sense: Sense,
     fallback_text_color: Option<Color32>,
+    fallback_font: Option<FontSelection>,
     min_size: Vec2,
     wrap_mode: Option<TextWrapMode>,
     align2: Option<Align2>,
@@ -57,6 +58,7 @@ impl<'a> AtomLayout<'a> {
             frame: Frame::default(),
             sense: Sense::hover(),
             fallback_text_color: None,
+            fallback_font: None,
             min_size: Vec2::ZERO,
             wrap_mode: None,
             align2: None,
@@ -92,6 +94,13 @@ impl<'a> AtomLayout<'a> {
     #[inline]
     pub fn fallback_text_color(mut self, color: Color32) -> Self {
         self.fallback_text_color = Some(color);
+        self
+    }
+
+    /// Set the fallback (default) font.
+    #[inline]
+    pub fn fallback_font(mut self, font: impl Into<FontSelection>) -> Self {
+        self.fallback_font = Some(font.into());
         self
     }
 
@@ -155,7 +164,10 @@ impl<'a> AtomLayout<'a> {
             min_size,
             wrap_mode,
             align2,
+            fallback_font,
         } = self;
+
+        let fallback_font = fallback_font.unwrap_or_default();
 
         let wrap_mode = wrap_mode.unwrap_or(ui.wrap_mode());
 
@@ -221,7 +233,12 @@ impl<'a> AtomLayout<'a> {
                     continue;
                 }
             }
-            let sized = item.into_sized(ui, available_inner_size, Some(wrap_mode));
+            let sized = item.into_sized(
+                ui,
+                available_inner_size,
+                Some(wrap_mode),
+                fallback_font.clone(),
+            );
             let size = sized.size;
 
             desired_width += size.x;
@@ -240,7 +257,12 @@ impl<'a> AtomLayout<'a> {
                 available_inner_size.y,
             );
 
-            let sized = item.into_sized(ui, available_size_for_shrink_item, Some(wrap_mode));
+            let sized = item.into_sized(
+                ui,
+                available_size_for_shrink_item,
+                Some(wrap_mode),
+                fallback_font,
+            );
             let size = sized.size;
 
             desired_width += size.x;
