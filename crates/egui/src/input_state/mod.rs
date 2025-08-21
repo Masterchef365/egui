@@ -19,6 +19,37 @@ pub use touch_state::MultiTouchInfo;
 use touch_state::TouchState;
 use num_traits::float::Float;
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+pub enum SurrenderFocusOn {
+    /// Surrender focus if the user _presses_ somewhere outside the focused widget.
+    Presses,
+
+    /// Surrender focus if the user _clicks_ somewhere outside the focused widget.
+    #[default]
+    Clicks,
+
+    /// Never surrender focus.
+    Never,
+}
+
+impl SurrenderFocusOn {
+    pub fn ui(&mut self, ui: &mut crate::Ui) {
+        ui.horizontal(|ui| {
+            ui.selectable_value(self, Self::Presses, "Presses")
+                .on_hover_text(
+                    "Surrender focus if the user presses somewhere outside the focused widget.",
+                );
+            ui.selectable_value(self, Self::Clicks, "Clicks")
+                .on_hover_text(
+                    "Surrender focus if the user clicks somewhere outside the focused widget.",
+                );
+            ui.selectable_value(self, Self::Never, "Never")
+                .on_hover_text("Never surrender focus.");
+        });
+    }
+}
+
 /// Options for input state handling.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -60,6 +91,9 @@ pub struct InputOptions {
     /// and when combined with [`Self::zoom_modifier`] it will result in zooming
     /// on only the vertical axis.
     pub vertical_scroll_modifier: Modifiers,
+
+    /// When should we surrender focus from the focused widget?
+    pub surrender_focus_on: SurrenderFocusOn,
 }
 
 impl Default for InputOptions {
@@ -81,6 +115,7 @@ impl Default for InputOptions {
             zoom_modifier: Modifiers::COMMAND,
             horizontal_scroll_modifier: Modifiers::SHIFT,
             vertical_scroll_modifier: Modifiers::ALT,
+            surrender_focus_on: SurrenderFocusOn::default(),
         }
     }
 }
@@ -97,6 +132,7 @@ impl InputOptions {
             zoom_modifier,
             horizontal_scroll_modifier,
             vertical_scroll_modifier,
+            surrender_focus_on,
         } = self;
         crate::Grid::new("InputOptions")
             .num_columns(2)
@@ -155,6 +191,10 @@ impl InputOptions {
 
                 ui.label("vertical_scroll_modifier");
                 vertical_scroll_modifier.ui(ui);
+                ui.end_row();
+
+                ui.label("surrender_focus_on");
+                surrender_focus_on.ui(ui);
                 ui.end_row();
 
             });
