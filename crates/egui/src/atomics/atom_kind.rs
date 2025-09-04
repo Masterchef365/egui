@@ -42,7 +42,7 @@ pub enum AtomKind<'a> {
     /// For custom rendering.
     ///
     /// You can get the [`crate::Rect`] with the [`Id`] from [`crate::AtomLayoutResponse`] and use a
-    /// [`crate::Painter`] or [`Ui::put`] to add/draw some custom content.
+    /// [`crate::Painter`] or [`Ui::place`] to add/draw some custom content.
     ///
     /// Example:
     /// ```
@@ -54,7 +54,7 @@ pub enum AtomKind<'a> {
     ///
     /// let rect = response.rect(id);
     /// if let Some(rect) = rect {
-    ///     ui.put(rect, Button::new("⏵"));
+    ///     ui.place(rect, Button::new("⏵"));
     /// }
     /// # });
     /// ```
