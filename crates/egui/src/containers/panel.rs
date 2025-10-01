@@ -145,8 +145,11 @@ impl SidePanel {
     ///
     /// Default is `true`.
     ///
-    /// If you want your panel to be resizable you also need a widget in it that
-    /// takes up more space as you resize it, such as:
+    /// If you want your panel to be resizable you also need to make the ui use
+    /// the available space.
+    ///
+    /// This can be done by using [`Ui::take_available_space`], or using a
+    /// widget in it that takes up more space as you resize it, such as:
     /// * Wrapping text ([`Ui::horizontal_wrapped`]).
     /// * A [`crate::ScrollArea`].
     /// * A [`crate::Separator`].
@@ -632,8 +635,11 @@ impl TopBottomPanel {
     ///
     /// Default is `false`.
     ///
-    /// If you want your panel to be resizable you also need a widget in it that
-    /// takes up more space as you resize it, such as:
+    /// If you want your panel to be resizable you also need to make the ui use
+    /// the available space.
+    ///
+    /// This can be done by using [`Ui::take_available_space`], or using a
+    /// widget in it that takes up more space as you resize it, such as:
     /// * Wrapping text ([`Ui::horizontal_wrapped`]).
     /// * A [`crate::ScrollArea`].
     /// * A [`crate::Separator`].
