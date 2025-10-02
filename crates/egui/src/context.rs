@@ -549,7 +549,7 @@ impl ContextImpl {
             // New font definition loaded, so we need to reload all fonts.
             self.fonts = None;
             self.font_definitions = font_definitions;
-            #[cfg(feature = "log")]
+
             log::trace!("Loading new font definitions");
         }
 
@@ -573,7 +573,6 @@ impl ContextImpl {
                     .insert(font.name, Arc::new(font.data));
             }
 
-            #[cfg(feature = "log")]
             log::trace!("Adding new fonts");
         }
 
@@ -582,7 +581,6 @@ impl ContextImpl {
         let mut is_new = false;
 
         let fonts = self.fonts.get_or_insert_with(|| {
-            #[cfg(feature = "log")]
             log::trace!("Creating new Fonts");
 
             is_new = true;
@@ -820,7 +818,6 @@ impl Context {
             }
 
             if max_passes <= output.platform_output.num_completed_passes {
-                #[cfg(feature = "log")]
                 log::debug!(
                     "Ignoring call request_discard, because max_passes={max_passes}. Requested from {:?}",
                     output.platform_output.request_discard_reasons
@@ -1833,7 +1830,6 @@ impl Context {
         let cause = RepaintCause::new_reason(reason);
         self.output_mut(|o| o.request_discard_reasons.push(cause));
 
-        #[cfg(feature = "log")]
         log::trace!(
             "request_discard: {}",
             if self.will_discard() {
@@ -2539,7 +2535,6 @@ impl ContextImpl {
             let parent = *self.viewport_parents.entry(id).or_default();
 
             if !all_viewport_ids.contains(&parent) {
-                #[cfg(feature = "log")]
                 log::debug!(
                     "Removing viewport {:?} ({:?}): the parent is gone",
                     id,
@@ -2552,7 +2547,6 @@ impl ContextImpl {
             let is_our_child = parent == ended_viewport_id && id != ViewportId::ROOT;
             if is_our_child {
                 if !viewport.used {
-                    #[cfg(feature = "log")]
                     log::debug!(
                         "Removing viewport {:?} ({:?}): it was never used this pass",
                         id,
@@ -2651,7 +2645,6 @@ impl Context {
             let texture_atlas = if let Some(fonts) = ctx.fonts.as_ref() {
                 fonts.texture_atlas()
             } else {
-                #[cfg(feature = "log")]
                 log::warn!("No font size matching {pixels_per_point} pixels per point found.");
                 ctx.fonts
                     .iter()

@@ -2003,13 +2003,10 @@ impl Tessellator {
         }
 
         if galley.pixels_per_point != self.pixels_per_point {
-            let warn = "epaint: WARNING: pixels_per_point (dpi scale) have changed between text layout and tessellation. \
-                       You must recreate your text shapes if pixels_per_point changes.";
-            #[cfg(feature = "log")]
-            log::warn!("{warn}");
-            #[cfg(not(feature = "log"))]
-            let _ = warn;
-            //println!("{warn}");
+            log::warn!(
+                "epaint: WARNING: pixels_per_point (dpi scale) have changed between text layout and tessellation. \
+                       You must recreate your text shapes if pixels_per_point changes."
+            );
         }
 
         out.vertices.reserve(galley.num_vertices);
