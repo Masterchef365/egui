@@ -70,6 +70,7 @@ ecolor.workspace = true
 num-traits = { version = "0.2", default-features = false, features = ["libm"] }
 #ab_glyph = { path = "../../../ab-glyph/glyph", default-features = false, features = ["libm"] }
 ab_glyph = { git = "https://github.com/Masterchef365/ab-glyph.git", branch = "no_std", default-features = false, features = ["libm"] }
+#ab_glyph.workspace = true
 ahash.workspace = true
 spin = { version = "0.10.0", features = ["mutex", "rwlock"] }
 log.workspace = true
@@ -83,7 +84,7 @@ bytemuck = { workspace = true, optional = true, features = ["derive"] }
 ## Enable this when generating docs.
 document-features = { workspace = true, optional = true }
 
-rayon = { version = "1.7", optional = true }
+rayon = { workspace = true, optional = true }
 
 ## Allow serialization using [`serde`](https://docs.rs/serde) .
 serde = { workspace = true, optional = true, features = ["derive", "rc"] }
