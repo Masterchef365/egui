@@ -457,7 +457,6 @@ pub mod widgets;
 #[cfg(debug_assertions)]
 mod callstack;
 
-#[cfg(feature = "accesskit")]
 pub use accesskit;
 
 //#[deprecated = "Use the ahash crate directly."]
@@ -717,7 +716,6 @@ pub fn __run_test_ui(add_contents: impl Fn(&mut Ui)) {
     });
 }
 
-#[cfg(feature = "accesskit")]
 pub fn accesskit_root_id() -> Id {
     Id::new("accesskit_root")
 }

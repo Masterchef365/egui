@@ -131,7 +131,6 @@ pub struct PlatformOutput {
     /// The difference in the widget tree since last frame.
     ///
     /// NOTE: this needs to be per-viewport.
-    #[cfg(feature = "accesskit")]
     pub accesskit_update: Option<accesskit::TreeUpdate>,
 
     /// How many ui passes is this the sum of?
@@ -178,7 +177,6 @@ impl PlatformOutput {
             mut events,
             mutable_text_under_cursor,
             ime,
-            #[cfg(feature = "accesskit")]
             accesskit_update,
             num_completed_passes,
             mut request_discard_reasons,
@@ -193,12 +191,8 @@ impl PlatformOutput {
         self.request_discard_reasons
             .append(&mut request_discard_reasons);
 
-        #[cfg(feature = "accesskit")]
-        {
-            // egui produces a complete AccessKit tree for each frame,
-            // so overwrite rather than appending.
-            self.accesskit_update = accesskit_update;
-        }
+        // egui produces a complete AccessKit tree for each frame, so overwrite rather than append:
+        self.accesskit_update = accesskit_update;
     }
 
     /// Take everything ephemeral (everything except `cursor_icon` currently)

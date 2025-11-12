@@ -51,7 +51,6 @@ use crate::{
     viewport::ViewportClass,
 };
 
-#[cfg(feature = "accesskit")]
 use crate::IdMap;
 
 /// Information given to the backend about when it is time to repaint the ui.
@@ -418,7 +417,6 @@ struct ContextImpl {
 
     embed_viewports: bool,
 
-    #[cfg(feature = "accesskit")]
     is_accesskit_enabled: bool,
 
     loaders: Arc<Loaders>,
@@ -521,7 +519,6 @@ impl ContextImpl {
             },
         );
 
-        #[cfg(feature = "accesskit")]
         if self.is_accesskit_enabled {
             profiling::scope!("accesskit");
             use crate::pass_state::AccessKitPassState;
@@ -603,7 +600,6 @@ impl ContextImpl {
         }
     }
 
-    #[cfg(feature = "accesskit")]
     fn accesskit_node_builder(&mut self, id: Id) -> &mut accesskit::Node {
         let state = self.viewport().this_pass.accesskit_state.as_mut().unwrap();
         let builders = &mut state.nodes;
@@ -633,6 +629,7 @@ impl ContextImpl {
             let parent_builder = builders.get_mut(&parent_id).unwrap();
             parent_builder.push_child(id.accesskit_id());
         }
+
         builders.get_mut(&id).unwrap()
     }
 
@@ -1218,7 +1215,6 @@ impl Context {
             plugins.on_widget_under_pointer(self, &w);
         }
 
-        #[cfg(feature = "accesskit")]
         if allow_focus && w.sense.is_focusable() {
             // Make sure anything that can receive focus has an AccessKit node.
             // TODO(mwcampbell): For nodes that are filled from widget info,
@@ -1226,7 +1222,6 @@ impl Context {
             self.accesskit_node_builder(w.id, |builder| res.fill_accesskit_node_common(builder));
         }
 
-        #[cfg(feature = "accesskit")]
         self.write(|ctx| {
             use crate::{Align, pass_state::ScrollTarget, style::ScrollAnimation};
             let viewport = ctx.viewport_for(ctx.viewport_id());
@@ -1234,12 +1229,14 @@ impl Context {
             viewport
                 .input
                 .consume_accesskit_action_requests(res.id, |request| {
+                    use accesskit::Action;
+
                     // TODO(lucasmerlin): Correctly handle the scroll unit:
                     // https://github.com/AccessKit/accesskit/blob/e639c0e0d8ccbfd9dff302d972fa06f9766d608e/common/src/lib.rs#L2621
                     const DISTANCE: f32 = 100.0;
 
                     match &request.action {
-                        accesskit::Action::ScrollIntoView => {
+                        Action::ScrollIntoView => {
                             viewport.this_pass.scroll_target = [
                                 Some(ScrollTarget::new(
                                     res.rect.x_range(),
@@ -1253,16 +1250,16 @@ impl Context {
                                 )),
                             ];
                         }
-                        accesskit::Action::ScrollDown => {
+                        Action::ScrollDown => {
                             viewport.this_pass.scroll_delta.0 += DISTANCE * Vec2::UP;
                         }
-                        accesskit::Action::ScrollUp => {
+                        Action::ScrollUp => {
                             viewport.this_pass.scroll_delta.0 += DISTANCE * Vec2::DOWN;
                         }
-                        accesskit::Action::ScrollLeft => {
+                        Action::ScrollLeft => {
                             viewport.this_pass.scroll_delta.0 += DISTANCE * Vec2::LEFT;
                         }
-                        accesskit::Action::ScrollRight => {
+                        Action::ScrollRight => {
                             viewport.this_pass.scroll_delta.0 += DISTANCE * Vec2::RIGHT;
                         }
                         _ => return false,
@@ -1355,7 +1352,6 @@ impl Context {
                 res.flags.set(Flags::FAKE_PRIMARY_CLICKED, true);
             }
 
-            #[cfg(feature = "accesskit")]
             if enabled
                 && sense.senses_click()
                 && input.has_accesskit_action_request(id, accesskit::Action::Click)
@@ -2512,7 +2508,6 @@ impl ContextImpl {
 
         let mut platform_output: PlatformOutput = core::mem::take(&mut viewport.output);
 
-        #[cfg(feature = "accesskit")]
         {
             profiling::scope!("accesskit");
             let state = viewport.this_pass.accesskit_state.take();
@@ -3511,9 +3506,8 @@ impl Context {
     ///
     /// The `Context` lock is held while the given closure is called!
     ///
-    /// Returns `None` if acesskit is off.
+    /// Returns `None` if accesskit is off.
     // TODO(emilk): consider making both read-only and read-write versions
-    #[cfg(feature = "accesskit")]
     pub fn accesskit_node_builder<R>(
         &self,
         id: Id,
@@ -3529,7 +3523,6 @@ impl Context {
         })
     }
 
-    #[cfg(feature = "accesskit")]
     pub(crate) fn register_accesskit_parent(&self, id: Id, parent_id: Id) {
         self.write(|ctx| {
             if let Some(state) = ctx.viewport().this_pass.accesskit_state.as_mut() {
@@ -3539,13 +3532,11 @@ impl Context {
     }
 
     /// Enable generation of AccessKit tree updates in all future frames.
-    #[cfg(feature = "accesskit")]
     pub fn enable_accesskit(&self) {
         self.write(|ctx| ctx.is_accesskit_enabled = true);
     }
 
     /// Disable generation of AccessKit tree updates in all future frames.
-    #[cfg(feature = "accesskit")]
     pub fn disable_accesskit(&self) {
         self.write(|ctx| ctx.is_accesskit_enabled = false);
     }
