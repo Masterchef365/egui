@@ -466,7 +466,7 @@ impl<'a> Popup<'a> {
     pub fn get_best_align(&self) -> RectAlign {
         let expected_popup_size = self
             .get_expected_size()
-            .unwrap_or(vec2(self.width.unwrap_or(0.0), 0.0));
+            .unwrap_or_else(|| vec2(self.width.unwrap_or(0.0), 0.0));
 
         let Some(anchor_rect) = self.anchor.rect(self.id, &self.ctx) else {
             return self.rect_align;
@@ -474,6 +474,7 @@ impl<'a> Popup<'a> {
 
         RectAlign::find_best_align(
             #[expect(clippy::iter_on_empty_collections)]
+            #[expect(clippy::or_fun_call)]
             once(self.rect_align).chain(
                 self.alternative_aligns
                     // Need the empty slice so the iters have the same type so we can unwrap_or
