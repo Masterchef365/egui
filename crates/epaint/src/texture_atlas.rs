@@ -3,7 +3,7 @@ use ecolor::Color32;
 use emath::{Rect, remap_clamp};
 use num_traits::float::Float;
 
-use crate::{AlphaFromCoverage, ColorImage, ImageDelta};
+use crate::{ColorImage, ImageDelta, TextOptions};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct Rectu {
@@ -77,11 +77,11 @@ pub struct TextureAtlas {
     discs: Vec<PrerasterizedDisc>,
 
     /// Controls how to convert glyph coverage to alpha.
-    pub(crate) text_alpha_from_coverage: AlphaFromCoverage,
+    options: TextOptions,
 }
 
 impl TextureAtlas {
-    pub fn new(size: [usize; 2], text_alpha_from_coverage: AlphaFromCoverage) -> Self {
+    pub fn new(size: [usize; 2], options: TextOptions) -> Self {
         assert!(size[0] >= 1024, "Tiny texture atlas");
         let mut atlas = Self {
             image: ColorImage::filled(size, Color32::TRANSPARENT),
@@ -90,7 +90,7 @@ impl TextureAtlas {
             row_height: 0,
             overflowed: false,
             discs: alloc::vec![], // will be filled in below
-            text_alpha_from_coverage,
+            options,
         };
 
         // Make the top left pixel fully white for `WHITE_UV`, i.e. painting something with solid color:
@@ -123,7 +123,7 @@ impl TextureAtlas {
                     let coverage =
                         remap_clamp(distance_to_center, (r - 0.5)..=(r + 0.5), 1.0..=0.0);
                     image[((x as i32 + hw + dx) as usize, (y as i32 + hw + dy) as usize)] =
-                        text_alpha_from_coverage.color_from_coverage(coverage);
+                        options.alpha_from_coverage.color_from_coverage(coverage);
                 }
             }
             atlas.discs.push(PrerasterizedDisc {
@@ -138,6 +138,10 @@ impl TextureAtlas {
         }
 
         atlas
+    }
+
+    pub fn options(&self) -> &TextOptions {
+        &self.options
     }
 
     pub fn size(&self) -> [usize; 2] {
