@@ -1146,8 +1146,7 @@ impl TitleBar {
         title_bar_height_with_margin: f32,
     ) -> Self {
         if false {
-            ui.ctx()
-                .debug_painter()
+            ui.debug_painter()
                 .debug_rect(ui.min_rect(), Color32::GREEN, "outer_min_rect");
         }
 
@@ -1175,8 +1174,7 @@ impl TitleBar {
         let min_rect = Rect::from_min_size(ui.min_rect().min, min_inner_size);
 
         if false {
-            ui.ctx()
-                .debug_painter()
+            ui.debug_painter()
                 .debug_rect(min_rect, Color32::LIGHT_BLUE, "min_rect");
         }
 
@@ -1213,8 +1211,7 @@ impl TitleBar {
         let title_inner_rect = self.inner_rect;
 
         if false {
-            ui.ctx()
-                .debug_painter()
+            ui.debug_painter()
                 .debug_rect(self.inner_rect, Color32::RED, "TitleBar");
         }
 
@@ -1253,8 +1250,7 @@ impl TitleBar {
             // Paint separator between title and content:
             let content_rect = content_response.rect;
             if false {
-                ui.ctx()
-                    .debug_painter()
+                ui.debug_painter()
                     .debug_rect(content_rect, Color32::RED, "content_rect");
             }
             let y = title_inner_rect.bottom() + window_frame.stroke.width / 2.0;
@@ -1268,11 +1264,8 @@ impl TitleBar {
         let double_click_rect = title_inner_rect.shrink2(vec2(32.0, 0.0));
 
         if false {
-            ui.ctx().debug_painter().debug_rect(
-                double_click_rect,
-                Color32::GREEN,
-                "double_click_rect",
-            );
+            ui.debug_painter()
+                .debug_rect(double_click_rect, Color32::GREEN, "double_click_rect");
         }
 
         let id = ui.unique_id().with("__window_title_bar");
