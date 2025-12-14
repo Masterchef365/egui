@@ -23,7 +23,7 @@ use num_traits::float::Float;
 /// how far the user has scrolled in a [`ScrollArea`](crate::ScrollArea) etc.
 ///
 /// If you want this to persist when closing your app, you should serialize [`Memory`] and store it.
-/// For this you need to enable the `persistence`.
+/// For this you need to enable the `persistence` feature.
 ///
 /// If you want to store data for your widgets, you should look at [`Memory::data`]
 #[derive(Clone, Debug)]
