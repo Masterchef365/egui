@@ -323,8 +323,8 @@ impl Painter {
         );
     }
 
-    pub fn error(&self, pos: Pos2, text: impl core::fmt::Display) -> Rect {
-        let color = self.ctx.style().visuals.error_fg_color;
+    pub fn error(&self, pos: Pos2, text: impl std::fmt::Display) -> Rect {
+        let color = self.ctx.global_style().visuals.error_fg_color;
         self.debug_text(pos, Align2::LEFT_TOP, color, format!("🔥 {text}"))
     }
 
