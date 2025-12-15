@@ -207,7 +207,7 @@ impl ContextImpl {
 pub struct ViewportState {
     /// The type of viewport.
     ///
-    /// This will never be [`ViewportClass::Embedded`],
+    /// This will never be [`ViewportClass::EmbeddedWindow`],
     /// since those don't result in real viewports.
     pub class: ViewportClass,
 
@@ -4029,21 +4029,23 @@ impl Context {
     ///
     /// If [`Context::embed_viewports`] is `true` (e.g. if the current egui
     /// backend does not support multiple viewports), the given callback
-    /// will be called immediately, embedding the new viewport in the current one.
-    /// You can check this with the [`ViewportClass`] given in the callback.
-    /// If you find [`ViewportClass::Embedded`], you need to create a new [`crate::Window`] for you content.
+    /// will be called immediately, embedding the new viewport in the current one,
+    /// inside of a [`crate::Window`].
+    /// You can know by checking for [`ViewportClass::EmbeddedWindow`].
     ///
     /// See [`crate::viewport`] for more information about viewports.
     pub fn show_viewport_deferred(
         &self,
         new_viewport_id: ViewportId,
         viewport_builder: ViewportBuilder,
-        viewport_ui_cb: impl Fn(&Self, ViewportClass) + Send + Sync + 'static,
+        viewport_ui_cb: impl Fn(&mut Ui, ViewportClass) + Send + Sync + 'static,
     ) {
         profiling::function_scope!();
 
         if self.embed_viewports() {
-            viewport_ui_cb(self, ViewportClass::Embedded);
+            crate::Window::from_viewport(new_viewport_id, viewport_builder).show(self, |ui| {
+                viewport_ui_cb(ui, ViewportClass::EmbeddedWindow);
+            });
         } else {
             self.write(|ctx| {
                 ctx.viewport_parents
@@ -4054,7 +4056,9 @@ impl Context {
                 viewport.builder = viewport_builder;
                 viewport.used = true;
                 viewport.viewport_ui_cb = Some(Arc::new(move |ctx| {
-                    (viewport_ui_cb)(ctx, ViewportClass::Deferred);
+                    crate::CentralPanel::no_frame().show(ctx, |ui| {
+                        (viewport_ui_cb)(ui, ViewportClass::Deferred);
+                    });
                 }));
             });
         }
@@ -4081,21 +4085,23 @@ impl Context {
     ///
     /// If [`Context::embed_viewports`] is `true` (e.g. if the current egui
     /// backend does not support multiple viewports), the given callback
-    /// will be called immediately, embedding the new viewport in the current one.
-    /// You can check this with the [`ViewportClass`] given in the callback.
-    /// If you find [`ViewportClass::Embedded`], you need to create a new [`crate::Window`] for you content.
+    /// will be called immediately, embedding the new viewport in the current one,
+    /// inside of a [`crate::Window`].
+    /// You can know by checking for [`ViewportClass::EmbeddedWindow`].
     ///
     /// See [`crate::viewport`] for more information about viewports.
     pub fn show_viewport_immediate<T>(
         &self,
         new_viewport_id: ViewportId,
         builder: ViewportBuilder,
-        mut viewport_ui_cb: impl FnMut(&Self, ViewportClass) -> T,
+        mut viewport_ui_cb: impl FnMut(&mut Ui, ViewportClass) -> T,
     ) -> T {
         profiling::function_scope!();
 
         if self.embed_viewports() {
-            return viewport_ui_cb(self, ViewportClass::Embedded);
+            return self.show_embedded_viewport(new_viewport_id, builder, |ui| {
+                viewport_ui_cb(ui, ViewportClass::EmbeddedWindow)
+            });
         }
 
         //IMMEDIATE_VIEWPORT_RENDERER.with(|immediate_viewport_renderer| {
@@ -4103,7 +4109,9 @@ impl Context {
             let immediate_viewport_renderer = IMMEDIATE_VIEWPORT_RENDERER.lock();
             let Some(immediate_viewport_renderer) = immediate_viewport_renderer.as_ref() else {
                 // This egui backend does not support multiple viewports.
-                return viewport_ui_cb(self, ViewportClass::Embedded);
+                return self.show_embedded_viewport(new_viewport_id, builder, |ui| {
+                    viewport_ui_cb(ui, ViewportClass::EmbeddedWindow)
+                });
             };
 
             let ids = self.write(|ctx| {
@@ -4127,8 +4135,10 @@ impl Context {
                 let viewport = ImmediateViewport {
                     ids,
                     builder,
-                    viewport_ui_cb: Box::new(move |context| {
-                        *out = Some(viewport_ui_cb(context, ViewportClass::Immediate));
+                    viewport_ui_cb: Box::new(move |ctx| {
+                        crate::CentralPanel::no_frame().show(ctx, |ui| {
+                            *out = Some((viewport_ui_cb)(ui, ViewportClass::Immediate));
+                        });
                     }),
                 };
 
@@ -4139,6 +4149,20 @@ impl Context {
                 "egui backend is implemented incorrectly - the user callback was never called",
             )
         //})
+    }
+
+    fn show_embedded_viewport<T>(
+        &self,
+        new_viewport_id: ViewportId,
+        builder: ViewportBuilder,
+        viewport_ui_cb: impl FnOnce(&mut Ui) -> T,
+    ) -> T {
+        crate::Window::from_viewport(new_viewport_id, builder)
+            .collapsible(false)
+            .show(self, |ui| viewport_ui_cb(ui))
+            .unwrap_or_else(|| panic!("Window did not show"))
+            .inner
+            .unwrap_or_else(|| panic!("Window was collapsed"))
     }
 }
 
