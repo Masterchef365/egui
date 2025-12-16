@@ -803,9 +803,13 @@ impl Context {
 
     #[must_use]
     fn run_ui_dyn(&self, new_input: RawInput, run_ui: &mut dyn FnMut(&mut Ui)) -> FullOutput {
+        let plugins = self.read(|ctx| ctx.plugins.ordered_plugins());
+        #[expect(deprecated)]
         self.run(new_input, |ctx| {
             crate::CentralPanel::no_frame().show(ctx, |ui| {
+                plugins.on_begin_pass(ui);
                 run_ui(ui);
+                plugins.on_end_pass(ui);
             });
         })
     }
@@ -837,6 +841,7 @@ impl Context {
     /// ## See also
     /// * [`Self::run_ui`]
     #[must_use]
+    #[deprecated = "Call run_ui instead"]
     pub fn run(&self, new_input: RawInput, mut run_ui: impl FnMut(&Self)) -> FullOutput {
         self.run_dyn(new_input, &mut run_ui)
     }
@@ -937,9 +942,6 @@ impl Context {
         plugins.on_input(&mut new_input);
 
         self.write(|ctx| ctx.begin_pass(new_input));
-
-        // Plugins run just after the pass starts:
-        plugins.on_begin_pass(self);
     }
 
     /// See [`Self::begin_pass`].
@@ -2391,15 +2393,14 @@ impl Context {
             crate::gui_zoom::zoom_with_keyboard(self);
         }
 
-        // Plugins run just before the pass ends.
-        let plugins = self.read(|ctx| ctx.plugins.ordered_plugins());
-        plugins.on_end_pass(self);
-
         #[cfg(debug_assertions)]
         self.debug_painting();
 
         let mut output = self.write(|ctx| ctx.end_pass());
+
+        let plugins = self.read(|ctx| ctx.plugins.ordered_plugins());
         plugins.on_output(&mut output);
+
         output
     }
 
@@ -4055,10 +4056,8 @@ impl Context {
                 viewport.class = ViewportClass::Deferred;
                 viewport.builder = viewport_builder;
                 viewport.used = true;
-                viewport.viewport_ui_cb = Some(Arc::new(move |ctx| {
-                    crate::CentralPanel::no_frame().show(ctx, |ui| {
-                        (viewport_ui_cb)(ui, ViewportClass::Deferred);
-                    });
+                viewport.viewport_ui_cb = Some(Arc::new(move |ui| {
+                    (viewport_ui_cb)(ui, ViewportClass::Deferred);
                 }));
             });
         }
@@ -4135,10 +4134,8 @@ impl Context {
                 let viewport = ImmediateViewport {
                     ids,
                     builder,
-                    viewport_ui_cb: Box::new(move |ctx| {
-                        crate::CentralPanel::no_frame().show(ctx, |ui| {
-                            *out = Some((viewport_ui_cb)(ui, ViewportClass::Immediate));
-                        });
+                    viewport_ui_cb: Box::new(move |ui| {
+                        *out = Some((viewport_ui_cb)(ui, ViewportClass::Immediate));
                     }),
                 };
 
@@ -4263,11 +4260,11 @@ mod test {
         // A single call, no request to discard:
         {
             let mut num_calls = 0;
-            let output = ctx.run(Default::default(), |ctx| {
+            let output = ctx.run_ui(Default::default(), |ui| {
                 num_calls += 1;
-                assert_eq!(ctx.output(|o| o.num_completed_passes), 0);
-                assert!(!ctx.output(|o| o.requested_discard()));
-                assert!(!ctx.will_discard());
+                assert_eq!(ui.output(|o| o.num_completed_passes), 0);
+                assert!(!ui.output(|o| o.requested_discard()));
+                assert!(!ui.will_discard());
             });
             assert_eq!(num_calls, 1);
             assert_eq!(output.platform_output.num_completed_passes, 1);
@@ -4277,10 +4274,10 @@ mod test {
         // A single call, with a denied request to discard:
         {
             let mut num_calls = 0;
-            let output = ctx.run(Default::default(), |ctx| {
+            let output = ctx.run_ui(Default::default(), |ui| {
                 num_calls += 1;
-                ctx.request_discard("test");
-                assert!(!ctx.will_discard(), "The request should have been denied");
+                ui.request_discard("test");
+                assert!(!ui.will_discard(), "The request should have been denied");
             });
             assert_eq!(num_calls, 1);
             assert_eq!(output.platform_output.num_completed_passes, 1);
@@ -4308,10 +4305,10 @@ mod test {
         // Normal single pass:
         {
             let mut num_calls = 0;
-            let output = ctx.run(Default::default(), |ctx| {
-                assert_eq!(ctx.output(|o| o.num_completed_passes), 0);
-                assert!(!ctx.output(|o| o.requested_discard()));
-                assert!(!ctx.will_discard());
+            let output = ctx.run_ui(Default::default(), |ui| {
+                assert_eq!(ui.output(|o| o.num_completed_passes), 0);
+                assert!(!ui.output(|o| o.requested_discard()));
+                assert!(!ui.will_discard());
                 num_calls += 1;
             });
             assert_eq!(num_calls, 1);
@@ -4322,13 +4319,13 @@ mod test {
         // Request discard once:
         {
             let mut num_calls = 0;
-            let output = ctx.run(Default::default(), |ctx| {
-                assert_eq!(ctx.output(|o| o.num_completed_passes), num_calls);
+            let output = ctx.run_ui(Default::default(), |ui| {
+                assert_eq!(ui.output(|o| o.num_completed_passes), num_calls);
 
-                assert!(!ctx.will_discard());
+                assert!(!ui.will_discard());
                 if num_calls == 0 {
-                    ctx.request_discard("test");
-                    assert!(ctx.will_discard());
+                    ui.request_discard("test");
+                    assert!(ui.will_discard());
                 }
 
                 num_calls += 1;
@@ -4344,15 +4341,15 @@ mod test {
         // Request discard twice:
         {
             let mut num_calls = 0;
-            let output = ctx.run(Default::default(), |ctx| {
-                assert_eq!(ctx.output(|o| o.num_completed_passes), num_calls);
+            let output = ctx.run_ui(Default::default(), |ui| {
+                assert_eq!(ui.output(|o| o.num_completed_passes), num_calls);
 
-                assert!(!ctx.will_discard());
-                ctx.request_discard("test");
+                assert!(!ui.will_discard());
+                ui.request_discard("test");
                 if num_calls == 0 {
-                    assert!(ctx.will_discard(), "First request granted");
+                    assert!(ui.will_discard(), "First request granted");
                 } else {
-                    assert!(!ctx.will_discard(), "Second request should be denied");
+                    assert!(!ui.will_discard(), "Second request should be denied");
                 }
 
                 num_calls += 1;
@@ -4374,13 +4371,13 @@ mod test {
         // Request discard three times:
         {
             let mut num_calls = 0;
-            let output = ctx.run(Default::default(), |ctx| {
-                assert_eq!(ctx.output(|o| o.num_completed_passes), num_calls);
+            let output = ctx.run_ui(Default::default(), |ui| {
+                assert_eq!(ui.output(|o| o.num_completed_passes), num_calls);
 
-                assert!(!ctx.will_discard());
+                assert!(!ui.will_discard());
                 if num_calls <= 2 {
-                    ctx.request_discard("test");
-                    assert!(ctx.will_discard());
+                    ui.request_discard("test");
+                    assert!(ui.will_discard());
                 }
 
                 num_calls += 1;
