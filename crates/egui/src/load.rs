@@ -608,7 +608,7 @@ impl Default for Loaders {
     fn default() -> Self {
         let include = Arc::new(DefaultBytesLoader::default());
         Self {
-            bytes: Mutex::new(alloc::vec![include.clone()]),
+            bytes: Mutex::new(alloc::vec![alloc::sync::Arc::clone(&include) as _]),
             image: Mutex::new(Vec::new()),
             // By default we only include `DefaultTextureLoader`.
             texture: Mutex::new(alloc::vec![Arc::new(DefaultTextureLoader::default())]),

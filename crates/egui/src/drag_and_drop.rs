@@ -98,11 +98,7 @@ impl DragAndDrop {
     where
         Payload: Any + Send + Sync,
     {
-        ctx.plugin::<Self>()
-            .lock()
-            .payload
-            .as_ref()?
-            .clone()
+        Arc::clone(ctx.plugin::<Self>().lock().payload.as_ref()?)
             .downcast()
             .ok()
     }
