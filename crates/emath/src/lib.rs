@@ -20,7 +20,7 @@
 #![cfg_attr(feature = "document-features", doc = document_features::document_features!())]
 //!
 
-#![allow(clippy::float_cmp)]
+#![expect(clippy::float_cmp)]
 
 #![no_std]
 extern crate alloc;

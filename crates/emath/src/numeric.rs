@@ -25,7 +25,7 @@ macro_rules! impl_numeric_float {
 
             #[inline(always)]
             fn to_f64(self) -> f64 {
-                #[allow(trivial_numeric_casts, clippy::allow_attributes)]
+                #[allow(clippy::allow_attributes, trivial_numeric_casts)]
                 {
                     self as f64
                 }
@@ -33,7 +33,7 @@ macro_rules! impl_numeric_float {
 
             #[inline(always)]
             fn from_f64(num: f64) -> Self {
-                #[allow(trivial_numeric_casts, clippy::allow_attributes)]
+                #[allow(clippy::allow_attributes, trivial_numeric_casts)]
                 {
                     num as Self
                 }

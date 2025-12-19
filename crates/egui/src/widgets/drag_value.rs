@@ -1,5 +1,5 @@
 // False positives with `impl ToString`
-#![allow(clippy::needless_pass_by_value)]
+#![expect(clippy::needless_pass_by_value)]
 use alloc::boxed::Box;
 use alloc::{format, vec::Vec};
 use alloc::string::{String, ToString};

@@ -1,5 +1,4 @@
 //! egui theme (spacing, colors, etc).
-#![allow(clippy::if_same_then_else)]
 use alloc::borrow::ToOwned;
 use alloc::{format, vec::Vec};
 use alloc::string::{String, ToString};

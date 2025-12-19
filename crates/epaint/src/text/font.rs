@@ -2,7 +2,7 @@ use alloc::collections::BTreeMap;
 use alloc::sync::Arc;
 
 use alloc::{string::String, vec::Vec, BTreeMap};
-#![allow(clippy::mem_forget)]
+#![expect(clippy::mem_forget)]
 
 use emath::{GuiRounding as _, OrderedFloat, Vec2, vec2};
 use self_cell::self_cell;
