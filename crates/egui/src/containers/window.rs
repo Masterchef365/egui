@@ -962,6 +962,9 @@ fn resize_interaction(
             },
             true,
         );
+
+        response.widget_info(|| WidgetInfo::new(crate::WidgetType::ResizeHandle));
+
         SideResponse {
             hover: response.hovered(),
             drag: response.dragged(),
