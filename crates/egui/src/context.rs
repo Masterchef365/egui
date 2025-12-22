@@ -1239,7 +1239,12 @@ impl Context {
     ///
     /// `allow_focus` should usually be true, unless you call this function multiple times with the
     /// same widget, then `allow_focus` should only be true once (like in [`Ui::new`] (true) and [`Ui::remember_min_rect`] (false)).
-    pub(crate) fn create_widget(&self, w: WidgetRect, allow_focus: bool) -> Response {
+    pub(crate) fn create_widget(
+        &self,
+        w: WidgetRect,
+        allow_focus: bool,
+        options: crate::InteractOptions,
+    ) -> Response {
         let interested_in_focus = w.enabled
             && w.sense.is_focusable()
             && self.memory(|mem| mem.allows_interaction(w.layer_id));
@@ -1251,7 +1256,7 @@ impl Context {
             // We add all widgets here, even non-interactive ones,
             // because we need this list not only for checking for blocking widgets,
             // but also to know when we have reached the widget we are checking for cover.
-            viewport.this_pass.widgets.insert(w.layer_id, w);
+            viewport.this_pass.widgets.insert(w.layer_id, w, options);
 
             if allow_focus && interested_in_focus {
                 ctx.memory.interested_in_focus(w.id, w.layer_id);
