@@ -81,8 +81,4 @@ impl<Value: 'static + Send + Sync, Computer: 'static + Send + Sync> CacheTrait
     fn len(&self) -> usize {
         self.cache.len()
     }
-
-    fn as_any_mut(&mut self) -> &mut dyn core::any::Any {
-        self
-    }
 }

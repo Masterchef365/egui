@@ -31,11 +31,13 @@ pub struct CacheStorage {
 
 impl CacheStorage {
     pub fn cache<Cache: CacheTrait + Default>(&mut self) -> &mut Cache {
-        #[expect(clippy::unwrap_used)]
-        self.caches
+        let cache = self
+            .caches
             .entry(core::any::TypeId::of::<Cache>())
-            .or_insert_with(|| Box::<Cache>::default())
-            .as_any_mut()
+            .or_insert_with(|| Box::<Cache>::default());
+
+        #[expect(clippy::unwrap_used)]
+        (cache.as_mut() as &mut dyn core::any::Any)
             .downcast_mut::<Cache>()
             .unwrap()
     }
