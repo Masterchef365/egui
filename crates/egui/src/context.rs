@@ -2445,7 +2445,8 @@ impl Context {
             if let Some(widget) =
                 self.write(|ctx| ctx.viewport().this_pass.widgets.get(id).copied())
             {
-                paint_widget(&widget, text, color);
+                let text = format!("{text} - {id:?}");
+                paint_widget(&widget, &text, color);
             }
         };
 
@@ -2552,6 +2553,12 @@ impl Context {
             if let Some(widget) = &drag {
                 paint_widget(widget, "drag", Color32::GREEN);
             }
+        }
+
+        if self.global_style().debug.show_focused_widget
+            && let Some(focused_id) = self.memory(|mem| mem.focused())
+        {
+            paint_widget_id(focused_id, "focused", Color32::PURPLE);
         }
 
         if let Some(debug_rect) = self.pass_state_mut(|fs| fs.debug_rect.take()) {
