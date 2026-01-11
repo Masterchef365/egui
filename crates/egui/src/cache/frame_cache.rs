@@ -48,10 +48,9 @@ impl<Value, Computer> FrameCache<Value, Computer> {
 impl<Value, Computer> FrameCache<Value, Computer> {
     /// Get from cache (if the same key was used last frame)
     /// or recompute and store in the cache.
-    pub fn get<Key>(&mut self, key: Key) -> Value
+    pub fn get<Key>(&mut self, key: Key) -> &Value
     where
         Key: Copy + core::hash::Hash,
-        Value: Clone,
         Computer: ComputerMut<Key, Value>,
     {
         let hash = crate::util::hash(key);
@@ -60,12 +59,12 @@ impl<Value, Computer> FrameCache<Value, Computer> {
             hashbrown::hash_map::Entry::Occupied(entry) => {
                 let cached = entry.into_mut();
                 cached.0 = self.generation;
-                cached.1.clone()
+                &cached.1
             }
             hashbrown::hash_map::Entry::Vacant(entry) => {
                 let value = self.computer.compute(key);
-                entry.insert((self.generation, value.clone()));
-                value
+                let inserted = entry.insert((self.generation, value));
+                &inserted.1
             }
         }
     }
