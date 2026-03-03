@@ -935,7 +935,7 @@ impl Galley {
     }
 
     /// Returns a 0-width Rect.
-    fn pos_from_layout_cursor(&self, layout_cursor: &LayoutCursor) -> Rect {
+    pub fn pos_from_layout_cursor(&self, layout_cursor: &LayoutCursor) -> Rect {
         let Some(row) = self.rows.get(layout_cursor.row) else {
             return self.end_pos();
         };
