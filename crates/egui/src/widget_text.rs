@@ -1,10 +1,10 @@
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use emath::GuiRounding as _;
-use epaint::text::TextFormat;
 use core::fmt::Formatter;
 use alloc::{borrow::Cow, sync::Arc};
 use alloc::string::{String, ToString};
+use epaint::text::{IntoTag, TextFormat, VariationCoords};
 
 use crate::{
     Align, Color32, FontFamily, FontSelection, Galley, Style, TextStyle, TextWrapMode, Ui, Visuals,
@@ -37,6 +37,7 @@ pub struct RichText {
     background_color: Color32,
     expand_bg: f32,
     text_color: Option<Color32>,
+    coords: VariationCoords,
     code: bool,
     strong: bool,
     weak: bool,
@@ -58,6 +59,7 @@ impl Default for RichText {
             background_color: Default::default(),
             expand_bg: 1.0,
             text_color: Default::default(),
+            coords: Default::default(),
             code: Default::default(),
             strong: Default::default(),
             weak: Default::default(),
@@ -196,6 +198,23 @@ impl RichText {
         let crate::FontId { size, family } = font_id;
         self.size = Some(size);
         self.family = Some(family);
+        self
+    }
+
+    /// Add a variation coordinate.
+    #[inline]
+    pub fn variation(mut self, tag: impl IntoTag, coord: f32) -> Self {
+        self.coords.push(tag, coord);
+        self
+    }
+
+    /// Override the variation coordinates completely.
+    #[inline]
+    pub fn variations<T: IntoTag>(
+        mut self,
+        variations: impl IntoIterator<Item = (T, f32)>,
+    ) -> Self {
+        self.coords = VariationCoords::new(variations);
         self
     }
 
@@ -394,6 +413,7 @@ impl RichText {
             background_color,
             expand_bg,
             text_color: _, // already used by `get_text_color`
+            coords,
             code,
             strong: _, // already used by `get_text_color`
             weak: _,   // already used by `get_text_color`
@@ -452,6 +472,7 @@ impl RichText {
                 line_height,
                 color: text_color,
                 background: background_color,
+                coords,
                 italics,
                 underline,
                 strikethrough,
