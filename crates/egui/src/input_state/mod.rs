@@ -873,7 +873,8 @@ impl InputState {
         let accesskit_id = id.accesskit_id();
         self.events.iter().filter_map(move |event| {
             if let Event::AccessKitActionRequest(request) = event
-                && request.target == accesskit_id
+                && request.target_node == accesskit_id
+                && request.target_tree == accesskit::TreeId::ROOT
                 && request.action == action
             {
                 return Some(request);
@@ -890,7 +891,8 @@ impl InputState {
         let accesskit_id = id.accesskit_id();
         self.events.retain(|event| {
             if let Event::AccessKitActionRequest(request) = event
-                && request.target == accesskit_id
+                && request.target_node == accesskit_id
+                && request.target_tree == accesskit::TreeId::ROOT
             {
                 return !consume(request);
             }
