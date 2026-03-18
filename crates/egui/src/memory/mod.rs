@@ -236,6 +236,16 @@ pub struct Options {
     #[cfg_attr(feature = "serde", serde(skip))]
     pub zoom_with_keyboard: bool,
 
+    /// Keyboard shortcuts to close the application.
+    ///
+    /// Pressing any of these will send [`crate::ViewportCommand::Close`]
+    /// to the root viewport.
+    ///
+    /// Defaults to `Cmd-Q` (which is Ctrl-Q on Linux/Windows, Cmd-Q on Mac).
+    /// Set to empty to disable.
+    #[cfg_attr(feature = "serde", serde(skip))]
+    pub quit_shortcuts: Vec<crate::KeyboardShortcut>,
+
     /// Controls the tessellator.
     pub tessellation_options: epaint::TessellationOptions,
 
@@ -306,6 +316,10 @@ impl Default for Options {
             system_theme: None,
             zoom_factor: 1.0,
             zoom_with_keyboard: true,
+            quit_shortcuts: vec![crate::KeyboardShortcut::new(
+                crate::Modifiers::COMMAND,
+                crate::Key::Q,
+            )],
             tessellation_options: Default::default(),
             repaint_on_widget_change: false,
 
@@ -365,6 +379,7 @@ impl Options {
             system_theme: _,
             zoom_factor,
             zoom_with_keyboard,
+            quit_shortcuts: _, // not shown in ui
             tessellation_options,
             repaint_on_widget_change,
             max_passes,
