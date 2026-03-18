@@ -1308,6 +1308,9 @@ pub struct DebugOptions {
     /// Show interesting widgets under the mouse cursor.
     pub show_widget_hits: bool,
 
+    /// Show a warning if the same `Rect` had different `Id` on the previous frame.
+    pub warn_if_rect_changes_id: bool,
+
     /// If true, highlight widgets that are not aligned to [`emath::GUI_ROUNDING`].
     ///
     /// See [`emath::GuiRounding`] for more.
@@ -1334,6 +1337,7 @@ impl Default for DebugOptions {
             show_resize: false,
             show_interactive_widgets: false,
             show_widget_hits: false,
+            warn_if_rect_changes_id: cfg!(debug_assertions),
             show_unaligned: cfg!(debug_assertions),
             show_focused_widget: false,
         }
@@ -2496,6 +2500,7 @@ impl DebugOptions {
             show_resize,
             show_interactive_widgets,
             show_widget_hits,
+            warn_if_rect_changes_id,
             show_unaligned,
             show_focused_widget,
         } = self;
@@ -2526,6 +2531,11 @@ impl DebugOptions {
         );
 
         ui.checkbox(show_widget_hits, "Show widgets under mouse pointer");
+
+        ui.checkbox(
+            warn_if_rect_changes_id,
+            "Warn if a Rect changes Id between frames",
+        );
 
         ui.checkbox(
             show_unaligned,
