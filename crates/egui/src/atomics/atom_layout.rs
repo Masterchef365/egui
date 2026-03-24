@@ -521,6 +521,20 @@ impl AtomLayoutResponse {
     }
 }
 
+impl Deref for AtomLayoutResponse {
+    type Target = Response;
+
+    fn deref(&self) -> &Self::Target {
+        &self.response
+    }
+}
+
+impl DerefMut for AtomLayoutResponse {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.response
+    }
+}
+
 impl Widget for AtomLayout<'_> {
     fn ui(self, ui: &mut Ui) -> Response {
         self.show(ui).response
