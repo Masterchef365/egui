@@ -3,6 +3,8 @@ use hashbrown::HashMap;
 use core::{any::Any, iter::FusedIterator};
 use alloc::string::String;
 
+use epaint::Color32;
+
 use crate::{Direction, Frame, Id, Rect};
 
 /// What kind is this [`crate::Ui`]?
@@ -254,6 +256,24 @@ impl UiStack {
     #[inline]
     pub fn has_visible_frame(&self) -> bool {
         !self.info.frame.stroke.is_empty()
+    }
+
+    /// The background color of this [`Ui`].
+    ///
+    /// This blend together all [`Frame::fill`] colors
+    /// up to the root.
+    #[inline]
+    pub fn bg_color(&self) -> Color32 {
+        let mut total = Color32::TRANSPARENT;
+        for node in self.iter() {
+            let fill = node.frame().fill;
+            if fill.is_opaque() {
+                return fill;
+            } else if fill != Color32::TRANSPARENT {
+                total = fill.blend(total);
+            }
+        }
+        total
     }
 }
 
