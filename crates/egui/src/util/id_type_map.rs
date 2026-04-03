@@ -348,7 +348,7 @@ use crate::Id;
 #[repr(transparent)]
 pub struct RawKey(u64);
 
-impl nohash_hasher::IsEnabled for RawKey {}
+//impl nohash_hasher::IsEnabled for RawKey {}
 
 impl RawKey {
     /// Create a new key for the given type.
@@ -412,7 +412,7 @@ impl RawKey {
 #[derive(Clone, Debug)]
 // We use `id XOR typeid` as a key, so we don't need to hash again!
 pub struct IdTypeMap {
-    map: nohash_hasher::IntMap<RawKey, Element>,
+    map: hashbrown::HashMap<RawKey, Element>,
 
     max_bytes_per_type: usize,
 }
@@ -546,7 +546,7 @@ impl IdTypeMap {
         id: Id,
         insert_with: impl FnOnce() -> T,
     ) -> &mut T {
-        let hash = hash(TypeId::of::<T>(), id);
+        let hash = core::hash::hash(TypeId::of::<T>(), id);
         use hashbrown::hash_map::Entry;
         match self.map.entry(hash) {
             Entry::Vacant(vacant) => {
@@ -584,7 +584,7 @@ impl IdTypeMap {
     /// Remove and fetch the state of this type and id.
     #[inline]
     pub fn remove_temp<T: 'static + Default>(&mut self, id: Id) -> Option<T> {
-        let hash = hash(TypeId::of::<T>(), id);
+        let hash = crate::util::hash(TypeId::of::<T>(), id);
         let mut element = self.map.remove(&hash)?;
         Some(core::mem::take(element.get_mut_temp()?))
     }

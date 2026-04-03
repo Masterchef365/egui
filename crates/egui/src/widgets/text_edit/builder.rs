@@ -2,6 +2,7 @@ use alloc::{borrow::ToOwned, string::String, sync::Arc, vec::Vec};
 
 use emath::{Rect, TSTransform};
 use epaint::text::{Galley, LayoutJob, TextWrapMode, cursor::CCursor};
+use crate::alloc::string::ToString;
 
 use crate::{
     Align, Align2, Atom, AtomExt as _, AtomKind, AtomLayout, Atoms, Color32, Context, CursorIcon,
