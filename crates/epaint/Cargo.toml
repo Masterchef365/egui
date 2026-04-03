@@ -62,6 +62,7 @@ emath.workspace = true
 ecolor.workspace = true
 
 num-traits = { version = "0.2", default-features = false, features = ["libm"] }
+hashbrown.workspace = true
 ahash.workspace = true
 spin = { version = "0.10.0", features = ["mutex", "rwlock"] }
 font-types.workspace = true

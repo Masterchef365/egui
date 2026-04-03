@@ -352,8 +352,8 @@ impl AsMut<[(font_types::Tag, f32)]> for VariationCoords {
     }
 }
 
-impl std::hash::Hash for VariationCoords {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+impl core::hash::Hash for VariationCoords {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
         self.0.len().hash(state);
         for (tag, coord) in &self.0 {
             tag.hash(state);

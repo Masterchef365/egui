@@ -1,8 +1,9 @@
 #![expect(clippy::mem_forget)]
-use alloc::collections::{BTreeMap, HashMap};
+use alloc::collections::{BTreeMap};
+use hashbrown::HashMap;
 use alloc::sync::Arc;
 
-use alloc::{string::String, vec::Vec, BTreeMap};
+use alloc::{string::String, vec::Vec, boxed::Box};
 
 use emath::{GuiRounding as _, OrderedFloat, Vec2, vec2};
 use self_cell::self_cell;
@@ -10,7 +11,6 @@ use skrifa::{
     MetadataProvider as _,
     raw::{TableProvider as _, tables::kern::SubtableKind},
 };
-use alloc::collections::BTreeMap;
 use vello_cpu::{color, kurbo};
 
 use crate::{
@@ -353,7 +353,7 @@ impl FontFace {
         font_data: Blob,
         index: u32,
         tweak: FontTweak,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
+    ) -> Result<Self, Box<dyn core::error::Error>> {
         let font = FontCell::try_new(font_data, |font_data| {
             let skrifa_font =
                 skrifa::FontRef::from_index(AsRef::<[u8]>::as_ref(font_data.as_ref()), index)?;
@@ -388,7 +388,7 @@ impl FontFace {
                 })
                 .flatten();
 
-            Ok::<DependentFontData<'_>, Box<dyn std::error::Error>>(DependentFontData {
+            Ok::<DependentFontData<'_>, Box<dyn core::error::Error>>(DependentFontData {
                 skrifa: skrifa_font,
                 charmap,
                 outline_glyphs: glyphs,
@@ -603,12 +603,12 @@ impl FontFace {
             .glyph_alloc_cache
             .entry(GlyphCacheKey::new(glyph_id, metrics, bin))
         {
-            std::collections::hash_map::Entry::Occupied(glyph_alloc) => {
+            hashbrown::hash_map::Entry::Occupied(glyph_alloc) => {
                 let mut glyph_alloc = *glyph_alloc.get();
                 glyph_alloc.advance_width_px = advance_width_px; // Hack to get `\t` and thin space to work, since they use the same glyph id as ` ` (space).
                 return (glyph_alloc, h_pos_round);
             }
-            std::collections::hash_map::Entry::Vacant(entry) => entry,
+            hashbrown::hash_map::Entry::Vacant(entry) => entry,
         };
 
         let allocation = self

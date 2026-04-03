@@ -3,9 +3,9 @@ use alloc::{
     collections::BTreeMap,
     sync::{
         Arc,
-        atomic::{AtomicU64, Ordering},
     },
 };
+use core::sync::atomic::{AtomicU64, Ordering};
 
 use crate::{
     TextureAtlas,
@@ -440,7 +440,7 @@ pub(super) struct CachedFamily {
 
     pub replacement_glyph: (FontFaceKey, GlyphInfo),
 
-    pub glyph_info_cache: ahash::HashMap<char, (FontFaceKey, GlyphInfo)>,
+    pub glyph_info_cache: hashbrown::HashMap<char, (FontFaceKey, GlyphInfo)>,
 }
 
 impl CachedFamily {
@@ -765,8 +765,8 @@ pub struct FontsImpl {
     definitions: FontDefinitions,
     atlas: TextureAtlas,
     fonts_by_id: nohash_hasher::IntMap<FontFaceKey, FontFace>,
-    fonts_by_name: ahash::HashMap<String, FontFaceKey>,
-    family_cache: ahash::HashMap<FontFamily, CachedFamily>,
+    fonts_by_name: hashbrown::HashMap<String, FontFaceKey>,
+    family_cache: hashbrown::HashMap<FontFamily, CachedFamily>,
 }
 
 impl FontsImpl {
@@ -778,7 +778,7 @@ impl FontsImpl {
         let atlas = TextureAtlas::new([texture_width, initial_height], options);
 
         let mut fonts_by_id: nohash_hasher::IntMap<FontFaceKey, FontFace> = Default::default();
-        let mut fonts_by_name: ahash::HashMap<String, FontFaceKey> = Default::default();
+        let mut fonts_by_name: hashbrown::HashMap<String, FontFaceKey> = Default::default();
         for (name, font_data) in &definitions.font_data {
             let blob = blob_from_font_data(font_data);
             let font_face = FontFace::new(
