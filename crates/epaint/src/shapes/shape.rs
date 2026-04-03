@@ -311,8 +311,8 @@ impl Shape {
         };
 
         Self::from(Mesh {
-            indices: vec![0, 1, 2, 2, 1, 3],
-            vertices: vec![
+            indices: alloc::vec![0, 1, 2, 2, 1, 3],
+            vertices: alloc::vec![
                 Vertex::untextured(rect.left_top(), left_top),
                 Vertex::untextured(rect.right_top(), right_top),
                 Vertex::untextured(rect.left_bottom(), left_bottom),

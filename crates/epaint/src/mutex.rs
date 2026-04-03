@@ -2,7 +2,7 @@
 
 // ----------------------------------------------------------------------------
 
-const DEADLOCK_DURATION: std::time::Duration = std::time::Duration::from_secs(10);
+const DEADLOCK_DURATION: core::time::Duration = core::time::Duration::from_secs(10);
 
 /// Provides interior mutability.
 ///

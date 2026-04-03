@@ -1,5 +1,5 @@
 #![expect(clippy::mem_forget)]
-use alloc::collections::BTreeMap;
+use alloc::collections::{BTreeMap, HashMap};
 use alloc::sync::Arc;
 
 use alloc::{string::String, vec::Vec, BTreeMap};
@@ -10,7 +10,7 @@ use skrifa::{
     MetadataProvider as _,
     raw::{TableProvider as _, tables::kern::SubtableKind},
 };
-use std::collections::BTreeMap;
+use alloc::collections::BTreeMap;
 use vello_cpu::{color, kurbo};
 
 use crate::{
@@ -342,8 +342,8 @@ pub struct FontFace {
     font: FontCell,
     tweak: FontTweak,
 
-    glyph_info_cache: ahash::HashMap<char, GlyphInfo>,
-    glyph_alloc_cache: ahash::HashMap<GlyphCacheKey, GlyphAllocation>,
+    glyph_info_cache: HashMap<char, GlyphInfo>,
+    glyph_alloc_cache: HashMap<GlyphCacheKey, GlyphAllocation>,
 }
 
 impl FontFace {
