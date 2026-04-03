@@ -742,7 +742,7 @@ impl Default for Context {
     fn default() -> Self {
         let ctx_impl = ContextImpl {
             embed_viewports: true,
-            viewports: std::iter::once((ViewportId::ROOT, ViewportState::default())).collect(),
+            viewports: core::iter::once((ViewportId::ROOT, ViewportState::default())).collect(),
             ..Default::default()
         };
         let ctx = Self(Arc::new(RwLock::new(ctx_impl)));
@@ -1994,7 +1994,7 @@ impl Context {
         &self,
         f: impl FnOnce(&mut T) -> R,
     ) -> Option<R> {
-        let plugin = self.read(|ctx| ctx.plugins.get(std::any::TypeId::of::<T>()));
+        let plugin = self.read(|ctx| ctx.plugins.get(core::any::TypeId::of::<T>()));
         plugin.map(|plugin| f(plugin.lock().typed_plugin_mut()))
     }
 
@@ -2006,13 +2006,13 @@ impl Context {
         if let Some(plugin) = self.plugin_opt() {
             plugin
         } else {
-            panic!("Plugin of type {:?} not found", std::any::type_name::<T>());
+            panic!("Plugin of type {:?} not found", core::any::type_name::<T>());
         }
     }
 
     /// Get a handle to the plugin of type `T`, if it was registered.
     pub fn plugin_opt<T: plugin::Plugin>(&self) -> Option<TypedPluginHandle<T>> {
-        let plugin = self.read(|ctx| ctx.plugins.get(std::any::TypeId::of::<T>()));
+        let plugin = self.read(|ctx| ctx.plugins.get(core::any::TypeId::of::<T>()));
         plugin.map(TypedPluginHandle::new)
     }
 
@@ -4297,20 +4297,20 @@ fn warn_if_rect_changes_id(
 ) {
     profiling::function_scope!();
 
-    use std::collections::BTreeMap;
+    use core::collections::BTreeMap;
 
     /// A wrapper around [`Rect`] that implements [`Ord`] using the bit representation of its floats.
     #[derive(Clone, Copy, PartialEq, Eq)]
     struct OrderedRect(Rect);
 
     impl PartialOrd for OrderedRect {
-        fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
             Some(self.cmp(other))
         }
     }
 
     impl Ord for OrderedRect {
-        fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        fn cmp(&self, other: &Self) -> core::cmp::Ordering {
             let lhs = self.0;
             let rhs = other.0;
             lhs.min

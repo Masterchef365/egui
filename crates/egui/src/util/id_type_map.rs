@@ -523,7 +523,7 @@ impl IdTypeMap {
         insert_with: impl FnOnce() -> T,
     ) -> &mut T {
         let key = RawKey::new::<T>(id);
-        use hashbrown::hash_map::::Entry;
+        use hashbrown::hash_map::Entry;
         match self.map.entry(key) {
             Entry::Vacant(vacant) => {
                 // this unwrap will never panic, because we insert correct type right now

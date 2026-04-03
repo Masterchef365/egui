@@ -1,9 +1,9 @@
+#![expect(clippy::use_self)]
 #![warn(missing_docs)] // Let's keep `Ui` well-documented.
 use alloc::boxed::Box;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use alloc::string::{String, ToString};
-#![expect(clippy::use_self)]
 
 use std::{any::Any, hash::Hash, ops::Deref, sync::Arc};
 

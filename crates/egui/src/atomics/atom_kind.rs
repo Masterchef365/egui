@@ -21,7 +21,6 @@ pub struct IntoSizedResult<'a> {
 // We need 'static in the result (or need to introduce another lifetime on the enum).
 // Otherwise, a single 'static Atom would force the closure to be 'static.
 pub type AtomClosure<'a> = Box<dyn FnOnce(&Ui, IntoSizedArgs) -> IntoSizedResult<'static> + 'a>;
->>>>>>> 8b90dc60c (⚠️ Atom improvements: `Atom::id`, `align`, `closure`, `max_size` (#7958))
 
 /// The different kinds of [`crate::Atom`]s.
 #[derive(Default)]
