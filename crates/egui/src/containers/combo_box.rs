@@ -1,5 +1,6 @@
 use epaint::Shape;
 use alloc::{boxed::Box, vec::Vec};
+use alloc::borrow::ToOwned;
 
 use crate::{
     Align2, Context, Id, InnerResponse, NumExt as _, Painter, Popup, PopupCloseBehavior, Rect,

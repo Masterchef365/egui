@@ -1,6 +1,7 @@
 use emath::{Rect, Vec2, vec2};
 use alloc::format;
 use crate::{InputOptions, Modifiers, MouseWheelUnit, TouchPhase};
+use crate::alloc::string::ToString;
 
 /// The current state of scrolling.
 ///
