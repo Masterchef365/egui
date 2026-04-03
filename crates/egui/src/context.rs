@@ -4297,7 +4297,7 @@ fn warn_if_rect_changes_id(
 ) {
     profiling::function_scope!();
 
-    use core::collections::BTreeMap;
+    use alloc::collections::BTreeMap;
 
     /// A wrapper around [`Rect`] that implements [`Ord`] using the bit representation of its floats.
     #[derive(Clone, Copy, PartialEq, Eq)]

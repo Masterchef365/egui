@@ -1,7 +1,7 @@
 use crate::{Context, FullOutput, RawInput, Ui};
 use hashbrown::HashMap;
 use epaint::mutex::{Mutex, MutexGuard};
-use core::sync::Arc;
+use alloc::sync::Arc;
 
 /// A plugin to extend egui.
 ///
