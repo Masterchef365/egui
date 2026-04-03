@@ -986,6 +986,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "critical-section"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "790eea4361631c5e7d22598ecd5723ff611904e3344ce8720784c93e3d83d40b"
+
+[[package]]
 name = "crossbeam-channel"
 version = "0.5.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1200,7 +1206,9 @@ dependencies = [
  "color-hex",
  "document-features",
  "emath",
+ "num-traits",
  "serde",
+ "spin",
 ]
 
 [[package]]
@@ -1253,12 +1261,16 @@ dependencies = [
  "document-features",
  "emath",
  "epaint",
+ "hashbrown 0.15.2",
  "log",
  "nohash-hasher",
+ "num-traits",
+ "once_cell",
  "profiling",
  "ron",
  "serde",
  "smallvec",
+ "spin",
  "unicode-segmentation",
 ]
 
@@ -1444,6 +1456,7 @@ dependencies = [
  "bytemuck",
  "document-features",
  "mint",
+ "num-traits",
  "serde",
 ]
 
@@ -1550,6 +1563,7 @@ dependencies = [
  "log",
  "mimalloc",
  "nohash-hasher",
+ "num-traits",
  "parking_lot",
  "profiling",
  "rayon",
@@ -1558,6 +1572,7 @@ dependencies = [
  "similar-asserts",
  "skrifa",
  "smallvec",
+ "spin",
  "vello_cpu",
 ]
 
@@ -2043,6 +2058,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf151400ff0baff5465007dd2f3e717f3fe502074ca563069ce3a6629d07b289"
 dependencies = [
  "foldhash 0.1.4",
+ "serde",
 ]
 
 [[package]]
@@ -3105,6 +3121,10 @@ name = "once_cell"
 version = "1.21.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
+dependencies = [
+ "critical-section",
+ "portable-atomic",
+]
 
 [[package]]
 name = "once_cell_polyfill"
@@ -4215,6 +4235,15 @@ checksum = "233504af464074f9d066d7b5416c5f9b894a5862a6506e306f7b816cdd6f1807"
 dependencies = [
  "libc",
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "spin"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d5fe4ccb98d9c292d56fec89a5e07da7fc4cf0dc11e156b41793132775d3e591"
+dependencies = [
+ "lock_api",
 ]
 
 [[package]]

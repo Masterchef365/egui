@@ -1,5 +1,5 @@
-use alloc::{sync::Arc, vec::Vec};
 #![expect(clippy::unwrap_used)] // TODO(emilk): remove unwraps
+use alloc::{sync::Arc, vec::Vec};
 
 use emath::{Align, GuiRounding as _, NumExt as _, Pos2, Rect, Vec2, pos2, vec2};
 

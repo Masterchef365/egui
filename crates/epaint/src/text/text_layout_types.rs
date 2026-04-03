@@ -1,6 +1,6 @@
 use core::ops::Range;
 use alloc::sync::Arc;
-use core::::FromStr as _;
+use core::FromStr as _;
 
 use super::{
     cursor::{CCursor, LayoutCursor},
