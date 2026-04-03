@@ -316,7 +316,7 @@ impl Default for Options {
             system_theme: None,
             zoom_factor: 1.0,
             zoom_with_keyboard: true,
-            quit_shortcuts: vec![crate::KeyboardShortcut::new(
+            quit_shortcuts: alloc::vec![crate::KeyboardShortcut::new(
                 crate::Modifiers::COMMAND,
                 crate::Key::Q,
             )],
@@ -1334,7 +1334,7 @@ impl Areas {
         // (it doesn't matter in which order we replace parents with their children)
         #[expect(clippy::iter_over_hash_type)]
         for (parent, children) in core::mem::take(sublayers) {
-            let mut moved_layers = vec![parent]; // parent first…
+            let mut moved_layers = alloc::vec![parent]; // parent first…
 
             order.retain(|l| {
                 if children.contains(l) {

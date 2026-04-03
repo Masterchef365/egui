@@ -3,7 +3,7 @@ use alloc::vec::Vec;
 use emath::TSTransform;
 use hashbrown::{HashMap, HashSet};
 
-use crate::{LayerId, Pos2, Sense, WidgetRect, WidgetRects, ahash, emath, id::IdSet};
+use crate::{LayerId, Pos2, Sense, WidgetRect, WidgetRects, emath, id::IdSet};
 
 /// Result of a hit-test against [`WidgetRects`].
 ///

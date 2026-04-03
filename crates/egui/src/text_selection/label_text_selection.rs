@@ -205,7 +205,7 @@ impl Plugin for LabelSelectionState {
             self.is_dragging = false;
         }
 
-        let text_to_copy = std::mem::take(&mut self.text_to_copy);
+        let text_to_copy = core::mem::take(&mut self.text_to_copy);
         if !text_to_copy.is_empty() {
             ui.copy_text(text_to_copy);
         }

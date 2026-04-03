@@ -60,7 +60,7 @@ impl Plugin for DebugTextPlugin {
     }
 
     fn on_end_pass(&mut self, ui: &mut Ui) {
-        let entries = std::mem::take(&mut self.entries);
+        let entries = core::mem::take(&mut self.entries);
         Self::paint_entries(ui, entries);
     }
 }

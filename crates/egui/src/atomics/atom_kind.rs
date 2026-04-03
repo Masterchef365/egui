@@ -2,6 +2,7 @@ use crate::{FontSelection, Image, ImageSource, SizedAtomKind, Ui, WidgetText};
 use emath::Vec2;
 use epaint::text::TextWrapMode;
 use alloc::vec::Vec;
+use alloc::boxed::Box;
 use core::fmt::Debug;
 
 /// Args passed when sizing an [`super::Atom`]
@@ -83,7 +84,7 @@ impl Clone for AtomKind<'_> {
 }
 
 impl Debug for AtomKind<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             AtomKind::Empty => write!(f, "AtomKind::Empty"),
             AtomKind::Text(text) => write!(f, "AtomKind::Text({text:?})"),

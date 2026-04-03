@@ -5,12 +5,10 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use alloc::string::{String, ToString};
 
-use std::{any::Any, hash::Hash, ops::Deref, sync::Arc};
-
 use emath::GuiRounding as _;
 use epaint::mutex::RwLock;
 use epaint::text::FontsView;
-use core::{any::Any, hash::Hash, sync::Arc};
+use core::{any::Any, hash::Hash, ops::Deref};
 
 use crate::containers::menu;
 use crate::{containers::*, ecolor::*, layout::*, placer::Placer, widgets::*, *};

@@ -123,13 +123,13 @@ pub struct ViewportId(pub Id);
 // We implement `PartialOrd` and `Ord` so we can use `ViewportId` in a `BTreeMap`,
 // which allows predicatable iteration order, frame-to-frame.
 impl PartialOrd for ViewportId {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl Ord for ViewportId {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
         self.0.value().cmp(&other.0.value())
     }
 }
@@ -175,7 +175,7 @@ pub type ViewportIdSet = hashbrown::HashSet<ViewportId>;
 pub type ViewportIdMap<T> = hashbrown::HashMap<ViewportId, T>;
 
 /// An order map from [`ViewportId`] to `T`.
-pub type OrderedViewportIdMap<T> = std::collections::BTreeMap<ViewportId, T>;
+pub type OrderedViewportIdMap<T> = alloc::collections::BTreeMap<ViewportId, T>;
 
 // ----------------------------------------------------------------------------
 

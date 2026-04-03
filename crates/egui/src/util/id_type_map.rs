@@ -3,6 +3,8 @@ use alloc::collections::btree_map::BTreeMap;
 use alloc::vec::Vec;
 use alloc::string::String;
 use hashbrown::HashMap;
+use crate::util::hash;
+
 // TODO(emilk): it is possible we can simplify `Element` further by
 // assuming everything is possibly serializable, and by supplying serialize/deserialize functions for them.
 // For non-serializable types, these simply return `None`.
@@ -591,7 +593,7 @@ impl IdTypeMap {
     ///
     /// Serialized values are ignored.
     pub fn remove_temp_raw(&mut self, raw: RawKey) -> Option<Box<dyn Any + Send + Sync>> {
-        use std::collections::hash_map::Entry;
+        use hashbrown::hash_map::Entry;
         if let Entry::Occupied(e) = self.map.entry(raw)
             && e.get().is_temp()
             && let Element::Value { value, .. } = e.remove()

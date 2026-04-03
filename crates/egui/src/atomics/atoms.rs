@@ -46,7 +46,7 @@ impl<'a> Atoms<'a> {
     ///
     /// If you have weird lifetime issues with this, use [`Self::push_left`] in a loop instead.
     pub fn extend_left(&mut self, mut atoms: Self) {
-        std::mem::swap(&mut atoms.0, &mut self.0);
+        core::mem::swap(&mut atoms.0, &mut self.0);
         self.0.extend(atoms.0);
     }
 
