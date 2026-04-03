@@ -2,16 +2,16 @@ use alloc::boxed::Box;
 use alloc::collections::btree_map::BTreeMap;
 use alloc::vec::Vec;
 use alloc::string::String;
+use alloc::sync::Arc;
 use hashbrown::HashMap;
 use crate::util::hash;
+use core::any::Any;
 
 // TODO(emilk): it is possible we can simplify `Element` further by
 // assuming everything is possibly serializable, and by supplying serialize/deserialize functions for them.
 // For non-serializable types, these simply return `None`.
 // This will also allow users to pick their own serialization format per type.
 
-use core::any::Any;
-use alloc::sync::Arc;
 // -----------------------------------------------------------------------------------------------
 
 /// Like [`core::any::TypeId`], but can be serialized and deserialized.
@@ -38,7 +38,7 @@ impl From<core::any::TypeId> for TypeId {
     }
 }
 
-//impl nohash_hasher::IsEnabled for TypeId {}
+impl nohash_hasher::IsEnabled for TypeId {}
 
 // -----------------------------------------------------------------------------------------------
 
@@ -348,7 +348,7 @@ use crate::Id;
 #[repr(transparent)]
 pub struct RawKey(u64);
 
-//impl nohash_hasher::IsEnabled for RawKey {}
+impl nohash_hasher::IsEnabled for RawKey {}
 
 impl RawKey {
     /// Create a new key for the given type.
@@ -546,9 +546,9 @@ impl IdTypeMap {
         id: Id,
         insert_with: impl FnOnce() -> T,
     ) -> &mut T {
-        let hash = core::hash::hash(TypeId::of::<T>(), id);
+        let key = RawKey::new::<T>(id);
         use hashbrown::hash_map::Entry;
-        match self.map.entry(hash) {
+        match self.map.entry(key) {
             Entry::Vacant(vacant) => {
                 // this unwrap will never panic, because we insert correct type right now
                 #[expect(clippy::unwrap_used)]
@@ -584,8 +584,8 @@ impl IdTypeMap {
     /// Remove and fetch the state of this type and id.
     #[inline]
     pub fn remove_temp<T: 'static + Default>(&mut self, id: Id) -> Option<T> {
-        let hash = crate::util::hash(TypeId::of::<T>(), id);
-        let mut element = self.map.remove(&hash)?;
+        let key = RawKey::new::<T>(id);
+        let mut element = self.map.remove(&key)?;
         Some(core::mem::take(element.get_mut_temp()?))
     }
 
@@ -695,9 +695,12 @@ struct PersistedMap(Vec<(u64, SerializedElement)>);
 impl PersistedMap {
     fn from_map(map: &IdTypeMap) -> Self {
         #![expect(clippy::iter_over_hash_type)] // the serialized order doesn't matter
+
         profiling::function_scope!();
 
-        let mut types_map: HashMap<TypeId, TypeStats> = Default::default();
+        use alloc::collections::BTreeMap;
+
+        let mut types_map: hashbrown::HashMap<TypeId, TypeStats> = Default::default();
         #[derive(Default)]
         struct TypeStats {
             num_bytes: usize,
@@ -726,10 +729,10 @@ impl PersistedMap {
             }
         }
 
-        let mut persisted = alloc::vec![];
+        let mut persisted = vec![];
 
         {
-            //profiling::scope!("gc");
+            profiling::scope!("gc");
             for stats in types_map.values() {
                 let mut bytes_written = 0;
 
@@ -753,7 +756,7 @@ impl PersistedMap {
     }
 
     fn into_map(self) -> IdTypeMap {
-        //profiling::function_scope!();
+        profiling::function_scope!();
         let map = self
             .0
             .into_iter()
@@ -790,7 +793,7 @@ impl serde::Serialize for IdTypeMap {
     where
         S: serde::Serializer,
     {
-        //profiling::scope!("IdTypeMap::serialize");
+        profiling::scope!("IdTypeMap::serialize");
         PersistedMap::from_map(self).serialize(serializer)
     }
 }
@@ -801,7 +804,7 @@ impl<'de> serde::Deserialize<'de> for IdTypeMap {
     where
         D: serde::Deserializer<'de>,
     {
-        //profiling::scope!("IdTypeMap::deserialize");
+        profiling::scope!("IdTypeMap::deserialize");
         <PersistedMap>::deserialize(deserializer).map(PersistedMap::into_map)
     }
 }
@@ -1103,3 +1106,4 @@ fn test_serialize_gc() {
         Some(B(2_000_000))
     );
 }
+
