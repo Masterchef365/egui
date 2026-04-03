@@ -1435,7 +1435,7 @@ impl Tessellator {
                 self.tessellate_ellipse(ellipse, out);
             }
             Shape::Mesh(mesh) => {
-                profiling::scope!("mesh");
+                //profiling::scope!("mesh");
 
                 if self.options.validate_meshes && !mesh.is_valid() {
                     debug_assert!(false, "Invalid Mesh in Shape::Mesh");
@@ -1731,7 +1731,7 @@ impl Tessellator {
             return;
         }
 
-        profiling::function_scope!();
+        //profiling::function_scope!();
 
         let PathShape {
             points,
@@ -2229,7 +2229,7 @@ impl Tessellator {
     /// A list of clip rectangles with matching [`Mesh`].
     #[allow(clippy::allow_attributes, unused_mut)]
     pub fn tessellate_shapes(&mut self, mut shapes: Vec<ClippedShape>) -> Vec<ClippedPrimitive> {
-        profiling::function_scope!();
+        //profiling::function_scope!();
 
         #[cfg(feature = "rayon")]
         if self.options.parallel_tessellation {
@@ -2239,7 +2239,7 @@ impl Tessellator {
         let mut clipped_primitives: Vec<ClippedPrimitive> = Vec::default();
 
         {
-            profiling::scope!("tessellate");
+            //profiling::scope!("tessellate");
             for clipped_shape in shapes {
                 self.tessellate_clipped_shape(clipped_shape, &mut clipped_primitives);
             }
@@ -2276,7 +2276,7 @@ impl Tessellator {
     /// then replace the original shape with their tessellated meshes.
     #[cfg(feature = "rayon")]
     fn parallel_tessellation_of_large_shapes(&self, shapes: &mut [ClippedShape]) {
-        profiling::function_scope!();
+        //profiling::function_scope!();
 
         use rayon::prelude::*;
 
@@ -2306,7 +2306,7 @@ impl Tessellator {
             .enumerate()
             .filter(|(_, clipped_shape)| should_parallelize(&clipped_shape.shape))
             .map(|(index, clipped_shape)| {
-                profiling::scope!("tessellate_big_shape");
+                //profiling::scope!("tessellate_big_shape");
                 // TODO(emilk): reuse tessellator in a thread local
                 let mut tessellator = (*self).clone();
                 let mut mesh = Mesh::default();
@@ -2315,7 +2315,7 @@ impl Tessellator {
             })
             .collect();
 
-        profiling::scope!("distribute results", tessellated.len().to_string());
+        //profiling::scope!("distribute results", tessellated.len().to_string());
         for (index, mesh) in tessellated {
             shapes[index].shape = Shape::Mesh(mesh.into());
         }
