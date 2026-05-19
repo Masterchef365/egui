@@ -1,7 +1,7 @@
 use alloc::{collections::BTreeMap, sync::Arc};
 
 use crate::{
-    image::ImageSource, mutex::{Mutex, MutexGuard}, text::{
+    image::ImageStorage, mutex::{Mutex, MutexGuard}, text::{
         font::{Font, FontImpl}, Galley, LayoutJob, LayoutSection
     }, AlphaFromCoverage, TextureAtlas
 };
@@ -691,7 +691,7 @@ impl FontsImpl {
             let image = crate::ColorImage {
                 size: [width as usize, height as usize],
                 source_size: emath::Vec2::new(width as _, height as _),
-                pixels: ImageSource::Static(pixels),
+                pixels: ImageStorage::Static(pixels),
             };
             atlas = TextureAtlas::from_external_image(image, text_alpha_from_coverage);
         }

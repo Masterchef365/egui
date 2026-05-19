@@ -4,7 +4,7 @@ use emath::{Rect, remap_clamp};
 use num_traits::float::Float;
 use alloc::borrow::Cow;
 
-use crate::{image::ImageSource, AlphaFromCoverage, ColorImage, ImageDelta};
+use crate::{image::ImageStorage, AlphaFromCoverage, ColorImage, ImageDelta};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct Rectu {
@@ -285,7 +285,7 @@ fn resize_to_min_height(image: &mut ColorImage, required_height: usize) -> bool 
         let mut new_pixels = image.pixels.to_vec();
         new_pixels
             .resize(image.width() * image.height(), Color32::TRANSPARENT);
-        image.pixels = ImageSource::Owned(new_pixels.into());
+        image.pixels = ImageStorage::Owned(new_pixels.into());
         true
     } else {
         false

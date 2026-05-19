@@ -46,12 +46,12 @@ impl ImageData {
 
 #[derive(Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub enum ImageSource {
+pub enum ImageStorage {
     Owned(Vec<Color32>),
     Static(&'static [Color32]),
 }
 
-impl core::ops::Deref for ImageSource {
+impl core::ops::Deref for ImageStorage {
     type Target = [Color32];
     fn deref(&self) -> &Self::Target {
         match self {
@@ -61,7 +61,7 @@ impl core::ops::Deref for ImageSource {
     }
 }
 
-impl Default for ImageSource {
+impl Default for ImageStorage {
     fn default() -> Self {
         Self::Owned(alloc::vec![crate::Color32::BLACK])
     }
@@ -78,7 +78,7 @@ pub struct ColorImage {
     pub source_size: Vec2,
 
     /// The pixels, row by row, from top to bottom.
-    pub pixels: ImageSource,
+    pub pixels: ImageStorage,
 }
 
 impl ColorImage {
@@ -92,7 +92,7 @@ impl ColorImage {
         Self {
             size,
             source_size: Vec2::new(size[0] as f32, size[1] as f32),
-            pixels: ImageSource::Owned(pixels.into()),
+            pixels: ImageStorage::Owned(pixels.into()),
         }
     }
 
@@ -101,7 +101,7 @@ impl ColorImage {
         Self {
             size,
             source_size: Vec2::new(size[0] as f32, size[1] as f32),
-            pixels: ImageSource::Owned(alloc::vec![color; size[0] * size[1]].into()),
+            pixels: ImageStorage::Owned(alloc::vec![color; size[0] * size[1]].into()),
         }
     }
 
@@ -206,7 +206,7 @@ impl ColorImage {
     /// A view of the underlying data as `&mut [u8]`
     #[cfg(feature = "bytemuck")]
     pub fn as_raw_mut(&mut self) -> &mut [u8] {
-        let ImageSource::Owned(pixels) = &mut self.pixels else { panic!("Cannot mutate static image") };
+        let ImageStorage::Owned(pixels) = &mut self.pixels else { panic!("Cannot mutate static image") };
         bytemuck::cast_slice_mut(pixels)
     }
 
@@ -343,7 +343,7 @@ impl core::ops::IndexMut<(usize, usize)> for ColorImage {
     fn index_mut(&mut self, (x, y): (usize, usize)) -> &mut Color32 {
         let [w, h] = self.size;
         assert!(x < w && y < h, "x: {x}, y: {y}, w: {w}, h: {h}");
-        let ImageSource::Owned(pixels) = &mut self.pixels else { panic!("Cannot mutate static image") };
+        let ImageStorage::Owned(pixels) = &mut self.pixels else { panic!("Cannot mutate static image") };
         &mut pixels[y * w + x]
     }
 }
