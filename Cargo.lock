@@ -18,6 +18,7 @@ version = "0.2.31"
 source = "git+https://github.com/Masterchef365/ab-glyph.git?branch=no_std#1f11b167b39ef0ef9d74de9194745460009d073c"
 dependencies = [
  "ab_glyph_rasterizer 0.1.9",
+ "libm",
  "owned_ttf_parser",
 ]
 
@@ -31,6 +32,9 @@ checksum = "c71b1793ee61086797f5c80b6efa2b8ffa6d5dd703f118545808a7f2e27f7046"
 name = "ab_glyph_rasterizer"
 version = "0.1.9"
 source = "git+https://github.com/Masterchef365/ab-glyph.git?branch=no_std#1f11b167b39ef0ef9d74de9194745460009d073c"
+dependencies = [
+ "libm",
+]
 
 [[package]]
 name = "accesskit"

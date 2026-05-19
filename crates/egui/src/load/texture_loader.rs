@@ -1,4 +1,4 @@
-use core::sync::atomic::{AtomicU64, Ordering::Relaxed};
+use core::sync::atomic::{AtomicU32, Ordering::Relaxed};
 use alloc::{borrow::ToOwned, vec::Vec};
 use alloc::string::String;
 
@@ -20,7 +20,7 @@ struct PrimaryKey {
 type Bucket = HashMap<Option<SizeHint>, Entry>;
 
 struct Entry {
-    last_used: AtomicU64,
+    last_used: AtomicU32,
 
     /// Size of the original SVG, if any, or the texel size of the image if not an SVG.
     source_size: Vec2,
@@ -30,7 +30,7 @@ struct Entry {
 
 #[derive(Default)]
 pub struct DefaultTextureLoader {
-    pass_index: AtomicU64,
+    pass_index: AtomicU32,
     cache: Mutex<HashMap<PrimaryKey, Bucket>>,
 }
 
@@ -82,7 +82,7 @@ impl TextureLoader for DefaultTextureLoader {
                     bucket.insert(
                         svg_size_hint,
                         Entry {
-                            last_used: AtomicU64::new(self.pass_index.load(Relaxed)),
+                            last_used: AtomicU32::new(self.pass_index.load(Relaxed)),
                             source_size,
                             handle,
                         },
@@ -119,7 +119,7 @@ impl TextureLoader for DefaultTextureLoader {
     }
 
     fn end_pass(&self, pass_index: u64) {
-        self.pass_index.store(pass_index, Relaxed);
+        self.pass_index.store(pass_index.try_into().unwrap(), Relaxed);
         let mut cache = self.cache.lock();
         cache.retain(|_key, bucket| {
             if 2 <= bucket.len() {
@@ -127,7 +127,7 @@ impl TextureLoader for DefaultTextureLoader {
                 // This could be because someone has an SVG in a resizable container,
                 // and so we get a lot of different sizes of it.
                 // This could wast VRAM, so we remove the ones that are not used in this frame.
-                bucket.retain(|_, texture| pass_index <= texture.last_used.load(Relaxed) + 1);
+                bucket.retain(|_, texture| pass_index <= texture.last_used.load(Relaxed) as u64 + 1);
             }
             !bucket.is_empty()
         });
