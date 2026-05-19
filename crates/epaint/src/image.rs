@@ -206,7 +206,8 @@ impl ColorImage {
     /// A view of the underlying data as `&mut [u8]`
     #[cfg(feature = "bytemuck")]
     pub fn as_raw_mut(&mut self) -> &mut [u8] {
-        bytemuck::cast_slice_mut(self.pixels.to_mut())
+        let ImageSource::Owned(pixels) = &mut self.pixels else { panic!("Cannot mutate static image") };
+        bytemuck::cast_slice_mut(pixels)
     }
 
     /// Create a [`ColorImage`] from flat RGB data.
