@@ -1,12 +1,9 @@
 use alloc::{collections::BTreeMap, sync::Arc};
 
 use crate::{
-    AlphaFromCoverage, TextureAtlas,
-    mutex::{Mutex, MutexGuard},
-    text::{
-        Galley, LayoutJob, LayoutSection,
-        font::{Font, FontImpl},
-    },
+    image::ImageSource, mutex::{Mutex, MutexGuard}, text::{
+        font::{Font, FontImpl}, Galley, LayoutJob, LayoutSection
+    }, AlphaFromCoverage, TextureAtlas
 };
 use alloc::{borrow::ToOwned, string::String, vec::Vec};
 use emath::{NumExt as _, OrderedFloat};
@@ -691,11 +688,10 @@ impl FontsImpl {
 
             let pixels = bytemuck::cast_slice(imagedata);
 
-
             let image = crate::ColorImage {
                 size: [width as usize, height as usize],
                 source_size: emath::Vec2::new(width as _, height as _),
-                pixels: alloc::borrow::Cow::Borrowed(pixels),
+                pixels: ImageSource::Static(pixels),
             };
             atlas = TextureAtlas::from_external_image(image, text_alpha_from_coverage);
         }
