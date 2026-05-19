@@ -1,4 +1,4 @@
-use alloc::vec::Vec;
+use alloc::{borrow::Cow, vec::Vec};
 use emath::Vec2;
 
 use crate::{Color32, textures::TextureOptions};
@@ -55,7 +55,7 @@ pub struct ColorImage {
     pub source_size: Vec2,
 
     /// The pixels, row by row, from top to bottom.
-    pub pixels: Vec<Color32>,
+    pub pixels: Cow<'static, [Color32]>,
 }
 
 impl ColorImage {
@@ -69,7 +69,7 @@ impl ColorImage {
         Self {
             size,
             source_size: Vec2::new(size[0] as f32, size[1] as f32),
-            pixels,
+            pixels: Cow::Owned(pixels.into()),
         }
     }
 
@@ -78,7 +78,7 @@ impl ColorImage {
         Self {
             size,
             source_size: Vec2::new(size[0] as f32, size[1] as f32),
-            pixels: alloc::vec![color; size[0] * size[1]],
+            pixels: Cow::Owned(alloc::vec![color; size[0] * size[1]].into()),
         }
     }
 
@@ -319,7 +319,7 @@ impl core::ops::IndexMut<(usize, usize)> for ColorImage {
     fn index_mut(&mut self, (x, y): (usize, usize)) -> &mut Color32 {
         let [w, h] = self.size;
         assert!(x < w && y < h, "x: {x}, y: {y}, w: {w}, h: {h}");
-        &mut self.pixels[y * w + x]
+        &mut self.pixels.to_mut()[y * w + x]
     }
 }
 

@@ -2,6 +2,7 @@ use alloc::vec::Vec;
 use ecolor::Color32;
 use emath::{Rect, remap_clamp};
 use num_traits::float::Float;
+use alloc::borrow::Cow;
 
 use crate::{AlphaFromCoverage, ColorImage, ImageDelta};
 
@@ -271,9 +272,10 @@ fn resize_to_min_height(image: &mut ColorImage, required_height: usize) -> bool 
     }
 
     if image.width() * image.height() > image.pixels.len() {
-        image
-            .pixels
+        let mut new_pixels = image.pixels.to_vec();
+        new_pixels
             .resize(image.width() * image.height(), Color32::TRANSPARENT);
+        image.pixels = Cow::Owned(new_pixels.into());
         true
     } else {
         false
