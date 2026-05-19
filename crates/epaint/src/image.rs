@@ -44,6 +44,29 @@ impl ImageData {
 
 // ----------------------------------------------------------------------------
 
+#[derive(Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+pub enum ImageSource {
+    Owned(Vec<Color32>),
+    Static(&'static [Color32]),
+}
+
+impl core::ops::Deref for ImageSource {
+    type Target = [Color32];
+    fn deref(&self) -> &Self::Target {
+        match self {
+            Self::Owned(s) => s,
+            Self::Static(s) => s,
+        }
+    }
+}
+
+impl Default for ImageSource {
+    fn default() -> Self {
+        Self::Owned(alloc::vec![crate::Color32::BLACK])
+    }
+}
+
 /// A 2D RGBA color image in RAM.
 #[derive(Clone, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -55,7 +78,7 @@ pub struct ColorImage {
     pub source_size: Vec2,
 
     /// The pixels, row by row, from top to bottom.
-    pub pixels: Cow<'static, [Color32]>,
+    pub pixels: ImageSource,
 }
 
 impl ColorImage {
@@ -69,7 +92,7 @@ impl ColorImage {
         Self {
             size,
             source_size: Vec2::new(size[0] as f32, size[1] as f32),
-            pixels: Cow::Owned(pixels.into()),
+            pixels: ImageSource::Owned(pixels.into()),
         }
     }
 
@@ -78,7 +101,7 @@ impl ColorImage {
         Self {
             size,
             source_size: Vec2::new(size[0] as f32, size[1] as f32),
-            pixels: Cow::Owned(alloc::vec![color; size[0] * size[1]].into()),
+            pixels: ImageSource::Owned(alloc::vec![color; size[0] * size[1]].into()),
         }
     }
 
@@ -319,7 +342,8 @@ impl core::ops::IndexMut<(usize, usize)> for ColorImage {
     fn index_mut(&mut self, (x, y): (usize, usize)) -> &mut Color32 {
         let [w, h] = self.size;
         assert!(x < w && y < h, "x: {x}, y: {y}, w: {w}, h: {h}");
-        &mut self.pixels.to_mut()[y * w + x]
+        let ImageSource::Owned(pixels) = &mut self.pixels else { panic!("Cannot mutate static image") };
+        &mut pixels[y * w + x]
     }
 }
 

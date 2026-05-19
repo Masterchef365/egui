@@ -687,7 +687,10 @@ impl FontsImpl {
             let width = u32::from_le_bytes([width[0], width[1], width[2], width[3]]);
             let height = u32::from_le_bytes([height[0], height[1], height[2], height[3]]);
 
+            assert_eq!(imagedata.len() as u32, width * height * 4);
+
             let pixels = bytemuck::cast_slice(imagedata);
+
 
             let image = crate::ColorImage {
                 size: [width as usize, height as usize],
