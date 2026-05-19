@@ -105,7 +105,11 @@ impl TextureAtlas {
             (0, 0),
             "Expected the first allocation to be at (0, 0), but was at {pos:?}"
         );
-        image[pos] = Color32::WHITE;
+
+        #[cfg(not(feature = "embed-fontimage"))]
+        {
+            image[pos] = Color32::WHITE;
+        }
 
         // Allocate a series of anti-aliased discs used to render small filled circles:
         // TODO(emilk): these circles can be packed A LOT better.
@@ -127,8 +131,11 @@ impl TextureAtlas {
                     let distance_to_center = ((dx * dx + dy * dy) as f32).sqrt();
                     let coverage =
                         remap_clamp(distance_to_center, (r - 0.5)..=(r + 0.5), 1.0..=0.0);
-                    image[((x as i32 + hw + dx) as usize, (y as i32 + hw + dy) as usize)] =
-                        text_alpha_from_coverage.color_from_coverage(coverage);
+                    #[cfg(not(feature = "embed-fontimage"))]
+                    {
+                        image[((x as i32 + hw + dx) as usize, (y as i32 + hw + dy) as usize)] =
+                            text_alpha_from_coverage.color_from_coverage(coverage);
+                    }
                 }
             }
             atlas.discs.push(PrerasterizedDisc {
