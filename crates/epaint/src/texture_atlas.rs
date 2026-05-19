@@ -83,8 +83,12 @@ pub struct TextureAtlas {
 impl TextureAtlas {
     pub fn new(size: [usize; 2], text_alpha_from_coverage: AlphaFromCoverage) -> Self {
         assert!(size[0] >= 1024, "Tiny texture atlas");
+        Self::from_external_image(ColorImage::filled(size, Color32::TRANSPARENT), text_alpha_from_coverage)
+    }
+
+    pub fn from_external_image(image: ColorImage, text_alpha_from_coverage: AlphaFromCoverage) -> Self {
         let mut atlas = Self {
-            image: ColorImage::filled(size, Color32::TRANSPARENT),
+            image,
             dirty: Rectu::EVERYTHING,
             cursor: (0, 0),
             row_height: 0,
