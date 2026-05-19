@@ -267,6 +267,9 @@ impl TextureAtlas {
 }
 
 fn resize_to_min_height(image: &mut ColorImage, required_height: usize) -> bool {
+    #[cfg(feature = "embed-fontimage")]
+    return false;
+
     while required_height >= image.height() {
         image.size[1] *= 2; // double the height
     }

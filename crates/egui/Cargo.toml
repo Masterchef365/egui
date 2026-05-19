@@ -24,7 +24,7 @@ rustdoc-args = ["--generate-link-to-definition"]
 
 
 [features]
-default = ["default_fonts"]
+default = ["default_fonts", "bytemuck"]
 
 ## Exposes detailed accessibility implementation required by platform
 ## accessibility APIs. Also requires support in the egui integration.
