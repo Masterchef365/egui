@@ -674,7 +674,33 @@ impl FontsImpl {
 
         let texture_width = max_texture_side.at_most(16 * 1024);
         let initial_height = 32; // Keep initial font atlas small, so it is fast to upload to GPU. This will expand as needed anyways.
-        let atlas = TextureAtlas::new([texture_width, initial_height], text_alpha_from_coverage);
+
+        let atlas;
+
+        #[cfg(feature = "embed-fontimage")]
+        {
+            const IMAGE_DATA: &[u8] = include_bytes!("fontimage.dat");
+            let (header, imagedata) = IMAGE_DATA.split_at(4*2);
+
+            let (width, height) = header.split_at(4);
+
+            let width = u32::from_le_bytes([width[0], width[1], width[2], width[3]]);
+            let height = u32::from_le_bytes([height[0], height[1], height[2], height[3]]);
+
+            let pixels = bytemuck::cast_slice(imagedata);
+
+            let image = crate::ColorImage {
+                size: [width as usize, height as usize],
+                source_size: emath::Vec2::new(width as _, height as _),
+                pixels: alloc::borrow::Cow::Borrowed(pixels),
+            };
+            atlas = TextureAtlas::from_external_image(image, text_alpha_from_coverage);
+        }
+
+        #[cfg(not(feature = "embed-fontimage"))]
+        {
+            atlas = TextureAtlas::new([texture_width, initial_height], text_alpha_from_coverage);
+        }
 
         let atlas = Arc::new(Mutex::new(atlas));
 

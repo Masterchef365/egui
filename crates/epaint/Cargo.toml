@@ -30,6 +30,7 @@ rustdoc-args = ["--generate-link-to-definition"]
 
 [features]
 default = ["default_fonts"]
+embed-fontimage = ["bytemuck"]
 
 ## [`bytemuck`](https://docs.rs/bytemuck) enables you to cast [`Vertex`] to `&[u8]`.
 bytemuck = ["dep:bytemuck", "emath/bytemuck", "ecolor/bytemuck"]
