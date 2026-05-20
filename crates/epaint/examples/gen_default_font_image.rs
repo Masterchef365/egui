@@ -10,7 +10,7 @@ use std::path::Path;
 
 fn main() {
     let pixels_per_point = 1.0;
-    let max_texture_side = 2048;
+    let max_texture_side = 1024;
     let text_alpha_from_coverage = Default::default();
     let definitions = Default::default();
     let imp = Fonts::new(pixels_per_point, max_texture_side, text_alpha_from_coverage, definitions);

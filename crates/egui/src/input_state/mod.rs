@@ -319,7 +319,7 @@ impl Default for InputState {
 
             screen_rect: Rect::from_min_size(Default::default(), vec2(10_000.0, 10_000.0)),
             pixels_per_point: 1.0,
-            max_texture_side: 2048,
+            max_texture_side: 1024,
             time: 0.0,
             unstable_dt: 1.0 / 60.0,
             predicted_dt: 1.0 / 60.0,
