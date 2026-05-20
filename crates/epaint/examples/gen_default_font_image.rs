@@ -31,8 +31,14 @@ fn main() {
     file.write_all(&height.to_le_bytes());
     let mut image = imp.image().clone();
 
-    //let ImageStorage::Owned(pixels) = &mut image.pixels else { panic!() };
-    //pixels.iter_mut().for_each(|px| *px = Color32::WHITE);
+    let ImageStorage::Owned(pixels) = &mut image.pixels else { panic!() };
+    pixels.iter_mut().for_each(|px| {
+        if *px != Color32::TRANSPARENT {
+            *px = Color32::GREEN
+        } else {
+            *px = Color32::RED
+        }
+    });
 
     file.write_all(image.as_raw());
 
