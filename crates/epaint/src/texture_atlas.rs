@@ -214,7 +214,7 @@ impl TextureAtlas {
         let dirty = core::mem::replace(&mut self.dirty, Rectu::NOTHING);
         if dirty == Rectu::NOTHING {
             None
-        } else if dirty == Rectu::EVERYTHING {
+        } else if dirty == Rectu::EVERYTHING || matches!(self.image.pixels, ImageStorage::Static(_)) {
             Some(ImageDelta::full(self.image.clone(), texture_options))
         } else {
             let pos = [dirty.min_x, dirty.min_y];
