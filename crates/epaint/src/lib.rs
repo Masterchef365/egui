@@ -154,3 +154,5 @@ pub enum Primitive {
 
 /// Was epaint compiled with the `rayon` feature?
 pub const HAS_RAYON: bool = cfg!(feature = "rayon");
+
+pub const COMMON_CHARS: &str = " !\\\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
