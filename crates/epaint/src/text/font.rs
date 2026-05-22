@@ -37,11 +37,14 @@ impl UvRect {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct GlyphInfo {
     /// Used for pair-kerning.
     ///
     /// Doesn't need to be unique.
     /// Use `ab_glyph::GlyphId(0)` if you just want to have an id, and don't care.
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serialize_glyph_id"))]
+    #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_glyph_id"))]
     pub(crate) id: ab_glyph::GlyphId,
 
     /// Unit: points.
@@ -49,6 +52,17 @@ pub struct GlyphInfo {
 
     /// Texture coordinates.
     pub uv_rect: UvRect,
+}
+
+#[cfg(feature = "serde")]
+fn deserialize_glyph_id<'de, D>(deser: D) -> Result<ab_glyph::GlyphId, D::Error> where D: serde::Deserializer<'de> {
+    use serde::Deserialize;
+    u16::deserialize(deser).map(ab_glyph::GlyphId)
+}
+
+#[cfg(feature = "serde")]
+fn serialize_glyph_id<S>(value: &ab_glyph::GlyphId, ser: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {
+    ser.serialize_u16(value.0)
 }
 
 impl Default for GlyphInfo {
@@ -80,7 +94,7 @@ pub struct FontImpl {
 
     ascent: f32,
     pixels_per_point: f32,
-    glyph_info_cache: RwLock<BTreeMap<char, GlyphInfo>>, // TODO(emilk): standard Mutex
+    pub glyph_info_cache: RwLock<BTreeMap<char, GlyphInfo>>, // TODO(emilk): standard Mutex
     atlas: Arc<Mutex<TextureAtlas>>,
 }
 
@@ -331,7 +345,7 @@ type FontIndex = usize;
 // TODO(emilk): rename?
 /// Wrapper over multiple [`FontImpl`] (e.g. a primary + fallbacks for emojis)
 pub struct Font {
-    fonts: Vec<Arc<FontImpl>>,
+    pub fonts: Vec<Arc<FontImpl>>,
 
     /// Lazily calculated.
     characters: Option<BTreeMap<char, Vec<String>>>,

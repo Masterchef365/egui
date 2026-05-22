@@ -13,23 +13,32 @@ fn main() {
     let max_texture_side = 1024;
     let text_alpha_from_coverage = Default::default();
     let definitions = Default::default();
-    let imp = Fonts::new(pixels_per_point, max_texture_side, text_alpha_from_coverage, definitions);
+    let fonts = Fonts::new(pixels_per_point, max_texture_side, text_alpha_from_coverage, definitions);
 
-    imp.begin_pass(pixels_per_point, max_texture_side, text_alpha_from_coverage);
-    let galley = imp.layout(COMMON_CHARS.to_string(), Default::default(), Color32::WHITE, 1000.0);
+    // Dummy pass with desired chars
+    fonts.begin_pass(pixels_per_point, max_texture_side, text_alpha_from_coverage);
+    let galley = fonts.layout(COMMON_CHARS.to_string(), Default::default(), Color32::WHITE, 1000.0);
 
+    // Save glyph positions
+    let mut lck = fonts.lock();
+    let font_impl = lck.fonts.font(&Default::default()).fonts[0].clone();
+    drop(lck);
+    let cache = font_impl.glyph_info_cache.read().clone();
 
+    let file = std::fs::File::create("glphycache.dat").unwrap();
+    let mut file = std::io::BufWriter::new(file);
+    file.write_all(&postcard::to_vec(&cache).unwrap());
 
-
-    let width = imp.image().width() as u32;
-    let height = imp.image().height() as u32;
+    // Save image
+    let width = fonts.image().width() as u32;
+    let height = fonts.image().height() as u32;
 
     let file = std::fs::File::create("fontimage.dat").unwrap();
     let mut file = std::io::BufWriter::new(file);
 
     file.write_all(&width.to_le_bytes());
     file.write_all(&height.to_le_bytes());
-    let mut image = imp.image().clone();
+    let mut image = fonts.image().clone();
 
     /*
     let ImageStorage::Owned(pixels) = &mut image.pixels else { panic!() };

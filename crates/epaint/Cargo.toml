@@ -100,6 +100,8 @@ serde = { workspace = true, optional = true, features = ["derive", "rc"] }
 
 epaint_default_fonts = { workspace = true, optional = true }
 
+postcard = { version = "1.1.3", features = ["alloc"] }
+
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 backtrace = { workspace = true, optional = true }

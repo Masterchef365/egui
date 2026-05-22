@@ -48,6 +48,7 @@ impl ImageData {
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum ImageStorage {
     Owned(Vec<Color32>),
+    #[serde(skip)]
     Static(&'static [Color32]),
 }
 
