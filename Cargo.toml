@@ -70,10 +70,13 @@ eframe = { version = "0.32.0", path = "crates/eframe", default-features = false 
 
 accesskit = "0.19.0"
 accesskit_winit = "0.27"
-ahash = { version = "0.8.11", default-features = false, features = [
-    "no-rng", # we don't need DOS-protection, so we let users opt-in to it instead
-    #"std",
-] }
+
+ahash = { git = "https://github.com/Masterchef365/aHash.git", branch = "serde-no-std", default-features = false, features = ["no-rng"] }
+#ahash = { path = "../aHash", default-features = false, features = ["no-rng"] }
+#ahash = { version = "0.8.12", default-features = false, features = [
+#    "no-rng", # we don't need DOS-protection, so we let users opt-in to it instead
+#    #"std",
+#] }
 backtrace = "0.3"
 bitflags = "2.6"
 bytemuck = "1.7.2"
@@ -96,7 +99,7 @@ puffin = "0.19"
 puffin_http = "0.16"
 raw-window-handle = "0.6.0"
 ron = "0.10.1"
-serde = { version = "1", features = ["derive"] }
+serde = { version = "1", default-features = false, features = ["derive", "alloc"] }
 similar-asserts = "1.4.2"
 smallvec = "1"
 thiserror = "1.0.37"
@@ -109,6 +112,7 @@ web-time = "1.1.0" # Timekeeping for native and web
 wgpu = { version = "25.0.0", default-features = false }
 windows-sys = "0.59"
 winit = { version = "0.30.7", default-features = false }
+
 
 [workspace.lints.rust]
 unsafe_code = "deny"

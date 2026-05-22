@@ -25,9 +25,10 @@ fn main() {
     drop(lck);
     let cache = font_impl.glyph_info_cache.read().clone();
 
-    let file = std::fs::File::create("glphycache.dat").unwrap();
+    let file = std::fs::File::create("glyphcache.dat").unwrap();
     let mut file = std::io::BufWriter::new(file);
-    file.write_all(&postcard::to_vec(&cache).unwrap());
+    let bytes: Vec<u8> = postcard::to_allocvec(&cache).unwrap().to_vec();
+    file.write_all(&bytes);
 
     // Save image
     let width = fonts.image().width() as u32;

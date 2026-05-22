@@ -147,16 +147,27 @@ checksum = "512761e0bb2578dd7380c6baaa0f4ce03e84f95e960231d1dec8bf4d7d6e2627"
 
 [[package]]
 name = "ahash"
-version = "0.8.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e89da841a80418a9b391ebaea17f5c112ffaaa96f621d2c285b5174da76b9011"
+version = "0.8.10"
+source = "git+https://github.com/Masterchef365/aHash.git?branch=serde-no-std#3cbe444e967993299c9a6fb4e19e21f398670509"
 dependencies = [
  "cfg-if",
- "getrandom 0.2.15",
  "once_cell",
  "serde",
  "version_check",
- "zerocopy 0.7.35",
+ "zerocopy 0.8.27",
+]
+
+[[package]]
+name = "ahash"
+version = "0.8.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a15f179cd60c4584b8a8c596927aadc462e27f2ca70c04e0071964a73ba7a75"
+dependencies = [
+ "cfg-if",
+ "getrandom 0.3.1",
+ "once_cell",
+ "version_check",
+ "zerocopy 0.8.27",
 ]
 
 [[package]]
@@ -1255,7 +1266,7 @@ dependencies = [
 name = "eframe"
 version = "0.32.0"
 dependencies = [
- "ahash",
+ "ahash 0.8.10",
  "bytemuck",
  "directories",
  "document-features",
@@ -1296,7 +1307,7 @@ name = "egui"
 version = "0.32.0"
 dependencies = [
  "accesskit",
- "ahash",
+ "ahash 0.8.10",
  "backtrace",
  "bitflags 2.9.0",
  "document-features",
@@ -1318,7 +1329,7 @@ dependencies = [
 name = "egui-wgpu"
 version = "0.32.0"
 dependencies = [
- "ahash",
+ "ahash 0.8.10",
  "bytemuck",
  "document-features",
  "egui",
@@ -1337,7 +1348,7 @@ name = "egui-winit"
 version = "0.32.0"
 dependencies = [
  "accesskit_winit",
- "ahash",
+ "ahash 0.8.10",
  "arboard",
  "bytemuck",
  "document-features",
@@ -1402,7 +1413,7 @@ dependencies = [
 name = "egui_extras"
 version = "0.32.0"
 dependencies = [
- "ahash",
+ "ahash 0.8.10",
  "chrono",
  "document-features",
  "egui",
@@ -1421,7 +1432,7 @@ dependencies = [
 name = "egui_glow"
 version = "0.32.0"
 dependencies = [
- "ahash",
+ "ahash 0.8.10",
  "bytemuck",
  "document-features",
  "egui",
@@ -1598,7 +1609,7 @@ name = "epaint"
 version = "0.32.0"
 dependencies = [
  "ab_glyph 0.2.31",
- "ahash",
+ "ahash 0.8.10",
  "backtrace",
  "bytemuck",
  "criterion",
@@ -3487,7 +3498,7 @@ checksum = "3779b94aeb87e8bd4e834cee3650289ee9e0d5677f976ecdb6d219e5f4f6cd94"
 dependencies = [
  "rand_chacha",
  "rand_core",
- "zerocopy 0.8.23",
+ "zerocopy 0.8.27",
 ]
 
 [[package]]
@@ -5444,7 +5455,7 @@ version = "0.30.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dba50bc8ef4b6f1a75c9274fb95aa9a8f63fbc66c56f391bd85cf68d51e7b1a3"
 dependencies = [
- "ahash",
+ "ahash 0.8.12",
  "android-activity",
  "atomic-waker",
  "bitflags 2.9.0",
@@ -5757,11 +5768,11 @@ dependencies = [
 
 [[package]]
 name = "zerocopy"
-version = "0.8.23"
+version = "0.8.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd97444d05a4328b90e75e503a34bad781f14e28a823ad3557f0750df1ebcbc6"
+checksum = "0894878a5fa3edfd6da3f88c4805f4c8558e2b996227a3d864f47fe11e38282c"
 dependencies = [
- "zerocopy-derive 0.8.23",
+ "zerocopy-derive 0.8.27",
 ]
 
 [[package]]
@@ -5777,9 +5788,9 @@ dependencies = [
 
 [[package]]
 name = "zerocopy-derive"
-version = "0.8.23"
+version = "0.8.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6352c01d0edd5db859a63e2605f4ea3183ddbd15e2c4a9e7d32184df75e4f154"
+checksum = "88d2b8d9c68ad2b9e4340d7832716a4d21a22a1154777ad56ea55c51a9cf3831"
 dependencies = [
  "proc-macro2",
  "quote",

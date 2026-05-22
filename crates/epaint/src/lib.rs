@@ -75,6 +75,7 @@ pub use self::{
 #[deprecated = "Renamed to CornerRadius"]
 pub type Rounding = CornerRadius;
 
+use alloc::collections::btree_map::BTreeMap;
 pub use ecolor::{Color32, Hsva, HsvaGamma, Rgba};
 pub use emath::{Pos2, Rect, Vec2, pos2, vec2};
 
@@ -86,6 +87,7 @@ pub use emath;
 
 #[cfg(feature = "color-hex")]
 pub use ecolor::hex_color;
+use text::font::GlyphInfo;
 
 /// The UV coordinate of a white region of the texture mesh.
 ///
@@ -156,3 +158,9 @@ pub enum Primitive {
 pub const HAS_RAYON: bool = cfg!(feature = "rayon");
 
 pub const COMMON_CHARS: &str = " !\\\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+
+#[cfg(feature = "embed-fontimage")]
+pub fn load_glyphs() -> BTreeMap<char, GlyphInfo> {
+    const GLYPH_CACHE: &[u8] = include_bytes!("text/glyphcache.dat");
+    postcard::from_bytes(GLYPH_CACHE).unwrap()
+}
