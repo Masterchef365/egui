@@ -492,7 +492,7 @@ impl Fonts {
     }
 
     /// Access the underlying [`FontsAndCache`].
-    #[doc(hidden)]
+    //#[doc(hidden)]
     #[inline]
     pub fn lock(&self) -> MutexGuard<'_, FontsAndCache> {
         self.0.lock()
